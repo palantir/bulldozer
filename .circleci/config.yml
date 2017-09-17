@@ -1,0 +1,102 @@
+darwin-linux-no-cgo: &darwin-linux-no-cgo
+  working_directory: /go/src/github.com/palantir/bulldozer
+  docker:
+    - image: nmiyake/go:go-darwin-linux-no-cgo-1.9-t112
+      environment:
+        CGO_ENABLED: 0
+
+define-artifact-dir: &define-artifacts-dir
+  run: echo "export ARTIFACT_STORE=/tmp/artifacts/${CIRCLE_PROJECT_REPONAME}-${TAG_NAME}-tests" >> $BASH_ENV
+
+mkdir-artifacts-dir: &mkdir-artifacts-dir
+  run: mkdir -p "${ARTIFACT_STORE}"
+
+store-test-results: &store-test-results
+  type: test-results-store
+  path: /tmp/artifacts
+
+store-artifacts: &store-artifacts
+  type: artifacts-store
+  path: /tmp/artifacts
+
+make-client: &make-client
+  run: ./scripts/make_client.sh
+
+install-git: &install-git
+  run:
+    command: apt-get install -y git
+
+install-yarn: &install-yarn
+  run:
+    command: |
+      curl -sL https://deb.nodesource.com/setup_6.x | bash -
+      curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
+      echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
+      apt-get -y update
+      apt-get -y install nodejs yarn
+
+version: 2
+jobs:
+  build:
+    <<: *darwin-linux-no-cgo
+    steps:
+      - *define-artifacts-dir
+      - *mkdir-artifacts-dir
+      - checkout
+      - *install-yarn
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "./client/package.json" }}
+            - v1-dependencies-
+      - run: go version
+      - run: ./godelw version
+      - run: ./godelw verify --apply=false --junit-output="${ARTIFACT_STORE}/tests.xml"
+      - run: ./godelw dist
+      - *make-client
+      - save_cache:
+          paths:
+            - ./client/node_modules
+          key: v1-dependencies-{{ checksum "./client/package.json" }}
+      - *store-test-results
+
+  changelog:
+    <<: *darwin-linux-no-cgo
+    steps:
+      - checkout
+      - *install-git
+      - *define-artifacts-dir
+      - *mkdir-artifacts-dir
+      - run: git log `git describe --tags --abbrev=0`..HEAD --pretty="### %s%n%b%n" > /tmp/artifacts/changelog.md
+      - *store-artifacts
+
+  publish:
+    <<: *darwin-linux-no-cgo
+    steps:
+      - checkout
+      - run: ./godelw publish bintray --url https://api.bintray.com --subject palantir --repository releases --user "$BINTRAY_USERNAME" --password "$BINTRAY_PASSWORD" --publish --downloads-list bulldozer
+      - run: sha256sum dist/*.tgz
+
+workflows:
+  version: 2
+  build-publish:
+    jobs:
+      - build:
+          filters:
+            tags:
+              only: /.*/
+      - publish:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /^[0-9]+(\.[0-9]+)+(-rc[0-9]+)?(-alpha[0-9]+)?$/
+            branches:
+              ignore: /.*/
+      - changelog:
+          requires:
+            - build
+          filters:
+            tags:
+              ignore: /.*/
+            branches:
+              only: /^develop$/

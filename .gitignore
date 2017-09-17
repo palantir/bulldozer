@@ -1,0 +1,12 @@
+*.iml
+*.ipr
+*.iws
+.idea/
+/build/
+coverage.out
+dist/
+gotest.out
+.DS_Store
+config/bulldozer.yml
+client/build
+client/node_modules
