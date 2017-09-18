@@ -22,12 +22,38 @@ store-artifacts: &store-artifacts
 make-client: &make-client
   run: ./scripts/make_client.sh
 
+install-docker-client: &install-docker-client
+  run:
+    name: Install docker client
+    command: |
+      set -x
+      VER="17.05.0-ce"
+      curl -L -o /tmp/docker-$VER.tgz https://get.docker.com/builds/Linux/x86_64/docker-$VER.tgz
+      tar -xz -C /tmp -f /tmp/docker-$VER.tgz
+      mv /tmp/docker/* /usr/bin
+
+build-docker-image: &build-docker-image
+  run:
+    name: Build docker image
+    command: |
+      set -x
+      version=$(./godelw project-version)
+      cp /etc/ssl/certs/ca-certificates.crt .
+      docker build \
+        -t palantirtechnologies/bulldozer \
+        --build-arg VERSION=${version} \
+        -f Dockerfile \
+        .
+      rm -f ca-certificates.crt
+
 install-git: &install-git
   run:
+    name: Install git
     command: apt-get install -y git
 
 install-yarn: &install-yarn
   run:
+    name: Install yarn
     command: |
       curl -sL https://deb.nodesource.com/setup_6.x | bash -
       curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
@@ -44,15 +70,23 @@ jobs:
       - *mkdir-artifacts-dir
       - checkout
       - *install-yarn
+
       - restore_cache:
           keys:
             - v1-dependencies-{{ checksum "./client/package.json" }}
             - v1-dependencies-
+
       - run: go version
       - run: ./godelw version
       - run: ./godelw verify --apply=false --junit-output="${ARTIFACT_STORE}/tests.xml"
+
+      - setup_remote_docker
+      - *install-docker-client
+
       - run: ./godelw dist
       - *make-client
+      - *build-docker-image
+
       - save_cache:
           paths:
             - ./client/node_modules
@@ -73,8 +107,12 @@ jobs:
     <<: *darwin-linux-no-cgo
     steps:
       - checkout
+      - setup_remote_docker
+      - *install-docker-client
       - run: ./godelw publish bintray --url https://api.bintray.com --subject palantir --repository releases --user "$BINTRAY_USERNAME" --password "$BINTRAY_PASSWORD" --publish --downloads-list bulldozer
       - run: sha256sum dist/*.tgz
+      - *build-docker-image
+      - run: ./publish-docker.sh
 
 workflows:
   version: 2

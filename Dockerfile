@@ -1,4 +1,4 @@
-FROM SCRATCH
+FROM scratch
 
 ARG VERSION
 
