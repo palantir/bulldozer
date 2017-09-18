@@ -46,7 +46,7 @@ Bulldozer has the following behavior:
 ### there exists no `.bulldozer.yml` file in the destination branch of a PR
 - Bulldozer will ignore the PR and will not act on it
 
-### here exists a `.bulldozer.yml` file in the destination branch of a PR
+### there exists a `.bulldozer.yml` file in the destination branch of a PR
 The format of the file is:
 
 ```yaml
