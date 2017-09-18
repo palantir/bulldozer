@@ -137,4 +137,4 @@ workflows:
             tags:
               ignore: /.*/
             branches:
-              only: /^develop$/
+              only: /^master$/
