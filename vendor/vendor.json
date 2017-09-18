@@ -183,10 +183,12 @@
 			"revisionTime": "2017-04-30T19:46:03Z"
 		},
 		{
-			"checksumSHA1": "qUd2AA/+1E7WacQ/2pNaSiU8azM=",
+			"checksumSHA1": "sO9V9uOy53nKHP7diciRbd3CSB8=",
 			"path": "github.com/labstack/echo",
-			"revision": "394f533510cc577dd4e136b56de3802a4f88f7b4",
-			"revisionTime": "2017-02-14T22:11:35Z"
+			"revision": "cec7629194fe4bf83b0c72d9a02d340c7a1468ac",
+			"revisionTime": "2017-08-24T15:57:36Z",
+			"version": "3.2.3",
+			"versionExact": "3.2.3"
 		},
 		{
 			"checksumSHA1": "EMeRIQY2vGlMS+0A1/F8qatmDsM=",

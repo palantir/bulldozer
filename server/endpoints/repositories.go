@@ -89,7 +89,7 @@ func Repositories(db *sqlx.DB) echo.HandlerFunc {
 
 		repoc := make(chan *Repository, 100)
 
-		client, err := gh.FromAuthHeader(c, c.Request().Header.Get("authorization"))
+		client, err := gh.FromAuthHeader(c, c.Request().Header.Get(echo.HeaderAuthorization))
 		if err != nil {
 			return errors.Wrap(err, "cannot create GitHub client")
 		}
@@ -126,7 +126,7 @@ func RepositoryEnable(db *sqlx.DB, webHookURL string, webHookSecret string) echo
 	return func(c echo.Context) error {
 		logger := log.FromContext(c)
 
-		client, err := gh.FromAuthHeader(c, c.Request().Header.Get("authorization"))
+		client, err := gh.FromAuthHeader(c, c.Request().Header.Get(echo.HeaderAuthorization))
 		if err != nil {
 			return errors.Wrap(err, "cannot create GitHub client")
 		}
@@ -224,7 +224,7 @@ func RepositoryDisable(db *sqlx.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		logger := log.FromContext(c)
 
-		client, err := gh.FromAuthHeader(c, c.Request().Header.Get("authorization"))
+		client, err := gh.FromAuthHeader(c, c.Request().Header.Get(echo.HeaderAuthorization))
 		if err != nil {
 			return errors.Wrap(err, "cannot create GitHub client")
 		}
