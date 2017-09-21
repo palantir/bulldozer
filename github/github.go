@@ -392,20 +392,24 @@ func (client *Client) PullRequestForSHA(repo *github.Repository, SHA string) (*g
 		return nil, nil
 	}
 
+	if pullRequest.Mergeable != nil {
+		return pullRequest, nil
+	}
+
 	ticker := time.NewTicker(5 * time.Second)
 	for {
+		select {
+		case <-ticker.C:
+		}
+
 		// polling for merge status (https://developer.github.com/v3/pulls/#get-a-single-pull-request)
 		p, _, err := client.PullRequests.Get(client.Ctx, owner, name, pullRequest.GetNumber())
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot poll for PR merge status with head %s on %s", SHA, repo.GetFullName())
 		}
-		if p.GetMergeable() {
+		if p.Mergeable != nil {
 			pullRequest = p
 			break
-		}
-
-		select {
-		case <-ticker.C:
 		}
 	}
 
