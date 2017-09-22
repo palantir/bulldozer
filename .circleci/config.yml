@@ -118,7 +118,7 @@ jobs:
       - attach_workspace:
           at: /go/src/github.com/palantir/bulldozer
       - *build-docker-image
-      - run: ./scripts/publish-docker.sh
+      - run: ./scripts/publish_docker.sh
 
 workflows:
   version: 2
