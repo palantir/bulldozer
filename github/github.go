@@ -398,9 +398,7 @@ func (client *Client) PullRequestForSHA(repo *github.Repository, SHA string) (*g
 
 	ticker := time.NewTicker(5 * time.Second)
 	for {
-		select {
-		case <-ticker.C:
-		}
+		<-ticker.C
 
 		// polling for merge status (https://developer.github.com/v3/pulls/#get-a-single-pull-request)
 		p, _, err := client.PullRequests.Get(client.Ctx, owner, name, pullRequest.GetNumber())
