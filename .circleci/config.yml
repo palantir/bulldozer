@@ -64,7 +64,7 @@ install-yarn: &install-yarn
 setup-docker: &setup-docker
   run:
     name: Setup Docker
-    commands: |
+    command: |
       - setup_remote_docker
       - *install-docker-client
 
