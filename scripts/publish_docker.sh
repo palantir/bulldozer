@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eu
+set -u
 
 docker login -u "${DOCKERHUB_USERNAME}" -p "${DOCKERHUB_PASSWORD}"
 
