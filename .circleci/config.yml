@@ -61,13 +61,6 @@ install-yarn: &install-yarn
       apt-get -y update
       apt-get -y install nodejs yarn
 
-setup-docker: &setup-docker
-  run:
-    name: Setup Docker
-    commands: |
-      - setup_remote_docker
-      - *install-docker-client
-
 version: 2
 jobs:
   build:
@@ -130,7 +123,8 @@ jobs:
     <<: *darwin-linux-no-cgo
     steps:
       - checkout
-      - *setup-docker
+      - setup_remote_docker
+      - *install-docker-client
       - run: ./godelw publish bintray --url https://api.bintray.com --subject palantir --repository releases --user "$BINTRAY_USERNAME" --password "$BINTRAY_PASSWORD" --publish --downloads-list bulldozer
       - run: sha256sum dist/*.tgz
       - attach_workspace:
