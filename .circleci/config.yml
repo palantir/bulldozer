@@ -118,9 +118,11 @@ jobs:
     <<: *darwin-linux-no-cgo
     steps:
       - checkout
-      - *setup-docker
+      - setup_remote_docker
+      - *install-docker-client
       - attach_workspace:
           at: /go/src/github.com/palantir/bulldozer
+      - run: ./godelw dist
       - *build-docker-image
       - run: ./scripts/publish_docker.sh
 
@@ -168,4 +170,3 @@ workflows:
               only: /^[0-9]+(\.[0-9]+)+(-rc[0-9]+)?(-alpha[0-9]+)?$/
             branches:
               ignore: /.*/
-
