@@ -61,6 +61,13 @@ install-yarn: &install-yarn
       apt-get -y update
       apt-get -y install nodejs yarn
 
+setup-docker: &setup-docker
+  run:
+    name: Setup Docker
+    commands: |
+      - setup_remote_docker
+      - *install-docker-client
+
 version: 2
 jobs:
   build:
@@ -107,12 +114,21 @@ jobs:
       - run: git log `git describe --tags --abbrev=0`..HEAD --pretty="### %s%n%b%n" > /tmp/artifacts/changelog.md
       - *store-artifacts
 
-  publish:
+  publish-snapshot:
     <<: *darwin-linux-no-cgo
     steps:
       - checkout
-      - setup_remote_docker
-      - *install-docker-client
+      - *setup-docker
+      - attach_workspace:
+          at: /go/src/github.com/palantir/bulldozer
+      - *build-docker-image
+      - run: ./scripts/publish_docker.sh
+
+  publish-release:
+    <<: *darwin-linux-no-cgo
+    steps:
+      - checkout
+      - *setup-docker
       - run: ./godelw publish bintray --url https://api.bintray.com --subject palantir --repository releases --user "$BINTRAY_USERNAME" --password "$BINTRAY_PASSWORD" --publish --downloads-list bulldozer
       - run: sha256sum dist/*.tgz
       - attach_workspace:
@@ -128,14 +144,6 @@ workflows:
           filters:
             tags:
               only: /.*/
-      - publish:
-          requires:
-            - build
-          filters:
-            tags:
-              only: /^[0-9]+(\.[0-9]+)+(-rc[0-9]+)?(-alpha[0-9]+)?$/
-            branches:
-              ignore: /.*/
       - changelog:
           requires:
             - build
@@ -144,3 +152,20 @@ workflows:
               ignore: /.*/
             branches:
               only: /^master$/
+      - publish-snapshot:
+          requires:
+            - build
+          filters:
+            tags:
+              ignore: /.*/
+            branches:
+              only: /^master$/
+      - publish-release:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /^[0-9]+(\.[0-9]+)+(-rc[0-9]+)?(-alpha[0-9]+)?$/
+            branches:
+              ignore: /.*/
+
