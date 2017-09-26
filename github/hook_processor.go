@@ -47,19 +47,19 @@ func ProcessHook(c echo.Context, hookSecret string) (*ProcessResult, error) {
 	logger.Debugf("Got a %s event", webHookType)
 	switch webHookType {
 	case StatusEvent:
-		event := webHook.(github.StatusEvent)
+		event := webHook.(*github.StatusEvent)
 		return &ProcessResult{RepoID: event.Repo.GetID(), SHA: event.GetSHA(), Merge: true}, nil
 	case PullRequestEvent:
-		event := webHook.(github.PullRequestEvent)
+		event := webHook.(*github.PullRequestEvent)
 		if event.GetAction() == "closed" {
 			return &ProcessResult{RepoID: event.Repo.GetID(), SHA: event.PullRequest.Head.GetSHA()}, nil
 		}
 		return &ProcessResult{RepoID: event.Repo.GetID(), SHA: event.PullRequest.Head.GetSHA(), Merge: true}, nil
 	case PullRequestReviewEvent:
-		event := webHook.(github.PullRequestReviewEvent)
+		event := webHook.(*github.PullRequestReviewEvent)
 		return &ProcessResult{RepoID: event.Repo.GetID(), SHA: event.PullRequest.Head.GetSHA(), Merge: true}, nil
 	case PushEvent:
-		event := webHook.(github.PushEvent)
+		event := webHook.(*github.PushEvent)
 		return &ProcessResult{RepoID: event.Repo.GetID(), Update: true, UpdatedRef: event.GetRef()}, nil
 	case PingEvent:
 		return &ProcessResult{}, nil
