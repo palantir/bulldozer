@@ -33,6 +33,7 @@ import (
 	"github.com/palantir/bulldozer/log"
 	"github.com/palantir/bulldozer/server/config"
 	"github.com/palantir/bulldozer/utils"
+	"github.com/palantir/bulldozer/version"
 )
 
 const (
@@ -68,26 +69,6 @@ type BulldozerFile struct {
 	Mode             string `yaml:"mode" validate:"nonzero"`
 }
 
-func FromAuthHeader(c echo.Context, authHeader string) (*Client, error) {
-	if authHeader == "" {
-		return nil, errors.New("authorization header not present")
-	}
-	token := strings.Split(authHeader, " ")[1]
-
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{
-			AccessToken: token,
-		},
-	)
-	tc := oauth2.NewClient(context.TODO(), ts)
-
-	client := github.NewClient(tc)
-
-	client.BaseURL, _ = url.Parse(config.Instance.Github.APIURL)
-
-	return &Client{log.FromContext(c), context.TODO(), client}, nil
-}
-
 func FromToken(c echo.Context, token string) *Client {
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
@@ -97,8 +78,23 @@ func FromToken(c echo.Context, token string) *Client {
 	client := github.NewClient(tc)
 
 	client.BaseURL, _ = url.Parse(config.Instance.Github.APIURL)
+	client.UserAgent = "bulldozer/" + version.Version()
 
 	return &Client{log.FromContext(c), context.TODO(), client}
+}
+
+func FromAuthHeader(c echo.Context, authHeader string) (*Client, error) {
+	if authHeader == "" {
+		return nil, errors.New("authorization header not present")
+	}
+
+	parts := strings.Split(authHeader, " ")
+	if len(parts) != 2 {
+		return nil, errors.New("incorrectly formatted auth header")
+	}
+
+	token := parts[1]
+	return FromToken(c, token), nil
 }
 
 func (client *Client) ConfigFile(repo *github.Repository, ref string) (*BulldozerFile, error) {
