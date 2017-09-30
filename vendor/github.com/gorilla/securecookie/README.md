@@ -45,8 +45,6 @@ func SetCookieHandler(w http.ResponseWriter, r *http.Request) {
 			Name:  "cookie-name",
 			Value: encoded,
 			Path:  "/",
-			Secure: true,
-			HttpOnly: true,
 		}
 		http.SetCookie(w, cookie)
 	}

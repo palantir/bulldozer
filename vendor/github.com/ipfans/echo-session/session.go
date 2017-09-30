@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gorilla/context"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo"
 )
@@ -65,6 +66,7 @@ func Sessions(name string, store Store) echo.MiddlewareFunc {
 			rs := ctx.Response()
 			s := &session{name, rq, store, nil, false, rs.Writer}
 			ctx.Set(DefaultKey, s)
+			defer context.Clear(rq)
 			return h(ctx)
 		}
 	}

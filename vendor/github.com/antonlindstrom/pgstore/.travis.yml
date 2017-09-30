@@ -1,0 +1,26 @@
+language: go
+
+go:
+  - 1.6
+  - 1.7
+  - tip
+
+install:
+  - make get-deps
+  - go get github.com/campoy/embedmd
+
+script:
+  - make metalint
+  - make docs-check
+  - make check
+
+env:
+  - GO15VENDOREXPERIMENT=1 PGSTORE_TEST_CONN="postgres://postgres@127.0.0.1/test?sslmode=disable"
+
+before_script:
+  - psql -c 'create database test;' -U postgres
+
+addons:
+  postgresql: "9.4"
+
+sudo: false
