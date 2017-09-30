@@ -56,7 +56,6 @@
   revision = "130e6b02ab059e7b717a096f397c5b60111cae74"
 
 [[projects]]
-  branch = "master"
   name = "github.com/google/go-github"
   packages = ["github"]
   revision = "511f540f1887d30b88cee4a2fcd1f2922754acf4"
@@ -104,7 +103,6 @@
   version = "v3.1.1"
 
 [[projects]]
-  branch = "master"
   name = "github.com/jmoiron/sqlx"
   packages = [".","reflectx"]
   revision = "d9bd385d68c068f1fabb5057e3dedcbcbb039d0f"
@@ -122,7 +120,6 @@
   version = "0.2.3"
 
 [[projects]]
-  branch = "master"
   name = "github.com/lib/pq"
   packages = [".","oid"]
   revision = "b77235e3890a962fe8a6f8c4c7198679ca7814e7"
@@ -194,7 +191,6 @@
   version = "v1.1.0"
 
 [[projects]]
-  branch = "master"
   name = "github.com/spf13/cobra"
   packages = ["."]
   revision = "e5f66de850af3302fbe378c8acded2b0fa55472c"
@@ -248,7 +244,6 @@
   revision = "0a9397675ba34b2845f758fe3cd68828369c6517"
 
 [[projects]]
-  branch = "master"
   name = "golang.org/x/oauth2"
   packages = [".","internal"]
   revision = "bb50c06baba3d0c76f9d125c0719093e315b5b44"
@@ -278,7 +273,6 @@
   version = "v9.7.0"
 
 [[projects]]
-  branch = "v2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   revision = "eb3733d160e74a9c7e442f435eb3bea458e1d19f"
@@ -286,6 +280,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c5474eebf90c10400f6aee655102d4744dd69d771872bf5d07db266ab577ef2d"
+  inputs-digest = "40bc7063ffd9b03f5f059775cab1296e4b6efc4fcd2e316eedf49e91dfb7e6c9"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -22,24 +22,24 @@
 
 
 [[constraint]]
-  branch = "master"
   name = "github.com/google/go-github"
+  revision = "511f540f1887d30b88cee4a2fcd1f2922754acf4"
 
 [[constraint]]
   name = "github.com/ipfans/echo-session"
   version = "3.1.1"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/jmoiron/sqlx"
+  revision = "d9bd385d68c068f1fabb5057e3dedcbcbb039d0f"
 
 [[constraint]]
   name = "github.com/labstack/echo"
   version = "3.2.3"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/lib/pq"
+  revision = "b77235e3890a962fe8a6f8c4c7198679ca7814e7"
 
 [[constraint]]
   name = "github.com/pkg/errors"
@@ -50,8 +50,8 @@
   version = "1.0.3"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/spf13/cobra"
+  revision = "e5f66de850af3302fbe378c8acded2b0fa55472c"
 
 [[constraint]]
   name = "github.com/spf13/viper"
@@ -62,13 +62,13 @@
   version = "1.1.4"
 
 [[constraint]]
-  branch = "master"
   name = "golang.org/x/oauth2"
+  revision = "bb50c06baba3d0c76f9d125c0719093e315b5b44"
 
 [[constraint]]
   name = "gopkg.in/go-playground/validator.v9"
   version = "9.7.0"
 
 [[constraint]]
-  branch = "v2"
   name = "gopkg.in/yaml.v2"
+  revision = "eb3733d160e74a9c7e442f435eb3bea458e1d19f"
