@@ -7,16 +7,8 @@
   version = "3.1.1"
 
 [[constraint]]
-  name = "github.com/jmoiron/sqlx"
-  revision = "d9bd385d68c068f1fabb5057e3dedcbcbb039d0f"
-
-[[constraint]]
   name = "github.com/labstack/echo"
   version = "3.2.3"
-
-[[constraint]]
-  name = "github.com/lib/pq"
-  revision = "b77235e3890a962fe8a6f8c4c7198679ca7814e7"
 
 [[constraint]]
   name = "github.com/pkg/errors"
@@ -49,3 +41,7 @@
 [[constraint]]
   name = "gopkg.in/yaml.v2"
   revision = "eb3733d160e74a9c7e442f435eb3bea458e1d19f"
+
+[[constraint]]
+  name = "github.com/jinzhu/gorm"
+  version = "1.0.0"
