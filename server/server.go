@@ -42,6 +42,7 @@ func New(db *sqlx.DB, startup *config.Startup) *Server {
 	e := echo.New()
 
 	e.Use(bm.ContextMiddleware)
+	e.Use(middleware.BodyLimit("6M"))
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: config.EchoLoggingFormat,
 		Skipper: func(c echo.Context) bool {
