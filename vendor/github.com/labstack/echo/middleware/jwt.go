@@ -77,7 +77,7 @@ var (
 //
 // See: https://jwt.io/introduction
 // See `JWTConfig.TokenLookup`
-func JWT(key []byte) echo.MiddlewareFunc {
+func JWT(key interface{}) echo.MiddlewareFunc {
 	c := DefaultJWTConfig
 	c.SigningKey = key
 	return JWTWithConfig(c)
@@ -91,7 +91,7 @@ func JWTWithConfig(config JWTConfig) echo.MiddlewareFunc {
 		config.Skipper = DefaultJWTConfig.Skipper
 	}
 	if config.SigningKey == nil {
-		panic("jwt middleware requires signing key")
+		panic("echo: jwt middleware requires signing key")
 	}
 	if config.SigningMethod == "" {
 		config.SigningMethod = DefaultJWTConfig.SigningMethod
@@ -141,7 +141,8 @@ func JWTWithConfig(config JWTConfig) echo.MiddlewareFunc {
 			if _, ok := config.Claims.(jwt.MapClaims); ok {
 				token, err = jwt.Parse(auth, config.keyFunc)
 			} else {
-				claims := reflect.ValueOf(config.Claims).Interface().(jwt.Claims)
+				t := reflect.ValueOf(config.Claims).Type().Elem()
+				claims := reflect.New(t).Interface().(jwt.Claims)
 				token, err = jwt.ParseWithClaims(auth, claims, config.keyFunc)
 			}
 			if err == nil && token.Valid {

@@ -458,7 +458,7 @@ func (client *Client) ReviewStatus(pr *github.PullRequest) (bool, error) {
 	}
 	reviewRequired := protection.RequiredPullRequestReviews != nil
 
-	if len(reviewers) == 0 && len(reviews) == 0 && !reviewRequired {
+	if len(reviewers.Users) == 0 && len(reviews) == 0 && !reviewRequired {
 		logger.WithFields(logrus.Fields{
 			"repo": repo.GetFullName(),
 			"pr":   pr.GetNumber(),
@@ -469,7 +469,7 @@ func (client *Client) ReviewStatus(pr *github.PullRequest) (bool, error) {
 	logger.WithFields(logrus.Fields{
 		"repo":       repo.GetFullName(),
 		"pr":         pr.GetNumber(),
-		"nReviewers": len(reviewers),
+		"nReviewers": len(reviewers.Users),
 		"nReviews":   len(reviews),
 	}).Info("Pull request has reviewers/reviews")
 	logger.WithFields(logrus.Fields{
@@ -484,7 +484,7 @@ func (client *Client) ReviewStatus(pr *github.PullRequest) (bool, error) {
 			"branch": pr.Base.GetRef(),
 		}).Debug("Branch requires code reviews")
 		return approval, nil
-	} else if len(reviews) != 0 || len(reviewers) != 0 {
+	} else if len(reviews) != 0 || len(reviewers.Users) != 0 {
 		return approval, nil
 	}
 

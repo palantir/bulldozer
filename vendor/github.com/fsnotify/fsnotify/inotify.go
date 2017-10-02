@@ -103,23 +103,21 @@ func (w *Watcher) Add(name string) error {
 	var flags uint32 = agnosticEvents
 
 	w.mu.Lock()
-	defer w.mu.Unlock()
-	watchEntry := w.watches[name]
-	if watchEntry != nil {
-		flags |= watchEntry.flags | unix.IN_MASK_ADD
+	watchEntry, found := w.watches[name]
+	w.mu.Unlock()
+	if found {
+		watchEntry.flags |= flags
+		flags |= unix.IN_MASK_ADD
 	}
 	wd, errno := unix.InotifyAddWatch(w.fd, name, flags)
 	if wd == -1 {
 		return errno
 	}
 
-	if watchEntry == nil {
-		w.watches[name] = &watch{wd: uint32(wd), flags: flags}
-		w.paths[wd] = name
-	} else {
-		watchEntry.wd = uint32(wd)
-		watchEntry.flags = flags
-	}
+	w.mu.Lock()
+	w.watches[name] = &watch{wd: uint32(wd), flags: flags}
+	w.paths[wd] = name
+	w.mu.Unlock()
 
 	return nil
 }
@@ -247,15 +245,6 @@ func (w *Watcher) readEvents() {
 
 			mask := uint32(raw.Mask)
 			nameLen := uint32(raw.Len)
-
-			if mask&unix.IN_Q_OVERFLOW != 0 {
-				select {
-				case w.Errors <- ErrEventOverflow:
-				case <-w.done:
-					return
-				}
-			}
-
 			// If the event happened to the watched directory or the watched file, the kernel
 			// doesn't append the filename to the event, but we would like to always fill the
 			// the "Name" field with a valid filename. We retrieve the path of the watch from
