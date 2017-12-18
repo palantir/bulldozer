@@ -85,16 +85,26 @@ func Hook(db *gorm.DB, secret string) echo.HandlerFunc {
 			}
 
 			for _, pr := range updateTargets {
-				updateLabel, err := ghClient.HasLabels(pr, config.UpdateMe)
+				repoConfig, err := ghClient.ConfigFile(repo, *pr.Base.Ref)
 				if err != nil {
-					return errors.Wrapf(err, "cannot check if %s-%s has update label", repo.GetFullName(), pr.GetNumber())
+					return err
 				}
-				if !updateLabel {
-					logger.WithFields(logrus.Fields{
-						"repo": repo.GetFullName(),
-						"pr":   pr.GetNumber(),
-					}).Info("Pull request does not have update me label")
-					continue
+
+				// Validate that we should update
+				switch repoConfig.UpdateStrategy {
+				case gh.UpdateStrategyDeferToPR:
+					updateLabel, err := ghClient.HasLabels(pr, config.UpdateMe)
+					if err != nil {
+						return errors.Wrapf(err, "cannot check if %s-%s has update label", repo.GetFullName(), pr.GetNumber())
+					}
+					if !updateLabel {
+						logger.WithFields(logrus.Fields{
+							"repo": repo.GetFullName(),
+							"pr":   pr.GetNumber(),
+						}).Info("Pull request does not have update me label, not updating")
+						continue
+					}
+				case gh.UpdateStrategyAlways:
 				}
 
 				if pr.Head.Repo.GetFork() {
