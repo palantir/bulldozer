@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/google/go-github/github"
-	"github.com/jinzhu/gorm"
+	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -41,7 +41,7 @@ type Repository struct {
 	EnabledAt   string `json:"enabledAt,omitempty"`
 }
 
-func worker(c echo.Context, db *gorm.DB, wg *sync.WaitGroup, repo *github.Repository, repoc chan *Repository, user *github.User, client *gh.Client) {
+func worker(c echo.Context, db *sqlx.DB, wg *sync.WaitGroup, repo *github.Repository, repoc chan *Repository, user *github.User, client *gh.Client) {
 	logger := log.FromContext(c)
 	defer wg.Done()
 
@@ -57,19 +57,18 @@ func worker(c echo.Context, db *gorm.DB, wg *sync.WaitGroup, repo *github.Reposi
 		isAdmin = perm.GetPermission() == "admin"
 	}
 
-	var repository persist.Repository
-	result := db.Where("github_id = ?", repo.GetID()).First(&repository)
-	if err := result.Error; err != nil && err != gorm.ErrRecordNotFound {
+	repository, err := persist.GetRepositoryByID(db, repo.GetID())
+	if err != nil {
 		logger.WithFields(logrus.Fields{
 			"repo": repo.GetFullName(),
-		}).Error(errors.Wrap(err, "Cannot get repository from db"))
+		}).Error(errors.Wrap(err, "Cannot get repository from database"))
 		return
 	}
 
-	if !result.RecordNotFound() {
+	if repository != nil {
 		isEnabled = true
-		enabledBy = repository.EnabledBy.Name
-		enabledAt = repository.EnabledAt.Format(time.RFC3339)
+		enabledBy = repository.EnabledBy
+		enabledAt = time.Unix(repository.EnabledAt, 0).Format(time.RFC3339)
 	}
 
 	repoc <- &Repository{
@@ -83,7 +82,7 @@ func worker(c echo.Context, db *gorm.DB, wg *sync.WaitGroup, repo *github.Reposi
 	}
 }
 
-func Repositories(db *gorm.DB) echo.HandlerFunc {
+func Repositories(db *sqlx.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var repositories []*Repository
 		var wg sync.WaitGroup
@@ -123,7 +122,7 @@ func Repositories(db *gorm.DB) echo.HandlerFunc {
 	}
 }
 
-func RepositoryEnable(db *gorm.DB, webHookURL string, webHookSecret string) echo.HandlerFunc {
+func RepositoryEnable(db *sqlx.DB, webHookURL string, webHookSecret string) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		logger := log.FromContext(c)
 
@@ -135,12 +134,6 @@ func RepositoryEnable(db *gorm.DB, webHookURL string, webHookSecret string) echo
 		user, _, err := client.Users.Get(client.Ctx, "")
 		if err != nil {
 			return errors.Wrap(err, "cannot get current user")
-		}
-
-		var dbUser persist.User
-		result := db.Where("github_id = ?", user.GetID()).First(&dbUser)
-		if err := result.Error; err != nil && err != gorm.ErrRecordNotFound {
-			return errors.Wrap(err, "cannot get current user from db")
 		}
 
 		owner := c.Param("owner")
@@ -189,20 +182,20 @@ func RepositoryEnable(db *gorm.DB, webHookURL string, webHookSecret string) echo
 		}).Info("Created hook on repository")
 
 		dbRepo := &persist.Repository{
-			GitHubID:  repo.GetID(),
+			ID:        repo.GetID(),
 			Name:      repo.GetFullName(),
-			EnabledAt: time.Now().UTC(),
-			EnabledBy: dbUser,
+			EnabledAt: time.Now().UTC().Unix(),
+			EnabledBy: user.GetLogin(),
 			HookID:    hook.GetID(),
 		}
 
-		result = db.Create(dbRepo)
-		if err := result.Error; err != nil {
+		err = persist.Put(db, dbRepo)
+		if err != nil {
 			_, e := client.Repositories.DeleteHook(client.Ctx, owner, name, hook.GetID())
 			if e != nil {
-				logger.Error(errors.Wrapf(err, "cannot delete hook on %s/%s (repo not saved to db)", owner, name))
+				logger.Error(errors.Wrapf(err, "cannot delete hook on %s/%s (repo not saved to DB)", owner, name))
 			}
-			return errors.Wrapf(err, "cannot add %s/%s to the db", owner, name)
+			return errors.Wrapf(err, "cannot add %s/%s to the database", owner, name)
 		}
 
 		data := struct {
@@ -227,7 +220,7 @@ func RepositoryEnable(db *gorm.DB, webHookURL string, webHookSecret string) echo
 	}
 }
 
-func RepositoryDisable(db *gorm.DB) echo.HandlerFunc {
+func RepositoryDisable(db *sqlx.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		logger := log.FromContext(c)
 
@@ -263,15 +256,13 @@ func RepositoryDisable(db *gorm.DB) echo.HandlerFunc {
 			"user": user.GetLogin(),
 		}).Debug("Deleting hook from repository")
 
-		var repository persist.Repository
-		result := db.Where("github_id = ?", repo.GetID()).First(&repository)
-		if err := result.Error; err != nil {
-			return errors.Wrap(err, "cannot get repository from db")
-		}
-
-		_, err = client.Repositories.DeleteHook(client.Ctx, owner, name, repository.HookID)
+		dbRepo, err := persist.GetRepositoryByID(db, repo.GetID())
 		if err != nil {
-			return errors.Wrapf(err, "cannot delete hook %d for %s/%s via %s", owner, name, repository.HookID, user.GetLogin())
+			return errors.Wrapf(err, "cannot get repo with ID %d from database", repo.GetID())
+		}
+		_, err = client.Repositories.DeleteHook(client.Ctx, owner, name, dbRepo.HookID)
+		if err != nil {
+			return errors.Wrapf(err, "cannot delete hook %d for %s/%s via %s", owner, name, dbRepo.HookID, user.GetLogin())
 		}
 
 		logger.WithFields(logrus.Fields{
@@ -279,7 +270,8 @@ func RepositoryDisable(db *gorm.DB) echo.HandlerFunc {
 			"user": user.GetLogin(),
 		}).Info("Deleted hook from repository")
 
-		if err := db.Delete(&repository).Error; err != nil {
+		err = persist.Delete(db, dbRepo)
+		if err != nil {
 			return errors.Wrapf(err, "cannot remove %s/%s from database", owner, name)
 		}
 

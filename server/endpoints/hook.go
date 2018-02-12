@@ -20,7 +20,7 @@ import (
 	"strings"
 
 	"github.com/google/go-github/github"
-	"github.com/jinzhu/gorm"
+	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -31,7 +31,7 @@ import (
 	"github.com/palantir/bulldozer/server/config"
 )
 
-func Hook(db *gorm.DB, secret string) echo.HandlerFunc {
+func Hook(db *sqlx.DB, secret string) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		logger := log.FromContext(c)
 
@@ -42,18 +42,18 @@ func Hook(db *gorm.DB, secret string) echo.HandlerFunc {
 
 		logger.Debugf("ProcessHook returned %+v", result)
 
-		var dbRepo persist.Repository
-		res := db.Where("github_id = ?", result.RepoID).First(&dbRepo)
-		if err := res.Error; err != nil {
-			return errors.Wrap(err, "cannot get repository from db")
-		}
-		if res.RecordNotFound() {
-			return c.String(http.StatusOK, "Repository not enabled for bulldozer")
+		dbRepo, err := persist.GetRepositoryByID(db, result.RepoID)
+		if err != nil {
+			return errors.Wrapf(err, "cannot get repo with id %d from database", result.RepoID)
 		}
 
-		var user persist.User
-		if err := db.First(&dbRepo.EnabledBy).Error; err != nil {
-			return errors.Wrapf(err, "cannot get user %s from database", dbRepo.EnabledBy.Name)
+		if dbRepo == nil {
+			return errors.Wrapf(err, "repository with ID not enabled", result.RepoID)
+		}
+
+		user, err := persist.GetUserByName(db, dbRepo.EnabledBy)
+		if err != nil {
+			return errors.Wrapf(err, "cannot get user %s from database", dbRepo.EnabledBy)
 		}
 
 		ghClient := gh.FromToken(c, user.Token)
