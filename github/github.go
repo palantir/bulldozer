@@ -427,6 +427,7 @@ func (client *Client) ReviewStatus(pr *github.PullRequest) (bool, error) {
 	}
 
 	approval := false
+	disapproval := false
 	for _, review := range reviews {
 		perms, _, err := client.Repositories.GetPermissionLevel(client.Ctx, owner, name, review.User.GetLogin())
 		if err != nil {
@@ -434,14 +435,22 @@ func (client *Client) ReviewStatus(pr *github.PullRequest) (bool, error) {
 		}
 
 		hasWrite := utils.StringInSlice(perms.GetPermission(), AcceptedPermLevels)
-		if review.GetState() == "APPROVED" && hasWrite {
-			logger.WithFields(logrus.Fields{
-				"repo":     repo.GetFullName(),
-				"pr":       pr.GetNumber(),
-				"approver": review.User.GetLogin(),
-			}).Info("Review approved")
-			approval = true
-			break
+		if hasWrite {
+			if review.GetState() == "APPROVED" {
+				logger.WithFields(logrus.Fields{
+					"repo":     repo.GetFullName(),
+					"pr":       pr.GetNumber(),
+					"approver": review.User.GetLogin(),
+				}).Info("Review approved")
+				approval = true
+			} else if review.GetState() == "CHANGES_REQUESTED" {
+				logger.WithFields(logrus.Fields{
+					"repo":     repo.GetFullName(),
+					"pr":       pr.GetNumber(),
+					"approver": review.User.GetLogin(),
+				}).Info("Review not approved")
+				disapproval = true
+			}
 		}
 	}
 
@@ -456,13 +465,13 @@ func (client *Client) ReviewStatus(pr *github.PullRequest) (bool, error) {
 			return true, nil
 		}
 	}
-	reviewRequired := protection.RequiredPullRequestReviews != nil
 
-	if len(reviewers.Users) == 0 && len(reviews) == 0 && !reviewRequired {
+	reviewRequired := protection.RequiredPullRequestReviews != nil
+	if !reviewRequired && !disapproval {
 		logger.WithFields(logrus.Fields{
 			"repo": repo.GetFullName(),
 			"pr":   pr.GetNumber(),
-		}).Info("Pull request has 0 reviewers and 0 reviews, considering status true")
+		}).Info("Review not required and no one has disapproved, considering status true")
 		return true, nil
 	}
 
