@@ -471,7 +471,7 @@ func (client *Client) ReviewStatus(pr *github.PullRequest) (bool, error) {
 		logger.WithFields(logrus.Fields{
 			"repo": repo.GetFullName(),
 			"pr":   pr.GetNumber(),
-		}).Info("Review not required and not one has disapproved, considering status true")
+		}).Info("Review not required and no one has disapproved, considering status true")
 		return true, nil
 	}
 
