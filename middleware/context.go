@@ -18,20 +18,24 @@ import (
 	"github.com/google/go-github/github"
 	"github.com/labstack/echo"
 	"github.com/sirupsen/logrus"
-
-	"github.com/palantir/bulldozer/server/config"
 )
 
-func ContextMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		deliveryID := github.DeliveryID(c.Request())
+func CtxMiddleware(logLevel logrus.Level) func(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			deliveryID := github.DeliveryID(c.Request())
 
-		logger := logrus.New()
-		logger.SetLevel(config.Instance.LogLevel())
-		logger.Formatter = &logrus.JSONFormatter{}
+			logger := logrus.New()
+			logger.SetLevel(logLevel)
+			logger.Formatter = &logrus.JSONFormatter{}
 
-		c.Set("log", logger.WithField("deliveryID", deliveryID))
+			if deliveryID != "" {
+				c.Set("log", logger.WithField("deliveryID", deliveryID))
+			} else {
+				c.Set("log", logger.WithFields(nil))
+			}
 
-		return next(c)
+			return next(c)
+		}
 	}
 }

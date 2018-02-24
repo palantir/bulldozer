@@ -69,7 +69,7 @@ type BulldozerFile struct {
 	Mode             string `yaml:"mode" validate:"nonzero"`
 }
 
-func FromToken(c echo.Context, token string) *Client {
+func FromToken(c echo.Context, ghAPIURL, token string) *Client {
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
 	)
@@ -77,13 +77,13 @@ func FromToken(c echo.Context, token string) *Client {
 
 	client := github.NewClient(tc)
 
-	client.BaseURL, _ = url.Parse(config.Instance.Github.APIURL)
+	client.BaseURL, _ = url.Parse(ghAPIURL)
 	client.UserAgent = "bulldozer/" + version.Version()
 
 	return &Client{log.FromContext(c), context.TODO(), client}
 }
 
-func FromAuthHeader(c echo.Context, authHeader string) (*Client, error) {
+func FromAuthHeader(c echo.Context, ghAPIURL, authHeader string) (*Client, error) {
 	if authHeader == "" {
 		return nil, errors.New("authorization header not present")
 	}
@@ -94,7 +94,7 @@ func FromAuthHeader(c echo.Context, authHeader string) (*Client, error) {
 	}
 
 	token := parts[1]
-	return FromToken(c, token), nil
+	return FromToken(c, ghAPIURL, token), nil
 }
 
 func (client *Client) ConfigFile(repo *github.Repository, ref string) (*BulldozerFile, error) {
@@ -308,7 +308,7 @@ func (client *Client) Merge(pr *github.PullRequest) error {
 		}
 	}
 
-	delete, err := client.DeleteFlag(pr.Base)
+	shouldDelete, err := client.DeleteFlag(pr.Base)
 	if err != nil {
 		return errors.Wrapf(err, "cannot get delete flag for %s on ref %s", repo.GetFullName(), pr.Base.GetRef())
 	}
@@ -330,7 +330,7 @@ func (client *Client) Merge(pr *github.PullRequest) error {
 	}).Info("Merged pull request")
 
 	if !pr.Head.Repo.GetFork() {
-		if delete {
+		if shouldDelete {
 			_, err = client.Git.DeleteRef(client.Ctx, owner, name, fmt.Sprintf("heads/%s", pr.Head.GetRef()))
 			if err != nil {
 				return errors.Wrapf(err, "cannot delete ref %s on %s", pr.Head.GetRef(), repo.GetFullName())
@@ -533,7 +533,7 @@ func (client *Client) HasLabels(pr *github.PullRequest, labelNames []string) (bo
 		return true, errors.Wrapf(err, "cannot get %s-%d", repo.GetFullName(), pr.GetNumber())
 	}
 
-	attachedLabels := []string{}
+	var attachedLabels []string
 	for _, label := range issue.Labels {
 		attachedLabels = append(attachedLabels, strings.ToLower(label.GetName()))
 	}
@@ -655,7 +655,7 @@ func (client *Client) ShaStatus(pr *github.PullRequest, SHA string) (bool, error
 }
 
 func (client *Client) AllRepositories(user *github.User) ([]*github.Repository, error) {
-	ownedRepos := []*github.Repository{}
+	var ownedRepos []*github.Repository
 	listOptions := &github.RepositoryListOptions{
 		ListOptions: github.ListOptions{
 			PerPage: 100,
@@ -675,4 +675,34 @@ func (client *Client) AllRepositories(user *github.User) ([]*github.Repository, 
 	}
 
 	return ownedRepos, nil
+}
+
+func (client *Client) CreateLabels(repo *github.Repository) error {
+	updateMeLabel := config.UpdateMeLabels[0]
+	doNotMergeLabel := config.DoNotMergeLabels[0]
+	mergeWhenReadyLabel := config.MergeWhenReadyLabels[0]
+
+	labels := map[string]string{
+		updateMeLabel:       "0e8a16",
+		doNotMergeLabel:     "b60205",
+		mergeWhenReadyLabel: "0052cc",
+	}
+
+	for name, color := range labels {
+		_, resp, err := client.Issues.GetLabel(client.Ctx, repo.Owner.GetLogin(), repo.GetName(), name)
+		if err != nil && resp.StatusCode == http.StatusNotFound {
+			label := &github.Label{
+				Name:  github.String(name),
+				Color: github.String(color),
+			}
+			_, _, err := client.Issues.CreateLabel(client.Ctx, repo.Owner.GetLogin(), repo.GetName(), label)
+			if err != nil {
+				return errors.Wrapf(err, "cannot create label %s", name)
+			}
+		} else if err != nil {
+			return errors.Wrapf(err, "cannot get label %s", name)
+		}
+	}
+
+	return nil
 }

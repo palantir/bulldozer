@@ -31,11 +31,9 @@ const (
 var (
 	validate *validator.Validate
 
-	Instance *Startup
-
-	DoNotMerge     = []string{"do not merge", "wip", "do-not-merge", "do_not_merge"}
-	MergeWhenReady = []string{"merge when ready", "merge-when-ready", "merge_when_ready"}
-	UpdateMe       = []string{"update me", "update-me", "update_me"}
+	DoNotMergeLabels     = []string{"do not merge", "wip", "do-not-merge", "do_not_merge"}
+	MergeWhenReadyLabels = []string{"merge when ready", "merge-when-ready", "merge_when_ready"}
+	UpdateMeLabels       = []string{"update me", "update-me", "update_me"}
 )
 
 type Startup struct {

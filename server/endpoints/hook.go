@@ -31,7 +31,7 @@ import (
 	"github.com/palantir/bulldozer/server/config"
 )
 
-func Hook(db *sqlx.DB, secret string) echo.HandlerFunc {
+func Hook(db *sqlx.DB, ghAPIURL, secret string) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		logger := log.FromContext(c)
 
@@ -56,7 +56,7 @@ func Hook(db *sqlx.DB, secret string) echo.HandlerFunc {
 			return errors.Wrapf(err, "cannot get user %s from database", dbRepo.EnabledBy)
 		}
 
-		ghClient := gh.FromToken(c, user.Token)
+		ghClient := gh.FromToken(c, ghAPIURL, user.Token)
 
 		if !(result.Update || result.Merge) {
 			return c.String(http.StatusOK, "Not taking action")
@@ -85,7 +85,7 @@ func Hook(db *sqlx.DB, secret string) echo.HandlerFunc {
 			}
 
 			for _, pr := range updateTargets {
-				updateLabel, err := ghClient.HasLabels(pr, config.UpdateMe)
+				updateLabel, err := ghClient.HasLabels(pr, config.UpdateMeLabels)
 				if err != nil {
 					return errors.Wrapf(err, "cannot check if %s-%s has update label", repo.GetFullName(), pr.GetNumber())
 				}
@@ -156,7 +156,7 @@ func Hook(db *sqlx.DB, secret string) echo.HandlerFunc {
 
 		switch mode {
 		case gh.ModeBlacklist:
-			hasDoNotMerge, err := ghClient.HasLabels(pr, config.DoNotMerge)
+			hasDoNotMerge, err := ghClient.HasLabels(pr, config.DoNotMergeLabels)
 			if err != nil {
 				return errors.Wrapf(err, "cannot get labels for %s-%d", repo.GetFullName(), pr.GetNumber())
 			}
@@ -168,7 +168,7 @@ func Hook(db *sqlx.DB, secret string) echo.HandlerFunc {
 				return c.String(http.StatusOK, fmt.Sprintf("Skipping PR %d", pr.GetNumber()))
 			}
 		case gh.ModeWhitelist:
-			hasMergeWhenReady, err := ghClient.HasLabels(pr, config.MergeWhenReady)
+			hasMergeWhenReady, err := ghClient.HasLabels(pr, config.MergeWhenReadyLabels)
 			if err != nil {
 				return errors.Wrapf(err, "cannot get labels for %s-%d", repo.GetFullName(), pr.GetNumber())
 			}

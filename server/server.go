@@ -41,7 +41,7 @@ type Server struct {
 func New(db *sqlx.DB, startup *config.Startup) *Server {
 	e := echo.New()
 
-	e.Use(bm.ContextMiddleware)
+	e.Use(bm.CtxMiddleware(startup.LogLevel()))
 	e.Use(middleware.BodyLimit("6M"))
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: config.EchoLoggingFormat,
@@ -66,16 +66,16 @@ func registerEndpoints(startup *config.Startup, e *echo.Echo, db *sqlx.DB) {
 	})
 
 	e.GET("/health", endpoints.Health())
-	e.GET("/api/user/repos", endpoints.Repositories(db))
+	e.GET("/api/user/repos", endpoints.Repositories(db, startup.Github.APIURL))
 
-	e.GET("/api/auth/github", auth.BeginAuthHandler)
+	e.GET("/api/auth/github", auth.BeginAuth(startup.Github))
 	e.GET("/login", auth.CompleteAuth(startup.AssetDir))
 
-	e.POST("/api/repo/:owner/:name", endpoints.RepositoryEnable(db, startup.Github.WebHookURL, startup.Github.WebhookSecret))
-	e.DELETE("/api/repo/:owner/:name", endpoints.RepositoryDisable(db))
+	e.POST("/api/repo/:owner/:name", endpoints.RepositoryEnable(db, startup.Github.APIURL, startup.Github.WebHookURL, startup.Github.WebhookSecret))
+	e.DELETE("/api/repo/:owner/:name", endpoints.RepositoryDisable(db, startup.Github.APIURL))
 
-	e.POST("/api/github/hook", endpoints.Hook(db, startup.Github.WebhookSecret))
-	e.GET("/api/auth/github/token", endpoints.Token(db))
+	e.POST("/api/github/hook", endpoints.Hook(db, startup.Github.APIURL, startup.Github.WebhookSecret))
+	e.GET("/api/auth/github/token", endpoints.Token(db, startup.Github))
 }
 
 func (s *Server) SetupSessionStore() error {

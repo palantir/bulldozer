@@ -40,8 +40,6 @@ var serverCmd = &cobra.Command{
 			log.Fatalf("Failed to parse config file: %+v", err)
 		}
 
-		config.Instance = startup
-
 		if startup.LogLevel() == log.DebugLevel {
 			cmd.DebugFlags()
 			viper.Debug()
@@ -53,7 +51,7 @@ var serverCmd = &cobra.Command{
 			log.Fatalf("Cannot init db: %+v", err)
 		}
 
-		auth.InitGithubAuth(startup.Github)
+		auth.GitHubOAuth(startup.Github)
 
 		srv := server.New(db, startup)
 		if err := srv.SetupSessionStore(); err != nil {

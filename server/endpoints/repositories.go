@@ -82,14 +82,14 @@ func worker(c echo.Context, db *sqlx.DB, wg *sync.WaitGroup, repo *github.Reposi
 	}
 }
 
-func Repositories(db *sqlx.DB) echo.HandlerFunc {
+func Repositories(db *sqlx.DB, ghAPIURL string) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var repositories []*Repository
 		var wg sync.WaitGroup
 
 		repoc := make(chan *Repository, 100)
 
-		client, err := gh.FromAuthHeader(c, c.Request().Header.Get(echo.HeaderAuthorization))
+		client, err := gh.FromAuthHeader(c, ghAPIURL, c.Request().Header.Get(echo.HeaderAuthorization))
 		if err != nil {
 			return errors.Wrap(err, "cannot create GitHub client")
 		}
@@ -122,11 +122,11 @@ func Repositories(db *sqlx.DB) echo.HandlerFunc {
 	}
 }
 
-func RepositoryEnable(db *sqlx.DB, webHookURL string, webHookSecret string) echo.HandlerFunc {
+func RepositoryEnable(db *sqlx.DB, ghAPIURL, webHookURL string, webHookSecret string) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		logger := log.FromContext(c)
 
-		client, err := gh.FromAuthHeader(c, c.Request().Header.Get(echo.HeaderAuthorization))
+		client, err := gh.FromAuthHeader(c, ghAPIURL, c.Request().Header.Get(echo.HeaderAuthorization))
 		if err != nil {
 			return errors.Wrap(err, "cannot create GitHub client")
 		}
@@ -198,6 +198,10 @@ func RepositoryEnable(db *sqlx.DB, webHookURL string, webHookSecret string) echo
 			return errors.Wrapf(err, "cannot add %s/%s to the database", owner, name)
 		}
 
+		if err := client.CreateLabels(repo); err != nil {
+			return errors.Wrapf(err, "cannot create Bulldozer issues on repo %s", repo.GetFullName())
+		}
+
 		data := struct {
 			ID          int    `json:"id"`
 			Owner       string `json:"owner"`
@@ -215,16 +219,15 @@ func RepositoryEnable(db *sqlx.DB, webHookURL string, webHookSecret string) echo
 			EnabledBy:   user.GetLogin(),
 			EnabledAt:   time.Now().UTC().Format(time.RFC3339),
 		}
-
 		return c.JSON(http.StatusOK, data)
 	}
 }
 
-func RepositoryDisable(db *sqlx.DB) echo.HandlerFunc {
+func RepositoryDisable(db *sqlx.DB, ghAPIURL string) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		logger := log.FromContext(c)
 
-		client, err := gh.FromAuthHeader(c, c.Request().Header.Get(echo.HeaderAuthorization))
+		client, err := gh.FromAuthHeader(c, ghAPIURL, c.Request().Header.Get(echo.HeaderAuthorization))
 		if err != nil {
 			return errors.Wrap(err, "cannot create GitHub client")
 		}

@@ -26,19 +26,20 @@ import (
 	gh "github.com/palantir/bulldozer/github"
 	"github.com/palantir/bulldozer/log"
 	"github.com/palantir/bulldozer/persist"
+	"github.com/palantir/bulldozer/server/config"
 )
 
-func Token(db *sqlx.DB) echo.HandlerFunc {
+func Token(db *sqlx.DB, cfg *config.GithubConfig) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		logger := log.FromContext(c)
 
-		token, err := auth.GithubOauthConfig.Exchange(context.TODO(), c.QueryParam("code"))
+		token, err := auth.GitHubOAuth(cfg).Exchange(context.TODO(), c.QueryParam("code"))
 		if err != nil {
 			return errors.Wrap(err, "Cannot get code from GitHub")
 		}
 
 		accessToken := token.AccessToken
-		ghClient := gh.FromToken(c, accessToken)
+		ghClient := gh.FromToken(c, cfg.APIURL, accessToken)
 		u, _, err := ghClient.Users.Get(ghClient.Ctx, "")
 		if err != nil {
 			return errors.Wrap(err, "Cannot get user from token")

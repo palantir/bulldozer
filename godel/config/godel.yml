@@ -1,0 +1,6 @@
+exclude:
+  names:
+    - "\\..+"
+    - "vendor"
+  paths:
+    - "godel"

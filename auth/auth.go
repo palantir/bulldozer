@@ -28,10 +28,8 @@ import (
 	"github.com/palantir/bulldozer/server/config"
 )
 
-var GithubOauthConfig *oauth2.Config
-
-func InitGithubAuth(cfg *config.GithubConfig) {
-	GithubOauthConfig = &oauth2.Config{
+func GitHubOAuth(cfg *config.GithubConfig) *oauth2.Config {
+	return &oauth2.Config{
 		RedirectURL:  cfg.CallbackURL,
 		ClientID:     cfg.ClientID,
 		ClientSecret: cfg.ClientSecret,
@@ -43,16 +41,18 @@ func InitGithubAuth(cfg *config.GithubConfig) {
 	}
 }
 
-func BeginAuthHandler(c echo.Context) error {
-	state := GenerateState()
-	redirectURL := GithubOauthConfig.AuthCodeURL(state)
-	sess := session.Default(c)
-	sess.Set("state", state)
-	if err := sess.Save(); err != nil {
-		return errors.Wrap(err, "cannot save session")
-	}
+func BeginAuth(cfg *config.GithubConfig) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		state := GenerateState()
+		redirectURL := GitHubOAuth(cfg).AuthCodeURL(state)
+		sess := session.Default(c)
+		sess.Set("state", state)
+		if err := sess.Save(); err != nil {
+			return errors.Wrap(err, "cannot save session")
+		}
 
-	return c.Redirect(http.StatusTemporaryRedirect, redirectURL)
+		return c.Redirect(http.StatusTemporaryRedirect, redirectURL)
+	}
 }
 
 func CompleteAuth(assetsDir string) echo.HandlerFunc {
