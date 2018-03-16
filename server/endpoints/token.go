@@ -18,7 +18,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/jinzhu/gorm"
+	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo"
 	"github.com/pkg/errors"
 
@@ -28,9 +28,10 @@ import (
 	"github.com/palantir/bulldozer/persist"
 )
 
-func Token(db *gorm.DB) echo.HandlerFunc {
+func Token(db *sqlx.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		logger := log.FromContext(c)
+
 		token, err := auth.GithubOauthConfig.Exchange(context.TODO(), c.QueryParam("code"))
 		if err != nil {
 			return errors.Wrap(err, "Cannot get code from GitHub")
@@ -43,22 +44,22 @@ func Token(db *gorm.DB) echo.HandlerFunc {
 			return errors.Wrap(err, "Cannot get user from token")
 		}
 
-		var user persist.User
-		result := db.Where("github_id = ?", u.GetID()).First(&user)
-		if err := result.Error; err != nil && err != gorm.ErrRecordNotFound {
-			return errors.Wrap(err, "cannot get user from db")
-		}
-		if result.RecordNotFound() {
-			db.Create(&persist.User{
-				GitHubID: u.GetID(),
+		user, err := persist.GetUserByID(db, u.GetID())
+		if err != nil {
+			dbUser := &persist.User{
+				GithubID: u.GetID(),
 				Name:     u.GetLogin(),
 				Token:    accessToken,
-			})
+			}
+			if err := persist.Put(db, dbUser); err != nil {
+				return errors.Wrapf(err, "Cannot add %s to the database", u.GetLogin())
+			}
 		} else {
-			logger.Infof("%+v", user)
-			user.Token = accessToken
-			if err := db.Save(&user).Error; err != nil {
-				return errors.Wrapf(err, "cannot update token for user %s", u.GetLogin())
+			if user.Token != accessToken {
+				if err := persist.UpdateUserToken(db, u.GetID(), accessToken); err != nil {
+					return errors.Wrapf(err, "Cannot update token for user %s", u.GetLogin())
+				}
+				logger.Debugf("Updated token for user %s", u.GetLogin())
 			}
 		}
 

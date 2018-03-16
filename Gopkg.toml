@@ -1,3 +1,26 @@
+
+# Gopkg.toml example
+#
+# Refer to https://github.com/golang/dep/blob/master/docs/Gopkg.toml.md
+# for detailed Gopkg.toml documentation.
+#
+# required = ["github.com/user/thing/cmd/thing"]
+# ignored = ["github.com/user/project/pkgX", "bitbucket.org/user/project/pkgA/pkgY"]
+#
+# [[constraint]]
+#   name = "github.com/user/project"
+#   version = "1.0.0"
+#
+# [[constraint]]
+#   name = "github.com/user/project2"
+#   branch = "dev"
+#   source = "github.com/myfork/project2"
+#
+# [[override]]
+#  name = "github.com/x/y"
+#  version = "2.4.0"
+
+
 [[constraint]]
   name = "github.com/google/go-github"
   revision = "511f540f1887d30b88cee4a2fcd1f2922754acf4"
@@ -7,8 +30,16 @@
   version = "3.1.1"
 
 [[constraint]]
+  name = "github.com/jmoiron/sqlx"
+  revision = "d9bd385d68c068f1fabb5057e3dedcbcbb039d0f"
+
+[[constraint]]
   name = "github.com/labstack/echo"
   version = "3.2.3"
+
+[[constraint]]
+  name = "github.com/lib/pq"
+  revision = "b77235e3890a962fe8a6f8c4c7198679ca7814e7"
 
 [[constraint]]
   name = "github.com/pkg/errors"
@@ -41,7 +72,3 @@
 [[constraint]]
   name = "gopkg.in/yaml.v2"
   revision = "eb3733d160e74a9c7e442f435eb3bea458e1d19f"
-
-[[constraint]]
-  name = "github.com/jinzhu/gorm"
-  version = "1.0.0"

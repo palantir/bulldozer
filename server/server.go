@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	"github.com/ipfans/echo-session"
-	"github.com/jinzhu/gorm"
+	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/pkg/errors"
@@ -38,7 +38,7 @@ type Server struct {
 	e    *echo.Echo
 }
 
-func New(db *gorm.DB, startup *config.Startup) *Server {
+func New(db *sqlx.DB, startup *config.Startup) *Server {
 	e := echo.New()
 
 	e.Use(bm.ContextMiddleware)
@@ -58,7 +58,7 @@ func New(db *gorm.DB, startup *config.Startup) *Server {
 	return &Server{startup.Server, e}
 }
 
-func registerEndpoints(startup *config.Startup, e *echo.Echo, db *gorm.DB) {
+func registerEndpoints(startup *config.Startup, e *echo.Echo, db *sqlx.DB) {
 	e.Static("/", startup.AssetDir)
 
 	e.GET("/repositories", func(c echo.Context) error {
