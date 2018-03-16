@@ -59,8 +59,8 @@ var (
 type UpdateStrategy string
 
 const (
-	// UpdateStrategyDeferToPR the default value for UpdateStrategy
-	UpdateStrategyDeferToPR UpdateStrategy = "deferToPR"
+	// UpdateStrategyLabel the default value for UpdateStrategy
+	UpdateStrategyLabel UpdateStrategy = "label"
 
 	// Future feature, see https://github.com/palantir/bulldozer/issues/21
 	// UpdateStrategyOnRequiredChecksPassing UpdateStrategy = "onRequiredChecksPassing"
@@ -134,10 +134,10 @@ func (client *Client) ConfigFile(repo *github.Repository, ref string) (*Bulldoze
 
 	// Default update strategy
 	if bulldozerFile.UpdateStrategy == "" {
-		bulldozerFile.UpdateStrategy = UpdateStrategyDeferToPR
+		bulldozerFile.UpdateStrategy = UpdateStrategyLabel
 	}
 
-	allowedUpdateStrategies := []UpdateStrategy{UpdateStrategyAlways, UpdateStrategyDeferToPR}
+	allowedUpdateStrategies := []UpdateStrategy{UpdateStrategyAlways, UpdateStrategyLabel}
 	validStrategy := func() bool {
 		for _, valid := range allowedUpdateStrategies {
 			if bulldozerFile.UpdateStrategy == valid {
@@ -147,7 +147,7 @@ func (client *Client) ConfigFile(repo *github.Repository, ref string) (*Bulldoze
 		return false
 	}()
 	if !validStrategy {
-		return nil, errors.Errorf("Invalid update strategy %#v", bulldozerFile.UpdateStrategy)
+		return nil, errors.Errorf("Invalid update strategy: %#v, valid strategies: %#v", bulldozerFile.UpdateStrategy, allowedUpdateStrategies)
 	}
 
 	return &bulldozerFile, nil

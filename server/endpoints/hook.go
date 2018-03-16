@@ -92,16 +92,10 @@ func Hook(db *sqlx.DB, secret string) echo.HandlerFunc {
 
 				// Validate that we should update
 				switch repoConfig.UpdateStrategy {
-				case gh.UpdateStrategyDeferToPR:
-					updateLabel, err := ghClient.HasLabels(pr, config.UpdateMe)
-					if err != nil {
-						return errors.Wrapf(err, "cannot check if %s-%s has update label", repo.GetFullName(), pr.GetNumber())
-					}
-					if !updateLabel {
-						logger.WithFields(logrus.Fields{
-							"repo": repo.GetFullName(),
-							"pr":   pr.GetNumber(),
-						}).Info("Pull request does not have update me label, not updating")
+				case gh.UpdateStrategyLabel:
+					if shouldUpdate, err := shouldUpdatePR(logger, ghClient, repo, pr); err != nil {
+						return err
+					} else if !shouldUpdate {
 						continue
 					}
 				case gh.UpdateStrategyAlways:
@@ -231,4 +225,19 @@ func Hook(db *sqlx.DB, secret string) echo.HandlerFunc {
 
 		return c.String(http.StatusOK, msg)
 	}
+}
+
+func shouldUpdatePR(logger *logrus.Entry, ghClient *gh.Client, repo *github.Repository, pr *github.PullRequest) (bool, error) {
+	updateLabel, err := ghClient.HasLabels(pr, config.UpdateMe)
+	if err != nil {
+		return false, errors.Wrapf(err, "cannot check if %s-%s has update label", repo.GetFullName(), pr.GetNumber())
+	}
+	if !updateLabel {
+		logger.WithFields(logrus.Fields{
+			"repo": repo.GetFullName(),
+			"pr":   pr.GetNumber(),
+		}).Info("Pull request does not have update me label, not updating")
+		return false, nil
+	}
+	return true, nil
 }
