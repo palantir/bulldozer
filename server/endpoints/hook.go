@@ -230,7 +230,7 @@ func Hook(db *sqlx.DB, secret string) echo.HandlerFunc {
 func shouldUpdatePR(logger *logrus.Entry, ghClient *gh.Client, repo *github.Repository, pr *github.PullRequest) (bool, error) {
 	updateLabel, err := ghClient.HasLabels(pr, config.UpdateMe)
 	if err != nil {
-		return false, errors.Wrapf(err, "cannot check if %s-%s has update label", repo.GetFullName(), pr.GetNumber())
+		return false, errors.Wrapf(err, "cannot check if %s-%d has update label", repo.GetFullName(), pr.GetNumber())
 	}
 	if !updateLabel {
 		logger.WithFields(logrus.Fields{
