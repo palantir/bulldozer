@@ -56,6 +56,18 @@ var (
 	AcceptedPermLevels = []string{"write", "admin"}
 )
 
+type UpdateStrategy string
+
+const (
+	// UpdateStrategyLabel the default value for UpdateStrategy
+	UpdateStrategyLabel UpdateStrategy = "label"
+
+	// Future feature, see https://github.com/palantir/bulldozer/issues/21
+	// UpdateStrategyOnRequiredChecksPassing UpdateStrategy = "onRequiredChecksPassing"
+
+	UpdateStrategyAlways UpdateStrategy = "always"
+)
+
 type Client struct {
 	Logger *logrus.Entry
 	Ctx    context.Context
@@ -64,9 +76,10 @@ type Client struct {
 }
 
 type BulldozerFile struct {
-	Strategy         string `yaml:"strategy" validate:"nonzero"`
-	DeleteAfterMerge bool   `yaml:"deleteAfterMerge" validate:"nonzero"`
-	Mode             string `yaml:"mode" validate:"nonzero"`
+	MergeStrategy    string         `yaml:"strategy" validate:"nonzero"`
+	DeleteAfterMerge bool           `yaml:"deleteAfterMerge" validate:"nonzero"`
+	Mode             string         `yaml:"mode" validate:"nonzero"`
+	UpdateStrategy   UpdateStrategy `yaml:"updateStrategy"`
 }
 
 func FromToken(c echo.Context, token string) *Client {
@@ -119,6 +132,24 @@ func (client *Client) ConfigFile(repo *github.Repository, ref string) (*Bulldoze
 		return nil, errors.Wrapf(err, "cannot unmarshal .bulldozer.yml for %s on %s", repo.GetFullName(), ref)
 	}
 
+	// Default update strategy
+	if bulldozerFile.UpdateStrategy == "" {
+		bulldozerFile.UpdateStrategy = UpdateStrategyLabel
+	}
+
+	allowedUpdateStrategies := []UpdateStrategy{UpdateStrategyAlways, UpdateStrategyLabel}
+	validStrategy := func() bool {
+		for _, valid := range allowedUpdateStrategies {
+			if bulldozerFile.UpdateStrategy == valid {
+				return true
+			}
+		}
+		return false
+	}()
+	if !validStrategy {
+		return nil, errors.Errorf("Invalid update strategy: %#v, valid strategies: %#v", bulldozerFile.UpdateStrategy, allowedUpdateStrategies)
+	}
+
 	return &bulldozerFile, nil
 }
 
@@ -160,7 +191,7 @@ func (client *Client) MergeMethod(branch *github.PullRequestBranch) (string, err
 
 	validMethod := func() bool {
 		for _, method := range allowedMethods {
-			if method == cfgFile.Strategy {
+			if method == cfgFile.MergeStrategy {
 				return true
 			}
 		}
@@ -173,7 +204,7 @@ func (client *Client) MergeMethod(branch *github.PullRequestBranch) (string, err
 			if method.isAllowed {
 				logger.WithFields(logrus.Fields{
 					"repo":         repo.GetFullName(),
-					"wantedMethod": cfgFile.Strategy,
+					"wantedMethod": cfgFile.MergeStrategy,
 					"chosenMethod": method.name,
 				}).Debug("Wanted merge method is not allowed, fallback one was chosen")
 				return method.name, nil
@@ -182,7 +213,7 @@ func (client *Client) MergeMethod(branch *github.PullRequestBranch) (string, err
 	}
 
 	desiredIsAllowed := func() bool {
-		switch cfgFile.Strategy {
+		switch cfgFile.MergeStrategy {
 		case MergeMethod:
 			return repo.GetAllowMergeCommit()
 		case SquashMethod:
@@ -194,7 +225,7 @@ func (client *Client) MergeMethod(branch *github.PullRequestBranch) (string, err
 	}()
 
 	if desiredIsAllowed {
-		return cfgFile.Strategy, nil
+		return cfgFile.MergeStrategy, nil
 	}
 
 	var m string

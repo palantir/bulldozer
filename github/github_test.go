@@ -509,7 +509,7 @@ func TestConfigFileSuccess(t *testing.T) {
 		fmt.Fprint(w, `{
 		  "type": "file",
 		  "encoding": "base64",
-		  "content": "bW9kZTogd2hpdGVsaXN0CnN0cmF0ZWd5OiBzcXVhc2gKZGVsZXRlQWZ0ZXJN\nZXJnZTogdHJ1ZQo=\n",
+		  "content": "bW9kZTogd2hpdGVsaXN0CnN0cmF0ZWd5OiBzcXVhc2gKZGVsZXRlQWZ0ZXJNZXJnZTogdHJ1ZQp1cGRhdGVTdHJhdGVneTogbGFiZWwK",
 		  "name": ".bulldozer.yml",
 		  "path": ".bulldozer.yml"
 		}`)
@@ -517,7 +517,8 @@ func TestConfigFileSuccess(t *testing.T) {
 
 	want := &BulldozerFile{
 		Mode:             "whitelist",
-		Strategy:         "squash",
+		MergeStrategy:    "squash",
+		UpdateStrategy:   UpdateStrategyLabel,
 		DeleteAfterMerge: true,
 	}
 	configFile, err := client.ConfigFile(fakeRepository("r"), "develop")
