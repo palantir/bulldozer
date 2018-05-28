@@ -348,6 +348,7 @@ func (client *Client) Merge(pr *github.PullRequest) error {
 		commitMessage,
 		&github.PullRequestOptions{
 			MergeMethod: mergeMethod,
+			CommitTitle: pr.GetTitle(),
 		})
 	if err != nil {
 		return errors.Wrapf(err, "merge of %s-%d has failed", repo.GetFullName(), pr.GetNumber())
