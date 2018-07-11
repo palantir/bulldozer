@@ -50,6 +50,8 @@ const (
 	ModeWhitelist = "whitelist"
 	ModeBlacklist = "blacklist"
 	ModeBody      = "pr_body"
+
+	MaxPullRequestPollCount = 5
 )
 
 var (
@@ -415,28 +417,33 @@ func (client *Client) PullRequestForSHA(repo *github.Repository, SHA string) (*g
 		opt.ListOptions.Page = resp.NextPage
 	}
 
-	if pullRequest == nil {
-		return nil, nil
-	}
-
-	if pullRequest.Mergeable != nil {
+	if pullRequest == nil || pullRequest.Mergeable != nil {
 		return pullRequest, nil
 	}
 
-	ticker := time.NewTicker(5 * time.Second)
-	for {
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+	// polling for merge status (https://developer.github.com/v3/pulls/#get-a-single-pull-request)
+	for i := 0; i < MaxPullRequestPollCount; i++ {
 		<-ticker.C
 
-		// polling for merge status (https://developer.github.com/v3/pulls/#get-a-single-pull-request)
 		p, _, err := client.PullRequests.Get(client.Ctx, owner, name, pullRequest.GetNumber())
 		if err != nil {
-			return nil, errors.Wrapf(err, "cannot poll for PR merge status with head %s on %s", SHA, repo.GetFullName())
+			return nil, errors.Wrapf(err, "cannot get details for PR %d on %s", pullRequest.GetNumber(), repo.GetFullName())
 		}
-		if p.Mergeable != nil {
-			pullRequest = p
-			break
+
+		if p.GetState() != "open" || p.Mergeable != nil {
+			return p, nil
 		}
+
+		pullRequest = p
 	}
+
+	client.Logger.WithFields(logrus.Fields{
+		"repo": repo.GetFullName(),
+		"pr":   pullRequest.GetNumber(),
+	}).Warnf("Failed to get a non-nil mergeable value after %d attempts; continuing with nil", MaxPullRequestPollCount)
 
 	return pullRequest, nil
 }
