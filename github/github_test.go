@@ -42,7 +42,14 @@ func setup() {
 	server = httptest.NewServer(mux)
 
 	logger := logrus.New().WithField("deliveryID", "randomDelivery")
-	client = &Client{logger, context.TODO(), github.NewClient(nil)}
+	client = &Client{
+		Logger: logger,
+		Ctx:    context.TODO(),
+		Client: github.NewClient(nil),
+
+		configPaths: []string{".bulldozer.yml", ".palantir/bulldozer.yml"},
+	}
+
 	url, _ := url.Parse(server.URL + "/")
 	client.BaseURL = url
 	client.UploadURL = url
@@ -512,6 +519,35 @@ func TestConfigFileSuccess(t *testing.T) {
 		  "content": "bW9kZTogd2hpdGVsaXN0CnN0cmF0ZWd5OiBzcXVhc2gKZGVsZXRlQWZ0ZXJNZXJnZTogdHJ1ZQp1cGRhdGVTdHJhdGVneTogbGFiZWwK",
 		  "name": ".bulldozer.yml",
 		  "path": ".bulldozer.yml"
+		}`)
+	})
+
+	want := &BulldozerFile{
+		Mode:             "whitelist",
+		MergeStrategy:    "squash",
+		UpdateStrategy:   UpdateStrategyLabel,
+		DeleteAfterMerge: true,
+	}
+	configFile, err := client.ConfigFile(fakeRepository("r"), "develop")
+	require.Nil(t, err)
+
+	if !reflect.DeepEqual(configFile, want) {
+		t.Errorf("ConfigFile returned %+v, want %+v", configFile, want)
+	}
+}
+
+func TestConfigFileAlternatePathSuccess(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/repos/o/r/contents/.palantir/bulldozer.yml", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "GET")
+		fmt.Fprint(w, `{
+		  "type": "file",
+		  "encoding": "base64",
+		  "content": "bW9kZTogd2hpdGVsaXN0CnN0cmF0ZWd5OiBzcXVhc2gKZGVsZXRlQWZ0ZXJNZXJnZTogdHJ1ZQp1cGRhdGVTdHJhdGVneTogbGFiZWwK",
+		  "name": ".palantir/bulldozer.yml",
+		  "path": ".palantir/bulldozer.yml"
 		}`)
 	})
 

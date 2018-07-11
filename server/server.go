@@ -74,7 +74,7 @@ func registerEndpoints(startup *config.Startup, e *echo.Echo, db *sqlx.DB) {
 	e.POST("/api/repo/:owner/:name", endpoints.RepositoryEnable(db, startup.Github.WebHookURL, startup.Github.WebhookSecret))
 	e.DELETE("/api/repo/:owner/:name", endpoints.RepositoryDisable(db))
 
-	e.POST("/api/github/hook", endpoints.Hook(db, startup.Github.WebhookSecret))
+	e.POST("/api/github/hook", endpoints.Hook(db, startup.Github.WebhookSecret, startup.ConfigPaths))
 	e.GET("/api/auth/github/token", endpoints.Token(db))
 }
 

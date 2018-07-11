@@ -31,7 +31,7 @@ import (
 	"github.com/palantir/bulldozer/server/config"
 )
 
-func Hook(db *sqlx.DB, secret string) echo.HandlerFunc {
+func Hook(db *sqlx.DB, secret string, configPaths []string) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		logger := log.FromContext(c)
 
@@ -56,7 +56,7 @@ func Hook(db *sqlx.DB, secret string) echo.HandlerFunc {
 			return errors.Wrapf(err, "cannot get user %s from database", dbRepo.EnabledBy)
 		}
 
-		ghClient := gh.FromToken(c, user.Token)
+		ghClient := gh.FromToken(c, user.Token, gh.WithConfigPaths(configPaths))
 
 		if !(result.Update || result.Merge) {
 			return c.String(http.StatusOK, "Not taking action")
