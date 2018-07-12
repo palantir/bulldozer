@@ -56,6 +56,7 @@ const (
 
 var (
 	AcceptedPermLevels = []string{"write", "admin"}
+	DefaultConfigPaths = []string{".bulldozer.yml"}
 )
 
 type UpdateStrategy string
@@ -70,11 +71,21 @@ const (
 	UpdateStrategyAlways UpdateStrategy = "always"
 )
 
+type Option func(c *Client)
+
+func WithConfigPaths(paths []string) Option {
+	return func(c *Client) {
+		c.configPaths = paths
+	}
+}
+
 type Client struct {
 	Logger *logrus.Entry
 	Ctx    context.Context
 
 	*github.Client
+
+	configPaths []string
 }
 
 type BulldozerFile struct {
@@ -84,21 +95,35 @@ type BulldozerFile struct {
 	UpdateStrategy   UpdateStrategy `yaml:"updateStrategy"`
 }
 
-func FromToken(c echo.Context, token string) *Client {
+func FromToken(c echo.Context, token string, opts ...Option) *Client {
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
 	)
 	tc := oauth2.NewClient(context.TODO(), ts)
 
-	client := github.NewClient(tc)
+	gh := github.NewClient(tc)
 
-	client.BaseURL, _ = url.Parse(config.Instance.Github.APIURL)
-	client.UserAgent = "bulldozer/" + version.Version()
+	gh.BaseURL, _ = url.Parse(config.Instance.Github.APIURL)
+	gh.UserAgent = "bulldozer/" + version.Version()
 
-	return &Client{log.FromContext(c), context.TODO(), client}
+	client := &Client{
+		Logger: log.FromContext(c),
+		Ctx:    context.TODO(),
+		Client: gh,
+	}
+
+	for _, opt := range opts {
+		opt(client)
+	}
+
+	if len(client.configPaths) == 0 {
+		client.configPaths = DefaultConfigPaths
+	}
+
+	return client
 }
 
-func FromAuthHeader(c echo.Context, authHeader string) (*Client, error) {
+func FromAuthHeader(c echo.Context, authHeader string, opts ...Option) (*Client, error) {
 	if authHeader == "" {
 		return nil, errors.New("authorization header not present")
 	}
@@ -109,18 +134,13 @@ func FromAuthHeader(c echo.Context, authHeader string) (*Client, error) {
 	}
 
 	token := parts[1]
-	return FromToken(c, token), nil
+	return FromToken(c, token, opts...), nil
 }
 
 func (client *Client) ConfigFile(repo *github.Repository, ref string) (*BulldozerFile, error) {
-	owner := repo.Owner.GetLogin()
-	name := repo.GetName()
-
-	repositoryContent, _, _, err := client.Repositories.GetContents(client.Ctx, owner, name, ".bulldozer.yml", &github.RepositoryContentGetOptions{
-		Ref: ref,
-	})
+	repositoryContent, err := client.findConfigFile(repo, ref)
 	if err != nil {
-		return nil, errors.Wrapf(err, "cannot get .bulldozer.yml for %s on ref %s", repo.GetFullName(), ref)
+		return nil, err
 	}
 
 	content, err := repositoryContent.GetContent()
@@ -153,6 +173,28 @@ func (client *Client) ConfigFile(repo *github.Repository, ref string) (*Bulldoze
 	}
 
 	return &bulldozerFile, nil
+}
+
+func (client *Client) findConfigFile(repo *github.Repository, ref string) (*github.RepositoryContent, error) {
+	owner := repo.Owner.GetLogin()
+	name := repo.GetName()
+
+	opts := github.RepositoryContentGetOptions{
+		Ref: ref,
+	}
+
+	for _, p := range client.configPaths {
+		content, _, _, err := client.Repositories.GetContents(client.Ctx, owner, name, p, &opts)
+		if err != nil {
+			if rerr, ok := err.(*github.ErrorResponse); ok && rerr.Response.StatusCode == http.StatusNotFound {
+				continue
+			}
+			return nil, errors.Wrapf(err, "cannot get %s for %s on ref %s", p, repo.GetFullName(), ref)
+		}
+		return content, nil
+	}
+
+	return nil, errors.Errorf("no configuration found for %s on ref %s", repo.GetFullName(), ref)
 }
 
 func (client *Client) MergeMethod(branch *github.PullRequestBranch) (string, error) {

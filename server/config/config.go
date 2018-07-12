@@ -39,11 +39,12 @@ var (
 )
 
 type Startup struct {
-	Server   Rest            `yaml:"rest" validate:"required"`
-	Logging  LoggingConfig   `yaml:"logging" validate:"required,dive"`
-	Database *DatabaseConfig `yaml:"database" validate:"required,dive"`
-	Github   *GithubConfig   `yaml:"github" validate:"required,dive"`
-	AssetDir string          `yaml:"assetDir" validate:"required"`
+	Server      Rest            `yaml:"rest" validate:"required"`
+	Logging     LoggingConfig   `yaml:"logging" validate:"required,dive"`
+	Database    *DatabaseConfig `yaml:"database" validate:"required,dive"`
+	Github      *GithubConfig   `yaml:"github" validate:"required,dive"`
+	AssetDir    string          `yaml:"assetDir" validate:"required"`
+	ConfigPaths []string        `yaml:"configPaths"`
 }
 
 type Rest struct {
