@@ -89,10 +89,11 @@ type Client struct {
 }
 
 type BulldozerFile struct {
-	MergeStrategy    string         `yaml:"strategy" validate:"nonzero"`
-	DeleteAfterMerge bool           `yaml:"deleteAfterMerge" validate:"nonzero"`
-	Mode             string         `yaml:"mode" validate:"nonzero"`
-	UpdateStrategy   UpdateStrategy `yaml:"updateStrategy"`
+	MergeStrategy          string         `yaml:"strategy" validate:"nonzero"`
+	DeleteAfterMerge       bool           `yaml:"deleteAfterMerge" validate:"nonzero"`
+	Mode                   string         `yaml:"mode" validate:"nonzero"`
+	UpdateStrategy         UpdateStrategy `yaml:"updateStrategy"`
+	IgnoreSquashedMessages bool           `yaml:"ignoreSquashedMessages"`
 }
 
 func FromToken(c echo.Context, token string, opts ...Option) *Client {
@@ -292,6 +293,15 @@ func (client *Client) DeleteFlag(branch *github.PullRequestBranch) (bool, error)
 	return bulldozerFile.DeleteAfterMerge, nil
 }
 
+func (client *Client) IgnoreSquashedMessages(branch *github.PullRequestBranch) (bool, error) {
+	bulldozerFile, err := client.ConfigFile(branch.Repo, branch.GetRef())
+	if err != nil {
+		return false, err
+	}
+
+	return bulldozerFile.IgnoreSquashedMessages, nil
+}
+
 func (client *Client) OperationMode(branch *github.PullRequestBranch) (string, error) {
 	cfgFile, err := client.ConfigFile(branch.Repo, branch.GetRef())
 	if err != nil {
@@ -347,23 +357,21 @@ func (client *Client) CommitMessages(pr *github.PullRequest) ([]string, error) {
 	return commitMessages, nil
 }
 
-func (client *Client) Merge(pr *github.PullRequest) error {
-	logger := client.Logger
-
-	repo := pr.Base.Repo
-	owner := repo.Owner.GetLogin()
-	name := repo.GetName()
-
+func (client *Client) commitMessage(pr *github.PullRequest, mergeMethod string) (string, error) {
 	commitMessage := ""
-	mergeMethod, err := client.MergeMethod(pr.Base)
+	repo := pr.Base.Repo
+	ignoreSquashedMessages, err := client.IgnoreSquashedMessages(pr.Base)
 	if err != nil {
-		return errors.Wrapf(err, "cannot get merge method for %s on ref %s", repo.GetFullName(), pr.Base.GetRef())
+		return "", errors.Wrapf(err,
+			"cannot get ignore squash messages flag for %s on ref %s",
+			repo.GetFullName(),
+			pr.Base.GetRef())
 	}
 
-	if mergeMethod == SquashMethod {
+	if mergeMethod == SquashMethod && !ignoreSquashedMessages {
 		messages, err := client.CommitMessages(pr)
 		if err != nil {
-			return err
+			return "", err
 		}
 		for _, message := range messages {
 			commitMessage = fmt.Sprintf("%s%s\n", commitMessage, message)
@@ -381,6 +389,25 @@ func (client *Client) Merge(pr *github.PullRequest) error {
 				commitMessage = m[2]
 			}
 		}
+	}
+
+	return commitMessage, nil
+}
+
+func (client *Client) Merge(pr *github.PullRequest) error {
+	logger := client.Logger
+
+	repo := pr.Base.Repo
+	owner := repo.Owner.GetLogin()
+	name := repo.GetName()
+
+	mergeMethod, err := client.MergeMethod(pr.Base)
+	if err != nil {
+		return errors.Wrapf(err, "cannot get merge method for %s on ref %s", repo.GetFullName(), pr.Base.GetRef())
+	}
+	commitMessage, err := client.commitMessage(pr, mergeMethod)
+	if err != nil {
+		return err
 	}
 
 	delete, err := client.DeleteFlag(pr.Base)
