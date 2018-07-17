@@ -710,3 +710,64 @@ func TestCommitMessage(t *testing.T) {
 		"* 1st commit msg", "* 2nd commit msg", "* 3rd commit msg",
 	}, commitMessages)
 }
+
+func TestSquashCommitMessage(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/repos/o/r/pulls/1/commits", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "GET")
+		fmt.Fprint(w, `
+			[
+				{
+					"commit": {
+						"message": "1st commit msg"
+					}
+				},
+				{
+					"commit": {
+						"message": "2nd commit msg"
+					}
+				},
+				{
+					"commit": {
+						"message": "3rd commit msg"
+					}
+				}
+			]
+		`)
+	})
+
+	mux.HandleFunc("/repos/o/r", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "GET")
+		fmt.Fprint(w, `{
+		  "allow_merge_commit": true,
+		  "allow_squash_merge": true,
+		  "allow_rebase_merge": true
+		}`)
+	})
+
+	mux.HandleFunc("/repos/o/r/contents/.bulldozer.yml", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "GET")
+		fmt.Fprint(w, `{
+		  "type": "file",
+		  "encoding": "base64",
+		  "content": "bW9kZTogd2hpdGVsaXN0CnN0cmF0ZWd5OiBzcXVhc2gKZGVsZXRlQWZ0ZXJNZXJnZTogdHJ1ZQppZ25vcmVTcXVhc2hlZE1lc3NhZ2VzOiB0cnVlCg==",
+		  "name": ".bulldozer.yml",
+		  "path": ".bulldozer.yml"
+		}`)
+	})
+
+	branch := &github.PullRequestBranch{
+		Ref:  github.String("develop"),
+		Repo: fakeRepository("r"),
+	}
+	mergeMethod, err := client.MergeMethod(branch)
+	require.Nil(t, err)
+	assert.Equal(t, SquashMethod, mergeMethod)
+
+	pr := fakePullRequest(1)
+	commitMessage, err := client.commitMessage(pr, mergeMethod)
+	require.Nil(t, err)
+	require.Equal(t, "", commitMessage)
+}
