@@ -359,22 +359,24 @@ func (client *Client) CommitMessages(pr *github.PullRequest) ([]string, error) {
 
 func (client *Client) commitMessage(pr *github.PullRequest, mergeMethod string) (string, error) {
 	commitMessage := ""
-	repo := pr.Base.Repo
-	ignoreSquashedMessages, err := client.IgnoreSquashedMessages(pr.Base)
-	if err != nil {
-		return "", errors.Wrapf(err,
-			"cannot get ignore squash messages flag for %s on ref %s",
-			repo.GetFullName(),
-			pr.Base.GetRef())
-	}
-
-	if mergeMethod == SquashMethod && !ignoreSquashedMessages {
-		messages, err := client.CommitMessages(pr)
+	if mergeMethod == SquashMethod {
+		repo := pr.Base.Repo
+		ignoreSquashedMessages, err := client.IgnoreSquashedMessages(pr.Base)
 		if err != nil {
-			return "", err
+			return "", errors.Wrapf(err,
+				"cannot get ignore squash messages flag for %s on ref %s",
+				repo.GetFullName(),
+				pr.Base.GetRef())
 		}
-		for _, message := range messages {
-			commitMessage = fmt.Sprintf("%s%s\n", commitMessage, message)
+
+		if !ignoreSquashedMessages {
+			messages, err := client.CommitMessages(pr)
+			if err != nil {
+				return "", err
+			}
+			for _, message := range messages {
+				commitMessage = fmt.Sprintf("%s%s\n", commitMessage, message)
+			}
 		}
 
 		var r *regexp.Regexp
