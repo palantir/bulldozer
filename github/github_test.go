@@ -42,7 +42,14 @@ func setup() {
 	server = httptest.NewServer(mux)
 
 	logger := logrus.New().WithField("deliveryID", "randomDelivery")
-	client = &Client{logger, context.TODO(), github.NewClient(nil)}
+	client = &Client{
+		Logger: logger,
+		Ctx:    context.TODO(),
+		Client: github.NewClient(nil),
+
+		configPaths: []string{".bulldozer.yml", ".palantir/bulldozer.yml"},
+	}
+
 	url, _ := url.Parse(server.URL + "/")
 	client.BaseURL = url
 	client.UploadURL = url
@@ -529,6 +536,35 @@ func TestConfigFileSuccess(t *testing.T) {
 	}
 }
 
+func TestConfigFileAlternatePathSuccess(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/repos/o/r/contents/.palantir/bulldozer.yml", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "GET")
+		fmt.Fprint(w, `{
+		  "type": "file",
+		  "encoding": "base64",
+		  "content": "bW9kZTogd2hpdGVsaXN0CnN0cmF0ZWd5OiBzcXVhc2gKZGVsZXRlQWZ0ZXJNZXJnZTogdHJ1ZQp1cGRhdGVTdHJhdGVneTogbGFiZWwK",
+		  "name": ".palantir/bulldozer.yml",
+		  "path": ".palantir/bulldozer.yml"
+		}`)
+	})
+
+	want := &BulldozerFile{
+		Mode:             "whitelist",
+		MergeStrategy:    "squash",
+		UpdateStrategy:   UpdateStrategyLabel,
+		DeleteAfterMerge: true,
+	}
+	configFile, err := client.ConfigFile(fakeRepository("r"), "develop")
+	require.Nil(t, err)
+
+	if !reflect.DeepEqual(configFile, want) {
+		t.Errorf("ConfigFile returned %+v, want %+v", configFile, want)
+	}
+}
+
 func TestConfigFileInvalid(t *testing.T) {
 	setup()
 	defer teardown()
@@ -673,4 +709,65 @@ func TestCommitMessage(t *testing.T) {
 	require.Equal(t, []string{
 		"* 1st commit msg", "* 2nd commit msg", "* 3rd commit msg",
 	}, commitMessages)
+}
+
+func TestSquashCommitMessage(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/repos/o/r/pulls/1/commits", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "GET")
+		fmt.Fprint(w, `
+			[
+				{
+					"commit": {
+						"message": "1st commit msg"
+					}
+				},
+				{
+					"commit": {
+						"message": "2nd commit msg"
+					}
+				},
+				{
+					"commit": {
+						"message": "3rd commit msg"
+					}
+				}
+			]
+		`)
+	})
+
+	mux.HandleFunc("/repos/o/r", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "GET")
+		fmt.Fprint(w, `{
+		  "allow_merge_commit": true,
+		  "allow_squash_merge": true,
+		  "allow_rebase_merge": true
+		}`)
+	})
+
+	mux.HandleFunc("/repos/o/r/contents/.bulldozer.yml", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "GET")
+		fmt.Fprint(w, `{
+		  "type": "file",
+		  "encoding": "base64",
+		  "content": "bW9kZTogd2hpdGVsaXN0CnN0cmF0ZWd5OiBzcXVhc2gKZGVsZXRlQWZ0ZXJNZXJnZTogdHJ1ZQppZ25vcmVTcXVhc2hlZE1lc3NhZ2VzOiB0cnVlCg==",
+		  "name": ".bulldozer.yml",
+		  "path": ".bulldozer.yml"
+		}`)
+	})
+
+	branch := &github.PullRequestBranch{
+		Ref:  github.String("develop"),
+		Repo: fakeRepository("r"),
+	}
+	mergeMethod, err := client.MergeMethod(branch)
+	require.Nil(t, err)
+	assert.Equal(t, SquashMethod, mergeMethod)
+
+	pr := fakePullRequest(1)
+	commitMessage, err := client.commitMessage(pr, mergeMethod)
+	require.Nil(t, err)
+	require.Equal(t, "", commitMessage)
 }

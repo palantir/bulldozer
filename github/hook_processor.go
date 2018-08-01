@@ -45,23 +45,23 @@ func ProcessHook(c echo.Context, hookSecret string) (*ProcessResult, error) {
 	}
 
 	logger.Debugf("Got a %s event", webHookType)
-	switch webHookType {
-	case StatusEvent:
-		event := webHook.(*github.StatusEvent)
-		return &ProcessResult{RepoID: event.Repo.GetID(), SHA: event.GetSHA(), Merge: true}, nil
-	case PullRequestEvent:
-		event := webHook.(*github.PullRequestEvent)
-		if event.GetAction() == "closed" {
-			return &ProcessResult{RepoID: event.Repo.GetID(), SHA: event.PullRequest.Head.GetSHA()}, nil
-		}
+
+	switch event := webHook.(type) {
+	case (*github.StatusEvent):
+		merge := event.GetState() == "success"
+		return &ProcessResult{RepoID: event.Repo.GetID(), SHA: event.GetSHA(), Merge: merge}, nil
+
+	case (*github.PullRequestEvent):
+		merge := event.GetAction() != "closed"
+		return &ProcessResult{RepoID: event.Repo.GetID(), SHA: event.PullRequest.Head.GetSHA(), Merge: merge}, nil
+
+	case (*github.PullRequestReviewEvent):
 		return &ProcessResult{RepoID: event.Repo.GetID(), SHA: event.PullRequest.Head.GetSHA(), Merge: true}, nil
-	case PullRequestReviewEvent:
-		event := webHook.(*github.PullRequestReviewEvent)
-		return &ProcessResult{RepoID: event.Repo.GetID(), SHA: event.PullRequest.Head.GetSHA(), Merge: true}, nil
-	case PushEvent:
-		event := webHook.(*github.PushEvent)
+
+	case (*github.PushEvent):
 		return &ProcessResult{RepoID: event.Repo.GetID(), Update: true, UpdatedRef: event.GetRef()}, nil
-	case PingEvent:
+
+	case (*github.PingEvent):
 		return &ProcessResult{}, nil
 	}
 

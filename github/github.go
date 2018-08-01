@@ -50,10 +50,13 @@ const (
 	ModeWhitelist = "whitelist"
 	ModeBlacklist = "blacklist"
 	ModeBody      = "pr_body"
+
+	MaxPullRequestPollCount = 5
 )
 
 var (
 	AcceptedPermLevels = []string{"write", "admin"}
+	DefaultConfigPaths = []string{".bulldozer.yml"}
 )
 
 type UpdateStrategy string
@@ -68,35 +71,60 @@ const (
 	UpdateStrategyAlways UpdateStrategy = "always"
 )
 
+type Option func(c *Client)
+
+func WithConfigPaths(paths []string) Option {
+	return func(c *Client) {
+		c.configPaths = paths
+	}
+}
+
 type Client struct {
 	Logger *logrus.Entry
 	Ctx    context.Context
 
 	*github.Client
+
+	configPaths []string
 }
 
 type BulldozerFile struct {
-	MergeStrategy    string         `yaml:"strategy" validate:"nonzero"`
-	DeleteAfterMerge bool           `yaml:"deleteAfterMerge" validate:"nonzero"`
-	Mode             string         `yaml:"mode" validate:"nonzero"`
-	UpdateStrategy   UpdateStrategy `yaml:"updateStrategy"`
+	MergeStrategy          string         `yaml:"strategy" validate:"nonzero"`
+	DeleteAfterMerge       bool           `yaml:"deleteAfterMerge" validate:"nonzero"`
+	Mode                   string         `yaml:"mode" validate:"nonzero"`
+	UpdateStrategy         UpdateStrategy `yaml:"updateStrategy"`
+	IgnoreSquashedMessages bool           `yaml:"ignoreSquashedMessages"`
 }
 
-func FromToken(c echo.Context, token string) *Client {
+func FromToken(c echo.Context, token string, opts ...Option) *Client {
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
 	)
 	tc := oauth2.NewClient(context.TODO(), ts)
 
-	client := github.NewClient(tc)
+	gh := github.NewClient(tc)
 
-	client.BaseURL, _ = url.Parse(config.Instance.Github.APIURL)
-	client.UserAgent = "bulldozer/" + version.Version()
+	gh.BaseURL, _ = url.Parse(config.Instance.Github.APIURL)
+	gh.UserAgent = "bulldozer/" + version.Version()
 
-	return &Client{log.FromContext(c), context.TODO(), client}
+	client := &Client{
+		Logger: log.FromContext(c),
+		Ctx:    context.TODO(),
+		Client: gh,
+	}
+
+	for _, opt := range opts {
+		opt(client)
+	}
+
+	if len(client.configPaths) == 0 {
+		client.configPaths = DefaultConfigPaths
+	}
+
+	return client
 }
 
-func FromAuthHeader(c echo.Context, authHeader string) (*Client, error) {
+func FromAuthHeader(c echo.Context, authHeader string, opts ...Option) (*Client, error) {
 	if authHeader == "" {
 		return nil, errors.New("authorization header not present")
 	}
@@ -107,18 +135,13 @@ func FromAuthHeader(c echo.Context, authHeader string) (*Client, error) {
 	}
 
 	token := parts[1]
-	return FromToken(c, token), nil
+	return FromToken(c, token, opts...), nil
 }
 
 func (client *Client) ConfigFile(repo *github.Repository, ref string) (*BulldozerFile, error) {
-	owner := repo.Owner.GetLogin()
-	name := repo.GetName()
-
-	repositoryContent, _, _, err := client.Repositories.GetContents(client.Ctx, owner, name, ".bulldozer.yml", &github.RepositoryContentGetOptions{
-		Ref: ref,
-	})
+	repositoryContent, err := client.findConfigFile(repo, ref)
 	if err != nil {
-		return nil, errors.Wrapf(err, "cannot get .bulldozer.yml for %s on ref %s", repo.GetFullName(), ref)
+		return nil, err
 	}
 
 	content, err := repositoryContent.GetContent()
@@ -151,6 +174,28 @@ func (client *Client) ConfigFile(repo *github.Repository, ref string) (*Bulldoze
 	}
 
 	return &bulldozerFile, nil
+}
+
+func (client *Client) findConfigFile(repo *github.Repository, ref string) (*github.RepositoryContent, error) {
+	owner := repo.Owner.GetLogin()
+	name := repo.GetName()
+
+	opts := github.RepositoryContentGetOptions{
+		Ref: ref,
+	}
+
+	for _, p := range client.configPaths {
+		content, _, _, err := client.Repositories.GetContents(client.Ctx, owner, name, p, &opts)
+		if err != nil {
+			if rerr, ok := err.(*github.ErrorResponse); ok && rerr.Response.StatusCode == http.StatusNotFound {
+				continue
+			}
+			return nil, errors.Wrapf(err, "cannot get %s for %s on ref %s", p, repo.GetFullName(), ref)
+		}
+		return content, nil
+	}
+
+	return nil, errors.Errorf("no configuration found for %s on ref %s", repo.GetFullName(), ref)
 }
 
 func (client *Client) MergeMethod(branch *github.PullRequestBranch) (string, error) {
@@ -248,6 +293,15 @@ func (client *Client) DeleteFlag(branch *github.PullRequestBranch) (bool, error)
 	return bulldozerFile.DeleteAfterMerge, nil
 }
 
+func (client *Client) IgnoreSquashedMessages(branch *github.PullRequestBranch) (bool, error) {
+	bulldozerFile, err := client.ConfigFile(branch.Repo, branch.GetRef())
+	if err != nil {
+		return false, err
+	}
+
+	return bulldozerFile.IgnoreSquashedMessages, nil
+}
+
 func (client *Client) OperationMode(branch *github.PullRequestBranch) (string, error) {
 	cfgFile, err := client.ConfigFile(branch.Repo, branch.GetRef())
 	if err != nil {
@@ -303,26 +357,26 @@ func (client *Client) CommitMessages(pr *github.PullRequest) ([]string, error) {
 	return commitMessages, nil
 }
 
-func (client *Client) Merge(pr *github.PullRequest) error {
-	logger := client.Logger
-
-	repo := pr.Base.Repo
-	owner := repo.Owner.GetLogin()
-	name := repo.GetName()
-
+func (client *Client) commitMessage(pr *github.PullRequest, mergeMethod string) (string, error) {
 	commitMessage := ""
-	mergeMethod, err := client.MergeMethod(pr.Base)
-	if err != nil {
-		return errors.Wrapf(err, "cannot get merge method for %s on ref %s", repo.GetFullName(), pr.Base.GetRef())
-	}
-
 	if mergeMethod == SquashMethod {
-		messages, err := client.CommitMessages(pr)
+		repo := pr.Base.Repo
+		ignoreSquashedMessages, err := client.IgnoreSquashedMessages(pr.Base)
 		if err != nil {
-			return err
+			return "", errors.Wrapf(err,
+				"cannot get ignore squash messages flag for %s on ref %s",
+				repo.GetFullName(),
+				pr.Base.GetRef())
 		}
-		for _, message := range messages {
-			commitMessage = fmt.Sprintf("%s%s\n", commitMessage, message)
+
+		if !ignoreSquashedMessages {
+			messages, err := client.CommitMessages(pr)
+			if err != nil {
+				return "", err
+			}
+			for _, message := range messages {
+				commitMessage = fmt.Sprintf("%s%s\n", commitMessage, message)
+			}
 		}
 
 		var r *regexp.Regexp
@@ -337,6 +391,25 @@ func (client *Client) Merge(pr *github.PullRequest) error {
 				commitMessage = m[2]
 			}
 		}
+	}
+
+	return commitMessage, nil
+}
+
+func (client *Client) Merge(pr *github.PullRequest) error {
+	logger := client.Logger
+
+	repo := pr.Base.Repo
+	owner := repo.Owner.GetLogin()
+	name := repo.GetName()
+
+	mergeMethod, err := client.MergeMethod(pr.Base)
+	if err != nil {
+		return errors.Wrapf(err, "cannot get merge method for %s on ref %s", repo.GetFullName(), pr.Base.GetRef())
+	}
+	commitMessage, err := client.commitMessage(pr, mergeMethod)
+	if err != nil {
+		return err
 	}
 
 	delete, err := client.DeleteFlag(pr.Base)
@@ -416,28 +489,33 @@ func (client *Client) PullRequestForSHA(repo *github.Repository, SHA string) (*g
 		opt.ListOptions.Page = resp.NextPage
 	}
 
-	if pullRequest == nil {
-		return nil, nil
-	}
-
-	if pullRequest.Mergeable != nil {
+	if pullRequest == nil || pullRequest.Mergeable != nil {
 		return pullRequest, nil
 	}
 
-	ticker := time.NewTicker(5 * time.Second)
-	for {
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+	// polling for merge status (https://developer.github.com/v3/pulls/#get-a-single-pull-request)
+	for i := 0; i < MaxPullRequestPollCount; i++ {
 		<-ticker.C
 
-		// polling for merge status (https://developer.github.com/v3/pulls/#get-a-single-pull-request)
 		p, _, err := client.PullRequests.Get(client.Ctx, owner, name, pullRequest.GetNumber())
 		if err != nil {
-			return nil, errors.Wrapf(err, "cannot poll for PR merge status with head %s on %s", SHA, repo.GetFullName())
+			return nil, errors.Wrapf(err, "cannot get details for PR %d on %s", pullRequest.GetNumber(), repo.GetFullName())
 		}
-		if p.Mergeable != nil {
-			pullRequest = p
-			break
+
+		if p.GetState() != "open" || p.Mergeable != nil {
+			return p, nil
 		}
+
+		pullRequest = p
 	}
+
+	client.Logger.WithFields(logrus.Fields{
+		"repo": repo.GetFullName(),
+		"pr":   pullRequest.GetNumber(),
+	}).Warnf("Failed to get a non-nil mergeable value after %d attempts; continuing with nil", MaxPullRequestPollCount)
 
 	return pullRequest, nil
 }
