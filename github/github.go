@@ -526,13 +526,14 @@ func (client *Client) ReviewStatus(pr *github.PullRequest) (bool, error) {
 	owner := repo.Owner.GetLogin()
 	name := repo.GetName()
 
-	reviewers, _, err := client.PullRequests.ListReviewers(client.Ctx, owner, name, pr.GetNumber(), nil)
+	reviewers, err := client.AllReviewers(pr)
 	if err != nil {
-		return false, errors.Wrapf(err, "cannot list reviewers for PR %d on %s", pr.GetNumber(), repo.GetFullName())
+		return false, err
 	}
-	reviews, _, err := client.PullRequests.ListReviews(client.Ctx, owner, name, pr.GetNumber(), nil)
+
+	reviews, err := client.AllReviews(pr)
 	if err != nil {
-		return false, errors.Wrapf(err, "cannot list reviews for PR %d on %s", pr.GetNumber(), repo.GetFullName())
+		return false, err
 	}
 
 	approval := false
@@ -610,11 +611,7 @@ func (client *Client) ReviewStatus(pr *github.PullRequest) (bool, error) {
 }
 
 func (client *Client) LastReviewFromUser(pr *github.PullRequest, user *github.User) (*github.PullRequestReview, error) {
-	repo := pr.Base.Repo
-	owner := repo.Owner.GetLogin()
-	name := repo.GetName()
-
-	reviews, _, err := client.PullRequests.ListReviews(client.Ctx, owner, name, pr.GetNumber(), nil)
+	reviews, err := client.AllReviews(pr)
 	if err != nil {
 		return nil, err
 	}
@@ -764,24 +761,78 @@ func (client *Client) ShaStatus(pr *github.PullRequest, SHA string) (bool, error
 }
 
 func (client *Client) AllRepositories(user *github.User) ([]*github.Repository, error) {
-	ownedRepos := []*github.Repository{}
-	listOptions := &github.RepositoryListOptions{
+	opts := &github.RepositoryListOptions{
 		ListOptions: github.ListOptions{
 			PerPage: 100,
 		},
 	}
 
+	var allRepos []*github.Repository
 	for {
-		repos, resp, err := client.Repositories.List(client.Ctx, "", listOptions)
+		repos, resp, err := client.Repositories.List(client.Ctx, "", opts)
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot list repositories for user %s", user.GetLogin())
 		}
-		ownedRepos = append(ownedRepos, repos...)
+		allRepos = append(allRepos, repos...)
 		if resp.NextPage == 0 {
 			break
 		}
-		listOptions.ListOptions.Page = resp.NextPage
+		opts.Page = resp.NextPage
 	}
 
-	return ownedRepos, nil
+	return allRepos, nil
+}
+
+func (client *Client) AllReviews(pr *github.PullRequest) ([]*github.PullRequestReview, error) {
+	repo := pr.Base.Repo
+	owner := repo.Owner.GetLogin()
+	name := repo.GetName()
+
+	opts := &github.ListOptions{
+		PerPage: 100,
+	}
+
+	var allReviews []*github.PullRequestReview
+	for {
+		reviews, resp, err := client.PullRequests.ListReviews(client.Ctx, owner, name, pr.GetNumber(), opts)
+		if err != nil {
+			return nil, errors.Wrapf(err, "cannot list reviews for %s#%d", repo.GetFullName(), pr.GetNumber())
+		}
+
+		allReviews = append(allReviews, reviews...)
+		if resp.NextPage == 0 {
+			break
+		}
+		opts.Page = resp.NextPage
+	}
+
+	return allReviews, nil
+}
+
+func (client *Client) AllReviewers(pr *github.PullRequest) (*github.Reviewers, error) {
+	repo := pr.Base.Repo
+	owner := repo.Owner.GetLogin()
+	name := repo.GetName()
+
+	opts := &github.ListOptions{
+		PerPage: 100,
+	}
+
+	var allReviewers github.Reviewers
+	for {
+		reviewers, resp, err := client.PullRequests.ListReviewers(client.Ctx, owner, name, pr.GetNumber(), opts)
+		if err != nil {
+			return nil, errors.Wrapf(err, "cannot list reviewers for %s#%d", repo.GetFullName(), pr.GetNumber())
+		}
+
+		allReviewers.Users = append(allReviewers.Users, reviewers.Users...)
+		allReviewers.Teams = append(allReviewers.Teams, reviewers.Teams...)
+
+		if resp.NextPage == 0 {
+			break
+		}
+		opts.Page = resp.NextPage
+	}
+
+	return &allReviewers, nil
 }
