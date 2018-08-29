@@ -771,3 +771,26 @@ func TestSquashCommitMessage(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, "", commitMessage)
 }
+
+func TestExtractMessageOverride(t *testing.T) {
+	_, ok := extractMessageOverride("no override here")
+	assert.False(t, ok, "found unexpected message override")
+
+	_, ok = extractMessageOverride("==COMITT_MSG==\r\nUnclosed message")
+	assert.False(t, ok, "found unexpected message override")
+
+	msg, ok := extractMessageOverride("==COMMIT_MSG==\r\nThe real message\r\n==COMMIT_MSG==")
+	if assert.True(t, ok, "override was not found") {
+		assert.Equal(t, "The real message", msg)
+	}
+
+	msg, ok = extractMessageOverride("==COMMIT_MSG== \r\nThe real message\r\n  ==COMMIT_MSG==")
+	if assert.True(t, ok, "override was not found") {
+		assert.Equal(t, "The real message", msg)
+	}
+
+	msg, ok = extractMessageOverride("==SQUASH_MSG==\nThe real message\n==SQUASH_MSG==")
+	if assert.True(t, ok, "override was not found") {
+		assert.Equal(t, "The real message", msg)
+	}
+}

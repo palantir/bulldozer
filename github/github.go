@@ -379,21 +379,30 @@ func (client *Client) commitMessage(pr *github.PullRequest, mergeMethod string) 
 			}
 		}
 
-		var r *regexp.Regexp
-		if strings.Contains(pr.GetBody(), "==COMMIT_MSG==") {
-			r = regexp.MustCompile("(?s:(==COMMIT_MSG==\r\n)(.*)(\r\n==COMMIT_MSG==))")
-		} else if strings.Contains(pr.GetBody(), "==SQUASH_MSG==") {
-			r = regexp.MustCompile("(?s:(==SQUASH_MSG==\r\n)(.*)(\r\n==SQUASH_MSG==))")
-		}
-		if r != nil {
-			m := r.FindStringSubmatch(pr.GetBody())
-			if len(m) == 4 {
-				commitMessage = m[2]
-			}
+		if msg, ok := extractMessageOverride(pr.GetBody()); ok {
+			commitMessage = msg
 		}
 	}
 
 	return commitMessage, nil
+}
+
+func extractMessageOverride(body string) (msg string, found bool) {
+	var r *regexp.Regexp
+	if strings.Contains(body, "==COMMIT_MSG==") {
+		r = regexp.MustCompile(`(?sm:(==COMMIT_MSG==\s*)^(.*)$(\s*==COMMIT_MSG==))`)
+	} else if strings.Contains(body, "==SQUASH_MSG==") {
+		r = regexp.MustCompile(`(?sm:(==SQUASH_MSG==\s*)^(.*)$(\s*==SQUASH_MSG==))`)
+	}
+
+	if r != nil {
+		m := r.FindStringSubmatch(body)
+		if len(m) == 4 {
+			msg = strings.TrimSpace(m[2])
+			found = true
+		}
+	}
+	return
 }
 
 func (client *Client) Merge(pr *github.PullRequest) error {
