@@ -168,10 +168,7 @@ func summarizeCommitMessages(ctx context.Context, pullCtx pull.Context, client *
 	}
 
 	for _, repositoryCommit := range repositoryCommits {
-		_, err := builder.WriteString(fmt.Sprintf("* %s\n", repositoryCommit.Commit.GetMessage()))
-		if err != nil {
-			return "", errors.Wrapf(err, "unable to concat commit messages")
-		}
+		fmt.Fprintf(&builder, "* %s\n", repositoryCommit.Commit.GetMessage())
 	}
 
 	return builder.String(), nil
