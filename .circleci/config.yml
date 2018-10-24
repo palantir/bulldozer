@@ -82,7 +82,7 @@ workflows:
     jobs:
       - build:
           filters: { tags: { only: /.*/ } }
-      - docker:
+      - dist:
           filters: { tags: { only: /.*/ } }
           requires:
             - build
