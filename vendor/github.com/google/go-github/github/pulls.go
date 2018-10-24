@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -20,7 +21,7 @@ type PullRequestsService service
 
 // PullRequest represents a GitHub pull request on a repository.
 type PullRequest struct {
-	ID                  *int       `json:"id,omitempty"`
+	ID                  *int64     `json:"id,omitempty"`
 	Number              *int       `json:"number,omitempty"`
 	State               *string    `json:"state,omitempty"`
 	Title               *string    `json:"title,omitempty"`
@@ -29,9 +30,11 @@ type PullRequest struct {
 	UpdatedAt           *time.Time `json:"updated_at,omitempty"`
 	ClosedAt            *time.Time `json:"closed_at,omitempty"`
 	MergedAt            *time.Time `json:"merged_at,omitempty"`
+	Labels              []*Label   `json:"labels,omitempty"`
 	User                *User      `json:"user,omitempty"`
 	Merged              *bool      `json:"merged,omitempty"`
 	Mergeable           *bool      `json:"mergeable,omitempty"`
+	MergeableState      *string    `json:"mergeable_state,omitempty"`
 	MergedBy            *User      `json:"merged_by,omitempty"`
 	MergeCommitSHA      *string    `json:"merge_commit_sha,omitempty"`
 	Comments            *int       `json:"comments,omitempty"`
@@ -45,19 +48,46 @@ type PullRequest struct {
 	StatusesURL         *string    `json:"statuses_url,omitempty"`
 	DiffURL             *string    `json:"diff_url,omitempty"`
 	PatchURL            *string    `json:"patch_url,omitempty"`
+	CommitsURL          *string    `json:"commits_url,omitempty"`
+	CommentsURL         *string    `json:"comments_url,omitempty"`
 	ReviewCommentsURL   *string    `json:"review_comments_url,omitempty"`
 	ReviewCommentURL    *string    `json:"review_comment_url,omitempty"`
 	Assignee            *User      `json:"assignee,omitempty"`
 	Assignees           []*User    `json:"assignees,omitempty"`
 	Milestone           *Milestone `json:"milestone,omitempty"`
 	MaintainerCanModify *bool      `json:"maintainer_can_modify,omitempty"`
+	AuthorAssociation   *string    `json:"author_association,omitempty"`
+	NodeID              *string    `json:"node_id,omitempty"`
+	RequestedReviewers  []*User    `json:"requested_reviewers,omitempty"`
 
-	Head *PullRequestBranch `json:"head,omitempty"`
-	Base *PullRequestBranch `json:"base,omitempty"`
+	Links *PRLinks           `json:"_links,omitempty"`
+	Head  *PullRequestBranch `json:"head,omitempty"`
+	Base  *PullRequestBranch `json:"base,omitempty"`
+
+	// ActiveLockReason is populated only when LockReason is provided while locking the pull request.
+	// Possible values are: "off-topic", "too heated", "resolved", and "spam".
+	ActiveLockReason *string `json:"active_lock_reason,omitempty"`
 }
 
 func (p PullRequest) String() string {
 	return Stringify(p)
+}
+
+// PRLink represents a single link object from Github pull request _links.
+type PRLink struct {
+	HRef *string `json:"href,omitempty"`
+}
+
+// PRLinks represents the "_links" object in a Github pull request.
+type PRLinks struct {
+	Self           *PRLink `json:"self,omitempty"`
+	HTML           *PRLink `json:"html,omitempty"`
+	Issue          *PRLink `json:"issue,omitempty"`
+	Comments       *PRLink `json:"comments,omitempty"`
+	ReviewComments *PRLink `json:"review_comments,omitempty"`
+	ReviewComment  *PRLink `json:"review_comment,omitempty"`
+	Commits        *PRLink `json:"commits,omitempty"`
+	Statuses       *PRLink `json:"statuses,omitempty"`
 }
 
 // PullRequestBranch represents a base or head branch in a GitHub pull request.
@@ -110,6 +140,10 @@ func (s *PullRequestsService) List(ctx context.Context, owner string, repo strin
 		return nil, nil, err
 	}
 
+	// TODO: remove custom Accept header when this API fully launches.
+	acceptHeaders := []string{mediaTypeLabelDescriptionSearchPreview, mediaTypeLockReasonPreview}
+	req.Header.Set("Accept", strings.Join(acceptHeaders, ", "))
+
 	var pulls []*PullRequest
 	resp, err := s.client.Do(ctx, req, &pulls)
 	if err != nil {
@@ -128,6 +162,10 @@ func (s *PullRequestsService) Get(ctx context.Context, owner string, repo string
 	if err != nil {
 		return nil, nil, err
 	}
+
+	// TODO: remove custom Accept header when this API fully launches.
+	acceptHeaders := []string{mediaTypeLabelDescriptionSearchPreview, mediaTypeLockReasonPreview}
+	req.Header.Set("Accept", strings.Join(acceptHeaders, ", "))
 
 	pull := new(PullRequest)
 	resp, err := s.client.Do(ctx, req, pull)
@@ -184,6 +222,9 @@ func (s *PullRequestsService) Create(ctx context.Context, owner string, repo str
 		return nil, nil, err
 	}
 
+	// TODO: remove custom Accept header when this API fully launches.
+	req.Header.Set("Accept", mediaTypeLabelDescriptionSearchPreview)
+
 	p := new(PullRequest)
 	resp, err := s.client.Do(ctx, req, p)
 	if err != nil {
@@ -229,6 +270,10 @@ func (s *PullRequestsService) Edit(ctx context.Context, owner string, repo strin
 	if err != nil {
 		return nil, nil, err
 	}
+
+	// TODO: remove custom Accept header when this API fully launches.
+	acceptHeaders := []string{mediaTypeLabelDescriptionSearchPreview, mediaTypeLockReasonPreview}
+	req.Header.Set("Accept", strings.Join(acceptHeaders, ", "))
 
 	p := new(PullRequest)
 	resp, err := s.client.Do(ctx, req, p)

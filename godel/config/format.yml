@@ -1,4 +1,0 @@
-formatters:
-  gofmt:
-    args:
-      - "-s"

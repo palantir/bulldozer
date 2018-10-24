@@ -1,0 +1,48 @@
+# Options for the http server
+server:
+  # The listen address and port
+  address: "0.0.0.0"
+  port: 8080
+
+# Options for logging output
+logging:
+  # If true, logs are printed in human-readable form. We recommend using
+  # "false" to output JSON-formatted logs in production
+  text: false
+
+  # Set a minimum logging level threshold
+  # Choose from: debug, info, warn, error
+  level: debug
+
+# Options for connecting to GitHub
+github:
+  # The URL of the GitHub homepage
+  web_url: "https://github.com"
+  # The base URL for v3 (REST) API requests
+  v3_api_url: "https://api.github.com"
+  app:
+    # The integration ID of the GitHub app
+    integration_id: 1
+    # A random string used to validate webhooks
+    webhook_secret: "app_secret"
+    # The private key of the GitHub app
+    private_key: "app_private_key"
+
+# Options for application behavior
+options:
+  # The path within repositories to find the bulldozer.yml config file
+  configuration_path: .bulldozer.yml
+  # The name of the application. This will affect the User-Agent header
+  # when making requests to Github.
+  app_name: bulldozer
+
+# Optional configuration to emit metrics to datadog
+datadog:
+  # Database endpoint
+  address: "127.0.0.1:8125"
+  # The metric flush frequency. Accepts any string
+  # parseable by https://golang.org/pkg/time/#ParseDuration
+  interval: "10s"
+  # Tags to include
+  tags:
+    - "bulldozer"
