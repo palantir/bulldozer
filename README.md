@@ -1,80 +1,140 @@
-# Bulldozer
+# bulldozer
 
-The `Bulldozer` is a bot that auto-merges PRs when all status checks are green and the PR is reviewed.
-It uses [GitHub status checks](https://developer.github.com/v3/repos/statuses/) and [GitHub reviews](https://developer.github.com/v3/pulls/reviews/) to do this.
+bulldozer is a [GitHub App](https://developer.github.com/apps/) that auto-merges
+PRs when all status checks are green and the PR is reviewed.
 
+## Configuration
 
-## Running the server
+By default, the behavior of the bot is configured by a `.bulldozer.yml` file at
+the root of the repository. The file name and location are configurable when
+running your own instance of the server. The `.bulldozer.yml` file is read from
+most recent commit on the target branch of each pull request. If bulldozer cannot
+find a configuration file, it will take no action. This means it is safe to enable
+the bulldozer Github App on all repositories in an organization.
 
-* The server expects a config file name to be passed-in with the `-c` parameter (see `./bulldozer --help`).  This config file should look like this.
+## Behaviour
 
-```yml
-rest:
-  address: 0.0.0.0
-  port: 80
+When bulldozer is enabled on a repo, it will merge all PRs as the `bulldozer[bot]`
+committer. Behaviour is configured by a file in each repository.
 
-logging:
-  level: info
-
-database:
-  name: dbName
-  host: dbHost
-  username: dbUser
-  password: dbPassword
-  sslmode: require
-
-github:
-  address: https://github.com/
-  apiURL: https://api.github.com/
-  callbackURL: https://bulldozer.dev/login
-  clientID: ???
-  clientSecret: ???
-  webhookURL: https://bulldozer.dev/api/github/hook
-  webhookSecret: ???
-
-assetDir: ???
-```
-
-You can get the `clientID` and `clientSecret` after you create an OAuth application. More details on this [here](https://developer.github.com/apps/building-integrations/setting-up-and-registering-oauth-apps/). The `assetsDir` config option should point to where you saved the web assets that `Bulldozer` serves. After building the project they can be found in the `client/build` folder.
-
-## Behavior
-
-When bulldozer is enabled on a repo, it will merge all PRs under the user which enabled it in the first place (enabled will be the commiter).
-
-Bulldozer has the following behavior:
-
-### there exists no `.bulldozer.yml` file in the destination branch of a PR
-- Bulldozer will ignore the PR and will not act on it
-
-### there exists a `.bulldozer.yml` file in the destination branch of a PR
-The format of the file is:
+We recommend using the following configuration, which can be copied into your configuration file.
 
 ```yaml
-mode: whitelist/blacklist/pr_body
-strategy: merge/squash/rebase
-deleteAfterMerge: true/false
+version: 1
+
+# "merge" defines how to merge PRs into the target
+merge:
+
+  # "whitelist" defines how to select PRs to evaluate and merge
+  whitelist:
+
+    # "labels" is a list of labels that must be matched to whitelist a PR for merging
+    labels: ["merge when ready"]
+
+    # "comment_substrings" matches on substrings in comments
+    comment_substrings: ["==MERGE_WHEN_READY=="]
+
+  # "blacklist" defines how to exclude PRs from evaluation and merging
+  blacklist:
+
+    # similar as above, "labels" defines a list of labels. In this case, matched labels cause exclusion.
+    labels: ["do not merge"]
+
+    # "comment_substrings" matches substrings in comments. In this case, matched substrings cause exclusion.
+    comment_substrings: ["==DO_NOT_MERGE=="]
+
+  # "method" defines how to merge in changes. Available options are "merge", "rebase" and "squash"
+  method: squash
+
+  # "options" is used in conjunction with "method", and defines additional merging options for each type.
+  options:
+
+    # "squash" is used when the "method" above is set to "squash"
+    squash:
+
+      # "body" is a an option for handling the merge body. available options are "summarize_commits", "pull_request_body", and "empty_body"
+      body: summarize_commits
+
+  # "delete_after_merge" is a bool that will cause merged PRs to be deleted once they are successfully merged
+  delete_after_merge: true
+
+# "update" defines how to keep open PRs up to date
+update:
+
+  # The "whitelist" and "blacklist" options here operate the same as described for the `merge` block.
+  whitelist:
+    labels: ["WIP", "Update Me"]
 ```
 
-The `mode` block specifies in which mode Bulldozer should operate. Available options:
-   - `whitelist` it will act on PRs that have a GitHub label with the text `MERGE WHEN READY`.
-   - `blacklist` it will not act on PRs that have a GitHub label with the text `DO NOT MERGE` or `WIP`.
-   - `pr_body` it will act on PRs that have in their body the text `==MERGE_WHEN_READY==`. This is useful for PRs from forks because usually people that fork the repo do not have write permissions on the source to attach the needed labels.
+### Caveats and Notes
 
-The `strategy` field allows you to tune the merge strategy. Available options:
-  - `merge`: it will create a merge commit.
-  - `squash`: it will squash all the commits into one and will apply it on the target branch. With this merge strategy the user can specify the commit message ahead of time by putting a block like the following `==COMMIT_MSG== sample commit message ==COMMIT_MSG==` in the PR body.
-  - `rebase`: it will rebase all commits on top of the target branch.
+If both `blacklist` and `whitelist` are specified, bulldozer will attempt to match on both. 
+In cases where both match, `blacklist` will take precedence.
 
-If the desired merge method is not allowed by the repository one will be chosen by default in the following order `squash, merge, rebase` from the ones allowed.
+The `merge_method` specifies the strategy that will be used to merge. Possible choices
+are `merge`, `squash`, and `rebase`. Specifying `squash` will allow for a further
+set of `squash_strategy` options, `pull_request_body`, `summarize_commits` and
+`empty_body` that will constitute the body of the merge commit message. 
 
-The `deleteAfterMerge` block specifies if the source branch of the PR should be deleted after the merge is performed.
+## Deployment
 
-If the repository has branch protection active but does not require PRs to have at least one reviewer Bulldozer will just merge the PR unless the creator of the PR assigned a reviewer explicitly. In that case it will wait for at least one APPROVED review
+bulldozer is easy to deploy in your own environment as it has no dependencies
+other than GitHub. It is also safe to run multiple instances of the server,
+making it a good fit for container schedulers like Nomad or Kubernetes.
 
-If the repository has branch protection active and enforces code reviews on PRs Bulldozer will wait until all status checks are green and at least one APPROVED review exists on the PR before merging it
+We provide both a Docker container and a binary distribution of the server. A
+sample configuration file is provided at `config/bulldozer.example.yml`. We
+recommend deploying the application behind a reverse proxy or load balancer
+that terminates TLS connections.
 
-### Keeping PRs up to date with base branch
-Bulldozer also has the option to update PR branches if the target branch has been updated. If the PR has a GitHub label with the text `UPDATE ME` then Bulldozer will keep this PR up to date with the base branch.
+### GitHub App Configuration
+
+bulldozer requires the following permissions as a GitHub app:
+
+* Repository Admin - read-only
+* Repository Contents - read & write
+* Issues - read-only
+* Repository metadata - read-only
+* Pull requests - read-only
+* Commit status - read-only
+
+It should be subscribed to the following events:
+
+* Commit comment
+* Pull request
+* Status
+* Push
+* Issue comment
+* Pull request review
+* Pull request review comment
+
+### Operations
+
+bulldozer uses [go-baseapp](https://github.com/palantir/go-baseapp) and
+[go-githubapp](https://github.com/palantir/go-githubapp), both of which emit
+standard metrics and structured log keys. Please see those projects for
+details.
+
+### Example Files
+
+Example `.bulldozer.yml` files can be found in [`config/examples`](https://github.com/palantir/bulldozer/tree/develop/config/examples)
+
+### Migrating: Version 0.4.X to 1.X
+
+The server configuration for bulldozer allows you to specify `configuration_v0_path`, which is a list of paths
+to check for `0.4.X` style bulldozer configuration. When a `1.X` style configuration file does not appear
+at the configured path, bulldozer will attempt to read from the paths configured by `configuration_v0_path`,
+converting the legacy configuration into an equivalent `v1` configuration internally. 
+
+The upgrade process is therefore to deploy the latest version of bulldozer with both `configuration_path` and
+`configuration_v0_path` configured, and to enable the bulldozer Github App on all organizations where it was
+previously installed.
 
 ## Contributing
-For general guidelines on contributing the Palantir products, see [this page](https://github.com/palantir/gradle-baseline/blob/develop/docs/best-practices/contributing/readme.md)
+
+Contributions and issues are welcome. For new features or large contributions,
+we prefer discussing the proposed change on a GitHub issue prior to a PR.
+
+## License
+
+This application is made available under the [Apache 2.0 License](http://www.apache.org/licenses/LICENSE-2.0).

@@ -1,0 +1,33 @@
+product-defaults:
+  publish:
+    group-id: com.palantir.bulldozer
+
+products:
+  bulldozer:
+    dist:
+      output-dir: build
+    build:
+      output-dir: build
+      main-pkg: .
+      version-var: github.com/palantir/bulldozer/version.version
+      environment:
+        CGO_ENABLED: "0"
+      os-archs:
+      - os: linux
+        arch: amd64
+    docker:
+      docker-builders:
+        bulldozer:
+          type: default
+          context-dir: build/docker
+          dockerfile-path: Dockerfile
+          input-products-dir: .
+          script: |
+            #!/usr/bin/env bash
+            cp -R docker/* ${CONTEXT_DIR}
+          tag-templates:
+            version: "{{Repository}}palantirtechnologies/bulldozer:{{Version}}"
+            latest: "{{Repository}}palantirtechnologies/bulldozer:latest"
+            snapshot: "{{Repository}}palantirtechnologies/bulldozer:snapshot"
+    publish:
+      group-id: com.palantir.bulldozer

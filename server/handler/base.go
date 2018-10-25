@@ -1,0 +1,97 @@
+// Copyright 2018 Palantir Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package handler
+
+import (
+	"context"
+
+	"github.com/google/go-github/github"
+	"github.com/palantir/go-githubapp/githubapp"
+	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
+
+	"github.com/palantir/bulldozer/bulldozer"
+	"github.com/palantir/bulldozer/pull"
+)
+
+type Base struct {
+	githubapp.ClientCreator
+	bulldozer.ConfigFetcher
+}
+
+func (b *Base) ProcessPullRequest(ctx context.Context, pullCtx pull.Context, client *github.Client, pr *github.PullRequest) error {
+	logger := zerolog.Ctx(ctx)
+
+	bulldozerConfig, err := b.ConfigForPR(ctx, client, pr)
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch configuration")
+	}
+
+	switch {
+	case bulldozerConfig.Missing():
+		logger.Debug().Msgf("No bulldozer configuration for %q", bulldozerConfig.String())
+	case bulldozerConfig.Invalid():
+		logger.Debug().Msgf("Bulldozer configuration is invalid for %q", bulldozerConfig.String())
+	default:
+		logger.Debug().Msgf("Bulldozer configuration is valid for %q", bulldozerConfig.String())
+		config := *bulldozerConfig.Config
+		shouldMerge, err := bulldozer.ShouldMergePR(ctx, pullCtx, config.Merge)
+		if err != nil {
+			return errors.Wrap(err, "unable to determine merge status")
+		}
+		if shouldMerge {
+			logger.Debug().Msg("Pull request should be merged")
+			if err := bulldozer.MergePR(ctx, pullCtx, client, config.Merge); err != nil {
+				return errors.Wrap(err, "failed to merge pull request")
+			}
+		}
+	}
+
+	return nil
+}
+
+func (b *Base) UpdatePullRequest(ctx context.Context, pullCtx pull.Context, client *github.Client, pr *github.PullRequest, baseRef string) error {
+	logger := zerolog.Ctx(ctx)
+
+	bulldozerConfig, err := b.ConfigForPR(ctx, client, pr)
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch configuration")
+	}
+
+	switch {
+	case bulldozerConfig.Missing():
+		logger.Debug().Msgf("No bulldozer configuration for %q", bulldozerConfig.String())
+	case bulldozerConfig.Invalid():
+		logger.Debug().Msgf("Bulldozer configuration is invalid for %q", bulldozerConfig.String())
+	default:
+		logger.Debug().Msgf("Bulldozer configuration is valid for %q", bulldozerConfig.String())
+		config := *bulldozerConfig.Config
+
+		shouldUpdate, err := bulldozer.ShouldUpdatePR(ctx, pullCtx, config.Update)
+
+		if err != nil {
+			return errors.Wrap(err, "unable to determine update status")
+		}
+
+		if shouldUpdate {
+			logger.Debug().Msg("Pull request should be updated")
+			if err := bulldozer.UpdatePR(ctx, pullCtx, client, config.Update, baseRef); err != nil {
+				return errors.Wrap(err, "failed to update pull request")
+			}
+		}
+	}
+
+	return nil
+}

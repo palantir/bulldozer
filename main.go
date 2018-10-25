@@ -1,4 +1,4 @@
-// Copyright 2017 Palantir Technologies, Inc.
+// Copyright 2018 Palantir Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,13 +15,21 @@
 package main
 
 import (
-	log "github.com/sirupsen/logrus"
+	"fmt"
+	"os"
+
+	"github.com/palantir/go-baseapp/pkg/errfmt"
 
 	"github.com/palantir/bulldozer/cmd"
 )
 
 func main() {
-	log.SetFormatter(&log.JSONFormatter{})
-
-	cmd.Execute()
+	if err := cmd.RootCmd.Execute(); err != nil {
+		if cmd.IsDebugMode() {
+			fmt.Fprint(os.Stderr, errfmt.Print(err)+"\n")
+		} else {
+			fmt.Fprint(os.Stderr, err.Error()+"\n")
+		}
+		os.Exit(-1)
+	}
 }

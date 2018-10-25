@@ -1,0 +1,17 @@
+checks:
+  golint:
+    filters:
+    - value: should have comment or be unexported
+    - value: or a comment on this block
+  novendor:
+    filters:
+    - value: github.com/stretchr/objx
+  errcheck:
+    filters:
+    - value: "Client\\.(Count|Gauge)"
+    config:
+      exclude:
+        - (*strings.Builder).Write
+        - (*strings.Builder).WriteByte
+        - (*strings.Builder).WriteRune
+        - (*strings.Builder).WriteString

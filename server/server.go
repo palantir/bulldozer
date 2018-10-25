@@ -1,4 +1,4 @@
-// Copyright 2017 Palantir Technologies, Inc.
+// Copyright 2018 Palantir Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,85 +16,100 @@ package server
 
 import (
 	"fmt"
-	"math/rand"
-	"net/http"
-	"strings"
+	"io"
+	"os"
 
-	"github.com/ipfans/echo-session"
-	"github.com/jmoiron/sqlx"
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
+	"github.com/palantir/go-baseapp/baseapp"
+	"github.com/palantir/go-baseapp/baseapp/datadog"
+	"github.com/palantir/go-githubapp/githubapp"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
+	"goji.io/pat"
 
-	"github.com/palantir/bulldozer/auth"
-	bm "github.com/palantir/bulldozer/middleware"
-	"github.com/palantir/bulldozer/server/config"
-	"github.com/palantir/bulldozer/server/endpoints"
-	"github.com/palantir/bulldozer/utils"
+	"github.com/palantir/bulldozer/bulldozer"
+	"github.com/palantir/bulldozer/server/handler"
+	"github.com/palantir/bulldozer/version"
 )
 
 type Server struct {
-	rest config.Rest
-	e    *echo.Echo
+	config *Config
+	base   *baseapp.Server
 }
 
-func New(db *sqlx.DB, startup *config.Startup) *Server {
-	e := echo.New()
-
-	e.Use(bm.ContextMiddleware)
-	e.Use(middleware.BodyLimit("6M"))
-	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-		Format: config.EchoLoggingFormat,
-		Skipper: func(c echo.Context) bool {
-			return strings.Contains(c.Request().URL.String(), "callback?code=")
-		},
-	}))
-	e.Use(middleware.Recover())
-
-	e.HTTPErrorHandler = utils.CustomHTTPErrorHandler
-
-	registerEndpoints(startup, e, db)
-
-	return &Server{startup.Server, e}
-}
-
-func registerEndpoints(startup *config.Startup, e *echo.Echo, db *sqlx.DB) {
-	e.Static("/", startup.AssetDir)
-
-	e.GET("/repositories", func(c echo.Context) error {
-		return c.Redirect(http.StatusMovedPermanently, "/")
-	})
-
-	e.GET("/health", endpoints.Health())
-	e.GET("/api/user/repos", endpoints.Repositories(db))
-
-	e.GET("/api/auth/github", auth.BeginAuthHandler)
-	e.GET("/login", auth.CompleteAuth(startup.AssetDir))
-
-	e.POST("/api/repo/:owner/:name", endpoints.RepositoryEnable(db, startup.Github.WebHookURL, startup.Github.WebhookSecret))
-	e.DELETE("/api/repo/:owner/:name", endpoints.RepositoryDisable(db))
-
-	e.POST("/api/github/hook", endpoints.Hook(db, startup.Github.WebhookSecret, startup.ConfigPaths))
-	e.GET("/api/auth/github/token", endpoints.Token(db))
-}
-
-func (s *Server) SetupSessionStore() error {
-	var cookieSecretAuth = make([]byte, 32)
-	var cookieSecretEnc = make([]byte, 32)
-
-	if _, err := rand.Read(cookieSecretAuth); err != nil {
-		return errors.Wrap(err, "cannot read rand cookie auth")
-	}
-	if _, err := rand.Read(cookieSecretEnc); err != nil {
-		return errors.Wrap(err, "cannot read rand cookie secret")
+// New instantiates a new Server.
+// Callers must then invoke Start to run the Server.
+func New(c *Config) (*Server, error) {
+	logger, err := configureLogger(c.Logging)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to initialize logging")
 	}
 
-	cookieStore := session.NewCookieStore(cookieSecretAuth, cookieSecretEnc)
-	s.e.Use(session.Sessions("bulldozer", cookieStore))
+	serverParams := baseapp.DefaultParams(logger, c.Options.AppName+".")
+	base, err := baseapp.NewServer(c.Server, serverParams...)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to initialize base server")
+	}
 
-	return nil
+	userAgent := fmt.Sprintf("%s/%s", c.Options.AppName, version.GetVersion())
+	clientCreator, err := githubapp.NewDefaultCachingClientCreator(
+		c.Github,
+		githubapp.WithClientUserAgent(userAgent),
+		githubapp.WithClientMiddleware(
+			githubapp.ClientLogging(zerolog.DebugLevel),
+			githubapp.ClientMetrics(base.Registry()),
+		),
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to initialize Github client creator")
+	}
+
+	baseHandler := handler.Base{
+		ClientCreator: clientCreator,
+		ConfigFetcher: bulldozer.NewConfigFetcher(c.Options.ConfigurationPath, c.Options.ConfigurationV0Paths),
+	}
+
+	webhookHandler := githubapp.NewDefaultEventDispatcher(c.Github,
+		&handler.IssueComment{Base: baseHandler},
+		&handler.PullRequestReview{Base: baseHandler},
+		&handler.Push{Base: baseHandler},
+		&handler.Status{Base: baseHandler},
+	)
+
+	mux := base.Mux()
+
+	// webhook route
+	mux.Handle(pat.Post(githubapp.DefaultWebhookRoute), webhookHandler)
+
+	// any additional API routes
+	mux.Handle(pat.Get("/api/health"), handler.Health())
+
+	return &Server{
+		config: c,
+		base:   base,
+	}, nil
 }
 
+func configureLogger(c LoggingConfig) (zerolog.Logger, error) {
+	out := io.Writer(os.Stdout)
+	if c.Text {
+		out = zerolog.ConsoleWriter{Out: out}
+	}
+
+	logLevel, err := zerolog.ParseLevel(c.Level)
+	if err != nil {
+		return zerolog.New(out).With().Timestamp().Logger(), err
+	}
+	zerolog.SetGlobalLevel(logLevel)
+
+	return zerolog.New(out).With().Timestamp().Logger(), nil
+}
+
+// Start is blocking and long-running
 func (s *Server) Start() error {
-	return s.e.Start(fmt.Sprintf("%s:%d", s.rest.Address, s.rest.Port))
+	if s.config.Datadog.Address != "" {
+		if err := datadog.StartEmitter(s.base, s.config.Datadog); err != nil {
+			return err
+		}
+	}
+	return s.base.Start()
 }
