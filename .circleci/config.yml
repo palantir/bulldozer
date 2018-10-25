@@ -69,9 +69,9 @@ jobs:
               ./godelw docker push --tags=latest,version
               ./godelw publish bintray \
                   --url https://api.bintray.com \
-                  --subject palantir --repository releases --product policy-bot \
+                  --subject palantir --repository releases --product bulldozer \
                   --username "${BINTRAY_USERNAME}" --password "${BINTRAY_PASSWORD}" \
-                  --downloads-list --publish policy-bot
+                  --downloads-list --publish bulldozer
             fi
 
 ### Workflows ###

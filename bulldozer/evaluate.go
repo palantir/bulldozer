@@ -52,7 +52,7 @@ func IsPRBlacklisted(ctx context.Context, pullCtx pull.Context, config Signals) 
 	}
 
 	for _, blacklistedComment := range config.Comments {
-		if strings.EqualFold(blacklistedComment, body) {
+		if strings.Compare(blacklistedComment, body) == 0 {
 			return true, fmt.Sprintf("PR body matches one of specified blacklist comments: %q", blacklistedComment), nil
 		}
 	}
@@ -99,7 +99,7 @@ func IsPRWhitelisted(ctx context.Context, pullCtx pull.Context, config Signals) 
 	}
 
 	for _, whitelistedComment := range config.Comments {
-		if strings.EqualFold(whitelistedComment, body) {
+		if strings.Compare(whitelistedComment, body) == 0 {
 			return true, fmt.Sprintf("PR body matches one of specified whitelist comments: %q", whitelistedComment), nil
 		}
 	}

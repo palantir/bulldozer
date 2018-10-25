@@ -25,7 +25,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// FetchedConfig TODO: refactor config_fetcher.go and these helpers into devtools/pkg or github baseapp?
 type FetchedConfig struct {
 	Owner  string
 	Repo   string

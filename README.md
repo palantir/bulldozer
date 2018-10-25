@@ -1,24 +1,20 @@
 # bulldozer
 
-`bulldozer` is a [GitHub App](https://developer.github.com/apps/) that auto-merges
-PRs when all status checks are green and the PR is reviewed
+bulldozer is a [GitHub App](https://developer.github.com/apps/) that auto-merges
+PRs when all status checks are green and the PR is reviewed.
 
 ## Configuration
 
 By default, the behavior of the bot is configured by a `.bulldozer.yml` file at
 the root of the repository. The file name and location are configurable when
-running your own instance of the server.
-
-- If the file does not exist, `bulldozer` will attempt to read from the configuration_v0_path, which is
-configurable, though the default is `.bulldozer.yml` If `bulldozer` cannot find either configuration file,
-it will take no action. This means it is safe to enable `bulldozer` on all repositories in an organization.
-
-- The `.bulldozer.yml` file is read from most recent commit on the target branch
-of each pull request.
+running your own instance of the server. The `.bulldozer.yml` file is read from
+most recent commit on the target branch of each pull request. If bulldozer cannot
+find a configuration file, it will take no action. This means it is safe to enable
+the bulldozer Github App on all repositories in an organization.
 
 ## Behaviour
 
-When `bulldozer` is enabled on a repo, it will merge all PRs as the `bulldozer[bot]`
+When bulldozer is enabled on a repo, it will merge all PRs as the `bulldozer[bot]`
 committer. Behaviour is configured by a file in each repository.
 
 We recommend using the following configuration, which can be copied into your configuration file.
@@ -70,10 +66,9 @@ update:
     labels: ["WIP", "Update Me"]
 ```
 
-
 ### Caveats and Notes
 
-If both `blacklist` and `whitelist` are specified, `bulldozer` will attempt to match on both. 
+If both `blacklist` and `whitelist` are specified, bulldozer will attempt to match on both. 
 In cases where both match, `blacklist` will take precedence.
 
 The `merge_method` specifies the strategy that will be used to merge. Possible choices
@@ -83,18 +78,18 @@ set of `squash_strategy` options, `pull_request_body`, `summarize_commits` and
 
 ## Deployment
 
-`bulldozer` is easy to deploy in your own environment as it has no dependencies
+bulldozer is easy to deploy in your own environment as it has no dependencies
 other than GitHub. It is also safe to run multiple instances of the server,
 making it a good fit for container schedulers like Nomad or Kubernetes.
 
 We provide both a Docker container and a binary distribution of the server. A
-sample configuration file is provided at `var/conf/bulldozer.yml`. We
+sample configuration file is provided at `config/bulldozer.example.yml`. We
 recommend deploying the application behind a reverse proxy or load balancer
 that terminates TLS connections.
 
 ### GitHub App Configuration
 
-`bulldozer` requires the following permissions as a GitHub app:
+bulldozer requires the following permissions as a GitHub app:
 
 * Repository Admin - read-only
 * Repository Contents - read & write
@@ -115,13 +110,25 @@ It should be subscribed to the following events:
 
 ### Operations
 
-`bulldozer` uses [go-baseapp](https://github.com/palantir/go-baseapp) and
+bulldozer uses [go-baseapp](https://github.com/palantir/go-baseapp) and
 [go-githubapp](https://github.com/palantir/go-githubapp), both of which emit
 standard metrics and structured log keys. Please see those projects for
 details.
 
 ### Example Files
-Example `bulldozer` files can be found in [`config/examples`](https://github.com/palantir/bulldozer/tree/develop/config/examples)
+
+Example `.bulldozer.yml` files can be found in [`config/examples`](https://github.com/palantir/bulldozer/tree/develop/config/examples)
+
+### Migrating: Version 0.4.X to 1.X
+
+The server configuration for bulldozer allows you to specify `configuration_v0_path`, which is a list of paths
+to check for `0.4.X` style bulldozer configuration. When a `1.X` style configuration file does not appear
+at the configured path, bulldozer will attempt to read from the paths configured by `configuration_v0_path`,
+converting the legacy configuration into an equivalent `v1` configuration internally. 
+
+The upgrade process is therefore to deploy the latest version of bulldozer with both `configuration_path` and
+`configuration_v0_path` configured, and to enable the bulldozer Github App on all organizations where it was
+previously installed.
 
 ## Contributing
 
@@ -130,4 +137,4 @@ we prefer discussing the proposed change on a GitHub issue prior to a PR.
 
 ## License
 
-This library is made available under the [Apache 2.0 License](http://www.apache.org/licenses/LICENSE-2.0).
+This application is made available under the [Apache 2.0 License](http://www.apache.org/licenses/LICENSE-2.0).
