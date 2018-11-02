@@ -1,5 +1,7 @@
 # bulldozer
 
+[![Download](https://api.bintray.com/packages/palantir/releases/bulldozer/images/download.svg)](https://bintray.com/palantir/releases/bulldozer/_latestVersion) [![Docker Pulls](https://img.shields.io/docker/pulls/palantirtechnologies/bulldozer.svg)](https://hub.docker.com/r/palantirtechnologies/bulldozer/)
+
 bulldozer is a [GitHub App](https://developer.github.com/apps/) that auto-merges
 PRs when all status checks are green and the PR is reviewed.
 
@@ -82,8 +84,12 @@ bulldozer is easy to deploy in your own environment as it has no dependencies
 other than GitHub. It is also safe to run multiple instances of the server,
 making it a good fit for container schedulers like Nomad or Kubernetes.
 
-We provide both a Docker container and a binary distribution of the server. A
-sample configuration file is provided at `config/bulldozer.example.yml`. We
+We provide both a Docker container and a binary distribution of the server:
+
+- Binaries: https://bintray.com/palantir/releases/bulldozer
+- Docker Images: https://hub.docker.com/r/palantirtechnologies/bulldozer/
+
+A sample configuration file is provided at `config/bulldozer.example.yml`. We
 recommend deploying the application behind a reverse proxy or load balancer
 that terminates TLS connections.
 
