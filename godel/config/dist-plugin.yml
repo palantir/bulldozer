@@ -4,8 +4,6 @@ product-defaults:
 
 products:
   bulldozer:
-    dist:
-      output-dir: build
     build:
       output-dir: build
       main-pkg: .
@@ -15,6 +13,11 @@ products:
       os-archs:
       - os: linux
         arch: amd64
+    dist:
+      output-dir: build
+      disters:
+        bin:
+          type: bin
     docker:
       docker-builders:
         bulldozer:
