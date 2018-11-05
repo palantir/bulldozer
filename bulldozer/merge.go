@@ -122,15 +122,6 @@ func MergePR(ctx context.Context, pullCtx pull.Context, client *github.Client, m
 
 			logger.Info().Msgf("Successfully merged pull request for sha %s with message %q", result.GetSHA(), result.GetMessage())
 
-			// Due to an issue with GitHub, pull requests are not always closed
-			// after merging, see issue #52 for more details.
-			if _, _, err := client.PullRequests.Edit(ctx, pullCtx.Owner(), pullCtx.Repo(), pullCtx.Number(), &github.PullRequest{
-				State: github.String("closed"),
-			}); err != nil {
-				logger.Error().Err(errors.WithStack(err)).Msgf("Failed to close PR after merge")
-				return
-			}
-
 			// Delete ref if owner of BASE and HEAD match
 			// otherwise, its from a fork that we cannot delete
 			if pr.GetBase().GetUser().GetLogin() == pr.GetHead().GetUser().GetLogin() {

@@ -101,7 +101,7 @@ bulldozer requires the following permissions as a GitHub app:
 * Repository Contents - read & write
 * Issues - read-only
 * Repository metadata - read-only
-* Pull requests - read-only
+* Pull requests - read & write
 * Commit status - read-only
 
 It should be subscribed to the following events:
