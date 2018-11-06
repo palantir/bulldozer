@@ -146,6 +146,10 @@ func (cf *ConfigFetcher) unmarshalConfig(bytes []byte) (*Config, error) {
 		return nil, errors.Wrapf(err, "failed to unmarshal configuration")
 	}
 
+	if config.Version != 1 {
+		return nil, errors.Errorf("unexpected version '%d', expected 1", config.Version)
+	}
+
 	return &config, nil
 }
 
