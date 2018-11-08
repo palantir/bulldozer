@@ -3,7 +3,7 @@
 [![Download](https://api.bintray.com/packages/palantir/releases/bulldozer/images/download.svg)](https://bintray.com/palantir/releases/bulldozer/_latestVersion) [![Docker Pulls](https://img.shields.io/docker/pulls/palantirtechnologies/bulldozer.svg)](https://hub.docker.com/r/palantirtechnologies/bulldozer/)
 
 bulldozer is a [GitHub App](https://developer.github.com/apps/) that auto-merges
-PRs when all status checks are green and the PR is reviewed.
+pull requests (PRs) when all status checks are green and the PR is reviewed.
 
 ## Configuration
 
