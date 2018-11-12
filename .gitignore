@@ -1,2 +1,7 @@
+# Idea/IntelliJ
 .idea/
+*.iml
+*.ipr
+*.iws
+
 build/
