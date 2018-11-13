@@ -28,31 +28,65 @@ import (
 func ShouldUpdatePR(ctx context.Context, pullCtx pull.Context, updateConfig UpdateConfig) (bool, error) {
 	logger := zerolog.Ctx(ctx)
 
+	if !updateConfig.Blacklist.Enabled() && !updateConfig.Whitelist.Enabled() {
+		logger.Debug().Msgf("Update configuration not present, ignoring for %s", pullCtx.Locator())
+		return false, nil
+	}
+
+	var blacklisted bool
+	var blacklistedReason string
+	var whitelisted bool
+	var whitelistedReason string
+	var err error
+
 	if updateConfig.Blacklist.Enabled() {
-		blacklisted, reason, err := IsPRBlacklisted(ctx, pullCtx, updateConfig.Blacklist)
+		blacklisted, blacklistedReason, err = IsPRBlacklisted(ctx, pullCtx, updateConfig.Blacklist)
 		if err != nil {
 			return false, errors.Wrap(err, "failed to determine if pull request is blacklisted")
-		}
-		if blacklisted {
-			logger.Debug().Msgf("%s is deemed not updateable because blacklisting is enabled and %s", pullCtx.Locator(), reason)
-			return false, nil
 		}
 	}
 
 	if updateConfig.Whitelist.Enabled() {
-		whitelisted, reason, err := IsPRWhitelisted(ctx, pullCtx, updateConfig.Whitelist)
+		whitelisted, whitelistedReason, err = IsPRWhitelisted(ctx, pullCtx, updateConfig.Whitelist)
 		if err != nil {
 			return false, errors.Wrap(err, "failed to determine if pull request is whitelisted")
 		}
-		if !whitelisted {
-			logger.Debug().Msgf("%s is deemed not updateable because whitelisting is enabled and no whitelist signal detected", pullCtx.Locator())
+	}
+
+	switch {
+	case updateConfig.Blacklist.Enabled() && updateConfig.Whitelist.Enabled():
+		if blacklisted {
+			logger.Debug().Msgf("%s is deemed not updateable because blacklisting is enabled and %s", pullCtx.Locator(), blacklistedReason)
 			return false, nil
 		}
 
-		logger.Debug().Msgf("%s is whitelisted because whitelisting is enabled and %s", pullCtx.Locator(), reason)
+		if whitelisted {
+			logger.Debug().Msgf("%s is whitelisted because whitelisting is enabled and %s", pullCtx.Locator(), whitelistedReason)
+			return true, nil
+		}
+
+		logger.Debug().Msgf("%s is deemed not updateable because no whitelist or blacklist signal was detected", pullCtx.Locator())
+		return false, nil
+
+	case updateConfig.Blacklist.Enabled():
+		if blacklisted {
+			logger.Debug().Msgf("%s is deemed not updateable because blacklisting is enabled and %s", pullCtx.Locator(), blacklistedReason)
+			return false, nil
+		}
+
+		return true, nil
+
+	case updateConfig.Whitelist.Enabled():
+		if whitelisted {
+			logger.Debug().Msgf("%s is whitelisted because whitelisting is enabled and %s", pullCtx.Locator(), whitelistedReason)
+			return true, nil
+		}
+
+		logger.Debug().Msgf("%s is deemed not updateable because whitelisting is enabled and no whitelist signal detected", pullCtx.Locator())
+		return false, nil
 	}
 
-	return true, nil
+	return false, nil
 }
 
 func UpdatePR(ctx context.Context, pullCtx pull.Context, client *github.Client, updateConfig UpdateConfig, baseRef string) error {
