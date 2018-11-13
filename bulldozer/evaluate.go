@@ -28,6 +28,10 @@ import (
 // IsPRBlacklisted returns true if the PR is identified as blacklisted,
 // false otherwise. Additionally, a description of the reason will be returned.
 func IsPRBlacklisted(ctx context.Context, pullCtx pull.Context, config Signals) (bool, string, error) {
+	if !config.Enabled() {
+		return false, "blacklisting is not enabled", nil
+	}
+
 	labels, err := pullCtx.Labels(ctx)
 	if err != nil {
 		return true, "unable to list PR labels", err
@@ -75,6 +79,10 @@ func IsPRBlacklisted(ctx context.Context, pullCtx pull.Context, config Signals) 
 // IsPRWhitelisted returns true if the PR is identified as whitelisted,
 // false otherwise. Additionally, a description of the reason will be returned.
 func IsPRWhitelisted(ctx context.Context, pullCtx pull.Context, config Signals) (bool, string, error) {
+	if !config.Enabled() {
+		return false, "whitelisting is not enabled", nil
+	}
+
 	labels, err := pullCtx.Labels(ctx)
 	if err != nil {
 		return false, "unable to list PR labels", err
