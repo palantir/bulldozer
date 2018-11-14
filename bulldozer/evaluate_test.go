@@ -135,6 +135,17 @@ func TestSimpleXListed(t *testing.T) {
 		assert.Equal(t, "PR label matches one of specified blacklist labels: \"LABEL_NOMERGE\"", actualBlacklistReason)
 	})
 
+	t.Run("labelCausesBlacklist case-insensitive", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			LabelValue: []string{"LABEL_nomERGE"},
+		}
+
+		actualBlacklist, actualBlacklistReason, err := IsPRBlacklisted(ctx, pc, mergeConfig.Blacklist)
+		require.Nil(t, err)
+		assert.True(t, actualBlacklist)
+		assert.Equal(t, "PR label matches one of specified blacklist labels: \"LABEL_nomERGE\"", actualBlacklistReason)
+	})
+
 	t.Run("labelCausesWhitelist", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			LabelValue: []string{"LABEL_MERGE"},
@@ -144,6 +155,17 @@ func TestSimpleXListed(t *testing.T) {
 		require.Nil(t, err)
 		assert.True(t, actualWhitelist)
 		assert.Equal(t, "PR label matches one of specified whitelist labels: \"LABEL_MERGE\"", actualWhitelistReason)
+	})
+
+	t.Run("labelCausesWhitelist case-insensitive", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			LabelValue: []string{"LABEL_merRGE"},
+		}
+
+		actualWhitelist, actualWhitelistReason, err := IsPRWhitelisted(ctx, pc, mergeConfig.Whitelist)
+		require.Nil(t, err)
+		assert.True(t, actualWhitelist)
+		assert.Equal(t, "PR label matches one of specified whitelist labels: \"LABEL_merRGE\"", actualWhitelistReason)
 	})
 }
 
