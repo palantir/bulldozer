@@ -28,6 +28,10 @@ import (
 func ShouldUpdatePR(ctx context.Context, pullCtx pull.Context, updateConfig UpdateConfig) (bool, error) {
 	logger := zerolog.Ctx(ctx)
 
+	if !updateConfig.Blacklist.Enabled() && !updateConfig.Whitelist.Enabled() {
+		return false, nil
+	}
+
 	if updateConfig.Blacklist.Enabled() {
 		blacklisted, reason, err := IsPRBlacklisted(ctx, pullCtx, updateConfig.Blacklist)
 		if err != nil {
