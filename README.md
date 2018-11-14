@@ -30,7 +30,7 @@ merge:
   # "whitelist" defines how to select PRs to evaluate and merge
   whitelist:
 
-    # "labels" is a list of labels that must be matched to whitelist a PR for merging
+    # "labels" is a list of labels that must be matched to whitelist a PR for merging (case-insensitive)
     labels: ["merge when ready"]
 
     # "comment_substrings" matches on substrings in comments
@@ -39,7 +39,7 @@ merge:
   # "blacklist" defines how to exclude PRs from evaluation and merging
   blacklist:
 
-    # similar as above, "labels" defines a list of labels. In this case, matched labels cause exclusion.
+    # similar as above, "labels" defines a list of labels. In this case, matched labels cause exclusion. (case-insensitive)
     labels: ["do not merge"]
 
     # "comment_substrings" matches substrings in comments. In this case, matched substrings cause exclusion.

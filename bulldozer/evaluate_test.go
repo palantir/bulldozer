@@ -133,13 +133,40 @@ func TestSimpleXListed(t *testing.T) {
 		require.Nil(t, err)
 		assert.True(t, actualBlacklist)
 		assert.Equal(t, "PR label matches one of specified blacklist labels: \"LABEL_NOMERGE\"", actualBlacklistReason)
+	})
+
+	t.Run("labelCausesBlacklistCaseInsensitive", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			LabelValue: []string{"LABEL_nomERGE"},
+		}
+
+		actualBlacklist, actualBlacklistReason, err := IsPRBlacklisted(ctx, pc, mergeConfig.Blacklist)
+		require.Nil(t, err)
+		assert.True(t, actualBlacklist)
+		assert.Equal(t, "PR label matches one of specified blacklist labels: \"LABEL_NOMERGE\"", actualBlacklistReason)
+	})
+
+	t.Run("labelCausesWhitelist", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			LabelValue: []string{"LABEL_MERGE"},
+		}
 
 		actualWhitelist, actualWhitelistReason, err := IsPRWhitelisted(ctx, pc, mergeConfig.Whitelist)
 		require.Nil(t, err)
-		assert.False(t, actualWhitelist)
-		assert.Equal(t, "no matching whitelist found", actualWhitelistReason)
+		assert.True(t, actualWhitelist)
+		assert.Equal(t, "PR label matches one of specified whitelist labels: \"LABEL_MERGE\"", actualWhitelistReason)
 	})
 
+	t.Run("labelCausesWhitelistCaseInsensitive", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			LabelValue: []string{"LABEL_meRGE"},
+		}
+
+		actualWhitelist, actualWhitelistReason, err := IsPRWhitelisted(ctx, pc, mergeConfig.Whitelist)
+		require.Nil(t, err)
+		assert.True(t, actualWhitelist)
+		assert.Equal(t, "PR label matches one of specified whitelist labels: \"LABEL_MERGE\"", actualWhitelistReason)
+	})
 }
 
 func TestShouldMerge(t *testing.T) {
@@ -191,6 +218,17 @@ func TestShouldMerge(t *testing.T) {
 		assert.True(t, actualShouldMerge)
 	})
 
+	t.Run("labelShouldMergeCaseInsensitive", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			LabelValue: []string{"LABEL_merGE"},
+		}
+
+		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+
+		require.Nil(t, err)
+		assert.True(t, actualShouldMerge)
+	})
+
 	t.Run("noContextShouldntMerge", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			LabelValue:   []string{"NOT_A_LABEL"},
@@ -227,6 +265,17 @@ func TestShouldMerge(t *testing.T) {
 	t.Run("labelCausesBlacklist", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			LabelValue: []string{"LABEL_NOMERGE"},
+		}
+
+		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+
+		require.Nil(t, err)
+		assert.False(t, actualShouldMerge)
+	})
+
+	t.Run("labelCausesBlacklistCaseInsensitive", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			LabelValue: []string{"LABEL_nomERGE"},
 		}
 
 		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
