@@ -107,6 +107,8 @@ func MergePR(ctx context.Context, pullCtx pull.Context, client *github.Client, m
 					continue
 				}
 
+				postCommentIfUserActionable(ctx, client, pullCtx.Owner(), pullCtx.Repo(), pullCtx.Number(), *gerr)
+
 				switch gerr.Response.StatusCode {
 				case http.StatusMethodNotAllowed:
 					logger.Info().Msgf("Merge rejected due to unsatisfied condition %q", gerr.Message)
@@ -194,4 +196,31 @@ func allCommits(ctx context.Context, pullCtx pull.Context, client *github.Client
 	}
 
 	return repositoryCommits, nil
+}
+
+func postCommentIfUserActionable(ctx context.Context, client *github.Client, owner, repo string, prNum int, githubError github.ErrorResponse) {
+	commentBody := "Error occurred when attempting merge: " + githubError.Message
+
+	switch {
+	case strings.HasPrefix(githubError.Message, "You're not authorized to push to this branch."):
+		commentBody = commentBody + "\n\nThe bulldozer bot account may not be allowed to merge to the branch."
+
+	case githubError.Message == "Merge commits are not allowed on this repository.":
+		commentBody = commentBody + "\n\nThe bulldozer configuration for merge method may not match the repository settings."
+
+	default:
+		// not user-actionable, don't post anything
+		return
+	}
+
+	logger := zerolog.Ctx(ctx)
+	logger.Debug().Msgf("Merge error may be user-fixable, commenting with: %q", commentBody)
+
+	if _, _, err := client.Issues.CreateComment(ctx, owner, repo, prNum, &github.IssueComment{Body: &commentBody}); err != nil {
+		logger.Error().Err(err).Msg("Failed to post user-fixable comment.")
+		return
+	}
+
+	logger.Info().Msgf("Posted comment to PR with potential user action.")
+	return
 }
