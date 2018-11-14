@@ -203,7 +203,7 @@ func postCommentIfUserActionable(ctx context.Context, client *github.Client, own
 
 	switch {
 	case strings.HasPrefix(githubError.Message, "You're not authorized to push to this branch."):
-		commentBody = commentBody + "\n\nThe bulldozer bot account may not be allowed to merge to the branch."
+		commentBody = commentBody + "\n\nThe bulldozer bot account may not be allowed to merge the branch."
 
 	case githubError.Message == "Merge commits are not allowed on this repository.":
 		commentBody = commentBody + "\n\nThe bulldozer configuration for merge method may not match the repository settings."
