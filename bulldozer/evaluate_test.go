@@ -218,6 +218,17 @@ func TestShouldMerge(t *testing.T) {
 		assert.True(t, actualShouldMerge)
 	})
 
+	t.Run("labelShouldMerge - case insensitive", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			LabelValue: []string{"LABEL_merGE"},
+		}
+
+		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+
+		require.Nil(t, err)
+		assert.True(t, actualShouldMerge)
+	})
+
 	t.Run("noContextShouldntMerge", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			LabelValue:   []string{"NOT_A_LABEL"},
@@ -254,6 +265,17 @@ func TestShouldMerge(t *testing.T) {
 	t.Run("labelCausesBlacklist", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			LabelValue: []string{"LABEL_NOMERGE"},
+		}
+
+		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+
+		require.Nil(t, err)
+		assert.False(t, actualShouldMerge)
+	})
+
+	t.Run("labelCausesBlacklist - case insensitive", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			LabelValue: []string{"LABEL_nomERGE"},
 		}
 
 		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
