@@ -166,12 +166,12 @@ func (cf *ConfigFetcher) unmarshalConfigV0(bytes []byte) (*Config, error) {
 			Version: 1,
 			Update: UpdateConfig{
 				Whitelist: Signals{
-					Labels: []string{"update me", "Update Me", "UPDATE ME", "update-me", "Update-Me", "UPDATE-ME", "update_me", "Update_Me", "UPDATE_ME"},
+					Labels: []string{"update me", "update-me", "update_me"},
 				},
 			},
 			Merge: MergeConfig{
 				Whitelist: Signals{
-					Labels: []string{"merge when ready", "Merge When Ready", "MERGE WHEN READY", "merge-when-ready", "Merge-When-Ready", "MERGE-WHEN-READY", "merge_when_ready", "Merge_When_Ready", "MERGE_WHEN_READY"},
+					Labels: []string{"merge when ready", "merge-when-ready", "merge_when_ready"},
 				},
 				DeleteAfterMerge: configv0.DeleteAfterMerge,
 				Method:           configv0.Strategy,
@@ -185,12 +185,12 @@ func (cf *ConfigFetcher) unmarshalConfigV0(bytes []byte) (*Config, error) {
 			Version: 1,
 			Update: UpdateConfig{
 				Whitelist: Signals{
-					Labels: []string{"update me", "Update Me", "UPDATE ME", "update-me", "Update-Me", "UPDATE-ME", "update_me", "Update_Me", "UPDATE_ME"},
+					Labels: []string{"update me", "update-me", "update_me"},
 				},
 			},
 			Merge: MergeConfig{
 				Blacklist: Signals{
-					Labels: []string{"do not merge", "Do Not Merge", "DO NOT MERGE", "wip", "WIP", "do-not-merge", "Do-Not-Merge", "DO-NOT-MERGE", "do_not_merge", "Do_Not_Merge", "DO_NOT_MERGE"},
+					Labels: []string{"wip", "do not merge", "do-not-merge", "do_not_merge"},
 				},
 				DeleteAfterMerge: configv0.DeleteAfterMerge,
 				Method:           configv0.Strategy,
@@ -204,7 +204,7 @@ func (cf *ConfigFetcher) unmarshalConfigV0(bytes []byte) (*Config, error) {
 			Version: 1,
 			Update: UpdateConfig{
 				Whitelist: Signals{
-					Labels: []string{"update me", "Update Me", "UPDATE ME", "update-me", "Update-Me", "UPDATE-ME", "update_me", "Update_Me", "UPDATE_ME"},
+					Labels: []string{"update me", "update-me", "update_me"},
 				},
 			},
 			Merge: MergeConfig{
