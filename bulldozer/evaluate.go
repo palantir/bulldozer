@@ -33,7 +33,7 @@ func IsPRBlacklisted(ctx context.Context, pullCtx pull.Context, config Signals) 
 		return true, "unable to list PR labels", err
 	}
 
-	if inSlice, idx := anyInSlice(labels, config.Labels); inSlice {
+	if inSlice, idx := anyInSliceCaseInsensitive(labels, config.Labels); inSlice {
 		return true, fmt.Sprintf("PR label matches one of specified blacklist labels: %q", config.Labels[idx]), nil
 	}
 
@@ -80,7 +80,7 @@ func IsPRWhitelisted(ctx context.Context, pullCtx pull.Context, config Signals) 
 		return false, "unable to list PR labels", err
 	}
 
-	if inSlice, idx := anyInSlice(labels, config.Labels); inSlice {
+	if inSlice, idx := anyInSliceCaseInsensitive(labels, config.Labels); inSlice {
 		return true, fmt.Sprintf("PR label matches one of specified whitelist labels: %q", config.Labels[idx]), nil
 	}
 
@@ -127,6 +127,18 @@ func anyInSlice(testValues []string, elements []string) (bool, int) {
 			}
 		}
 	}
+	return false, -1
+}
+
+func anyInSliceCaseInsensitive(testValues []string, elements []string) (bool, int) {
+	for _, testValue := range testValues {
+		for index, element := range elements {
+			if strings.EqualFold(testValue, element) {
+				return true, index
+			}
+		}
+	}
+
 	return false, -1
 }
 
