@@ -16,6 +16,7 @@ package bulldozer
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -27,11 +28,11 @@ import (
 func TestShouldUpdatePR(t *testing.T) {
 	ctx := context.Background()
 	testMatrix := []struct {
-		blacklistable   bool
-		blacklisted     bool
-		whitelistable   bool
-		whitelisted     bool
-		expectingUpdate bool
+		blacklistEnabled bool
+		blacklisted      bool
+		whitelistEnabled bool
+		whitelisted      bool
+		expectingUpdate  bool
 	}{
 		{false, false, false, false, false},
 		{false, false, false, true, false},
@@ -52,13 +53,15 @@ func TestShouldUpdatePR(t *testing.T) {
 	}
 
 	for ndx, testCase := range testMatrix {
-		pullCtx, updateConfig := generateUpdatableTestCases(testCase.blacklistable, testCase.blacklisted, testCase.whitelistable, testCase.whitelisted)
+		pullCtx, updateConfig := generateUpdateTestCase(testCase.blacklistEnabled, testCase.blacklisted, testCase.whitelistEnabled, testCase.whitelisted)
 		updating, err := ShouldUpdatePR(ctx, pullCtx, updateConfig)
-		require.Equal(t, testCase.expectingUpdate, updating, "case %d", ndx)
 		require.NoError(t, err)
+		msg := fmt.Sprintf("case %d - blacklistEnabled=%t blacklisted=%t whitelistEnabled=%t whitelisted=%t -> doUpdate=%t",
+			ndx, testCase.blacklistEnabled, testCase.blacklisted, testCase.whitelistEnabled, testCase.whitelisted, testCase.expectingUpdate)
+		require.Equal(t, testCase.expectingUpdate, updating, msg)
 	}
 }
-func generateUpdatableTestCases(blacklistable bool, blacklisted bool, whitelistable bool, whitelisted bool) (pull.Context, UpdateConfig) {
+func generateUpdateTestCase(blacklistable bool, blacklisted bool, whitelistable bool, whitelisted bool) (pull.Context, UpdateConfig) {
 	updateConfig := UpdateConfig{}
 	pullCtx := pulltest.MockPullContext{}
 
