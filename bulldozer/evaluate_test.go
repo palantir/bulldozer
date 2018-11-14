@@ -133,13 +133,18 @@ func TestSimpleXListed(t *testing.T) {
 		require.Nil(t, err)
 		assert.True(t, actualBlacklist)
 		assert.Equal(t, "PR label matches one of specified blacklist labels: \"LABEL_NOMERGE\"", actualBlacklistReason)
+	})
+
+	t.Run("labelCausesWhitelist", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			LabelValue: []string{"LABEL_MERGE"},
+		}
 
 		actualWhitelist, actualWhitelistReason, err := IsPRWhitelisted(ctx, pc, mergeConfig.Whitelist)
 		require.Nil(t, err)
-		assert.False(t, actualWhitelist)
-		assert.Equal(t, "no matching whitelist found", actualWhitelistReason)
+		assert.True(t, actualWhitelist)
+		assert.Equal(t, "PR label matches one of specified whitelist labels: \"LABEL_MERGE\"", actualWhitelistReason)
 	})
-
 }
 
 func TestShouldMerge(t *testing.T) {
