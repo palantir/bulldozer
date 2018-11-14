@@ -135,7 +135,7 @@ func TestSimpleXListed(t *testing.T) {
 		assert.Equal(t, "PR label matches one of specified blacklist labels: \"LABEL_NOMERGE\"", actualBlacklistReason)
 	})
 
-	t.Run("labelCausesBlacklist case-insensitive", func(t *testing.T) {
+	t.Run("labelCausesBlacklistCaseInsensitive", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			LabelValue: []string{"LABEL_nomERGE"},
 		}
@@ -157,7 +157,7 @@ func TestSimpleXListed(t *testing.T) {
 		assert.Equal(t, "PR label matches one of specified whitelist labels: \"LABEL_MERGE\"", actualWhitelistReason)
 	})
 
-	t.Run("labelCausesWhitelist case-insensitive", func(t *testing.T) {
+	t.Run("labelCausesWhitelistCaseInsensitive", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			LabelValue: []string{"LABEL_meRGE"},
 		}
@@ -218,7 +218,7 @@ func TestShouldMerge(t *testing.T) {
 		assert.True(t, actualShouldMerge)
 	})
 
-	t.Run("labelShouldMerge - case insensitive", func(t *testing.T) {
+	t.Run("labelShouldMergeCaseInsensitive", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			LabelValue: []string{"LABEL_merGE"},
 		}
@@ -273,7 +273,7 @@ func TestShouldMerge(t *testing.T) {
 		assert.False(t, actualShouldMerge)
 	})
 
-	t.Run("labelCausesBlacklist - case insensitive", func(t *testing.T) {
+	t.Run("labelCausesBlacklistCaseInsensitive", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			LabelValue: []string{"LABEL_nomERGE"},
 		}
