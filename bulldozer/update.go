@@ -37,6 +37,10 @@ func ShouldUpdatePR(ctx context.Context, pullCtx pull.Context, updateConfig Upda
 			logger.Debug().Msgf("%s is deemed not updateable because blacklisting is enabled and %s", pullCtx.Locator(), reason)
 			return false, nil
 		}
+
+		if !updateConfig.Whitelist.Enabled() { // added
+			return true, nil
+		}
 	}
 
 	if updateConfig.Whitelist.Enabled() {
@@ -44,15 +48,17 @@ func ShouldUpdatePR(ctx context.Context, pullCtx pull.Context, updateConfig Upda
 		if err != nil {
 			return false, errors.Wrap(err, "failed to determine if pull request is whitelisted")
 		}
+
 		if !whitelisted {
 			logger.Debug().Msgf("%s is deemed not updateable because whitelisting is enabled and no whitelist signal detected", pullCtx.Locator())
 			return false, nil
 		}
 
 		logger.Debug().Msgf("%s is whitelisted because whitelisting is enabled and %s", pullCtx.Locator(), reason)
+		return true, nil // added
 	}
 
-	return true, nil
+	return false, nil // changed
 }
 
 func UpdatePR(ctx context.Context, pullCtx pull.Context, client *github.Client, updateConfig UpdateConfig, baseRef string) error {
