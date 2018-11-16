@@ -79,6 +79,17 @@ Yes. Specifying `squash` will allow for a further set of `squash_strategy` optio
 specifically how to render the commit `body`. The possible options are:
 `pull_request_body`, `summarize_commits` and `empty_body`.
 
+#### Bulldozer isn't merging my commit when it should, what could be happening?
+Bulldozer will attempt to merge a branch whenever it passes the whitelist/blacklist
+criteria. GitHub may prevent it from merging a branch in certain conditions, some of
+which are to be expected, and others that may be caused by mis-configuring bulldozer.
+
+* All required Status Checks have passed
+* All PR review requirements are satisfied
+* The merge strategy configured in `.bulldozer.yml` is allowed in your repository settings
+* Branch protection rules are preventing `bulldozer [bot]` from [pushing to the branch](https://help.github.com/articles/about-branch-restrictions/).
+  Unfortunately a bot cannot be added to the list at this time.
+
 ## Deployment
 
 bulldozer is easy to deploy in your own environment as it has no dependencies
