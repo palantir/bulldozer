@@ -74,9 +74,14 @@ If both `blacklist` and `whitelist` are specified, bulldozer will attempt to mat
 In cases where both match, `blacklist` will take precedence.
 
 The `merge_method` specifies the strategy that will be used to merge. Possible choices
-are `merge`, `squash`, and `rebase`. Specifying `squash` will allow for a further
-set of `squash_strategy` options, `pull_request_body`, `summarize_commits` and
-`empty_body` that will constitute the body of the merge commit message. 
+are `merge`, `squash`, and `rebase`.  
+
+## FAQ
+
+#### Can I specify the body of the commit when using the `squash` strategy?
+Yes. Specifying `squash` will allow for a further set of `squash_strategy` options,
+specifically how to render the commit `body`. The possible options are: `pull_request_body`,
+`summarize_commits` and `empty_body`.
 
 ## Deployment
 
