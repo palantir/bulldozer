@@ -68,15 +68,34 @@ update:
     labels: ["WIP", "Update Me"]
 ```
 
-### Caveats and Notes
+## FAQ
 
-If both `blacklist` and `whitelist` are specified, bulldozer will attempt to match on both. 
-In cases where both match, `blacklist` will take precedence.
+#### Can I specify both a `blacklist` and `whitelist`?
+Yes. If both `blacklist` and `whitelist` are specified, bulldozer will attempt to match
+on both. In cases where both match, `blacklist` will take precedence.
 
-The `merge_method` specifies the strategy that will be used to merge. Possible choices
-are `merge`, `squash`, and `rebase`. Specifying `squash` will allow for a further
-set of `squash_strategy` options, `pull_request_body`, `summarize_commits` and
-`empty_body` that will constitute the body of the merge commit message. 
+#### Can I specify the body of the commit when using the `squash` strategy?
+Yes. When the merge strategy is `squash`, you can set additional options under the
+`options.squash` property, including how to render the commit body.
+
+```yaml
+merge:
+  method: squash
+  options:
+    squash:
+      body: summarize_commits # or `pull_request_body`, `empty_body`
+```
+
+#### Bulldozer isn't merging my commit when it should, what could be happening?
+Bulldozer will attempt to merge a branch whenever it passes the whitelist/blacklist
+criteria. GitHub may prevent it from merging a branch in certain conditions, some of
+which are to be expected, and others that may be caused by mis-configuring Bulldozer.
+
+* Required status checks have not passed
+* Review requirements are not satisfied
+* The merge strategy configured in `.bulldozer.yml` is not allowed by your repository settings
+* Branch protection rules are preventing `bulldozer [bot]` from [pushing to the branch](https://help.github.com/articles/about-branch-restrictions/).
+  Unfortunately GitHub apps cannot be added to the list at this time.
 
 ## Deployment
 
@@ -133,7 +152,7 @@ at the configured path, bulldozer will attempt to read from the paths configured
 converting the legacy configuration into an equivalent `v1` configuration internally. 
 
 The upgrade process is therefore to deploy the latest version of bulldozer with both `configuration_path` and
-`configuration_v0_path` configured, and to enable the bulldozer Github App on all organizations where it was
+`configuration_v0_path` configured, and to enable the bulldozer GitHub App on all organizations where it was
 previously installed.
 
 ## Contributing
