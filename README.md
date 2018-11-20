@@ -36,6 +36,9 @@ merge:
     # "comment_substrings" matches on substrings in comments
     comment_substrings: ["==MERGE_WHEN_READY=="]
 
+    # "pr_body_substrings" matches on substrings in the PR body
+    pr_body_substrings: ["==MERGE_WHEN_READY=="]
+
   # "blacklist" defines how to exclude PRs from evaluation and merging
   blacklist:
 
