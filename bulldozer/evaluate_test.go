@@ -181,6 +181,28 @@ func TestSimpleXListed(t *testing.T) {
 		assert.Equal(t, "PR body matches one of specified whitelist substrings: \"BODY_MERGE_PLZ\"", actualWhitelistReason)
 	})
 
+	t.Run("bodyCausesCommentSubstringWhitelist", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			BodyValue: "My PR Body\n\n\n :+1:",
+		}
+
+		actualWhitelist, actualWhitelistReason, err := IsPRWhitelisted(ctx, pc, mergeConfig.Whitelist)
+		require.Nil(t, err)
+		assert.True(t, actualWhitelist)
+		assert.Equal(t, "PR body matches one of specified whitelist comment substrings: \":+1:\"", actualWhitelistReason)
+	})
+
+	t.Run("bodyCausesCommentWhitelist", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			BodyValue: "FULL_COMMENT_PLZ_MERGE",
+		}
+
+		actualWhitelist, actualWhitelistReason, err := IsPRWhitelisted(ctx, pc, mergeConfig.Whitelist)
+		require.Nil(t, err)
+		assert.True(t, actualWhitelist)
+		assert.Equal(t, "PR body matches one of specified whitelist comments: \"FULL_COMMENT_PLZ_MERGE\"", actualWhitelistReason)
+	})
+
 	t.Run("bodyCausesBlacklist", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			BodyValue: "My PR Body\n\n\n BODY_NOMERGE",
@@ -190,6 +212,28 @@ func TestSimpleXListed(t *testing.T) {
 		require.Nil(t, err)
 		assert.True(t, actualBlacklist)
 		assert.Equal(t, "PR body matches one of specified blacklist substrings: \"BODY_NOMERGE\"", actualBlacklistReason)
+	})
+
+	t.Run("bodyCausesCommentSubstringBlacklist", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			BodyValue: "My PR Body\n\n\n :-1:",
+		}
+
+		actualBlacklist, actualBlacklistReason, err := IsPRBlacklisted(ctx, pc, mergeConfig.Blacklist)
+		require.Nil(t, err)
+		assert.True(t, actualBlacklist)
+		assert.Equal(t, "PR body matches one of specified blacklist comment substrings: \":-1:\"", actualBlacklistReason)
+	})
+
+	t.Run("bodyCausesCommentBlacklist", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			BodyValue: "NO_WAY",
+		}
+
+		actualBlacklist, actualBlacklistReason, err := IsPRBlacklisted(ctx, pc, mergeConfig.Blacklist)
+		require.Nil(t, err)
+		assert.True(t, actualBlacklist)
+		assert.Equal(t, "PR body matches one of specified blacklist comments: \"NO_WAY\"", actualBlacklistReason)
 	})
 
 	t.Run("errBodyFailsClosedBlacklist", func(t *testing.T) {

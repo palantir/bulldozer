@@ -51,11 +51,21 @@ func IsPRBlacklisted(ctx context.Context, pullCtx pull.Context, config Signals) 
 		return true, fmt.Sprintf("PR comment matches one of specified blacklist comments: %q", config.Comments[idx]), nil
 	}
 
+	for _, blacklistedComment := range config.Comments {
+		if blacklistedComment == body {
+			return true, fmt.Sprintf("PR body matches one of specified blacklist comments: %q", blacklistedComment), nil
+		}
+	}
+
 	for _, blacklistedSubstring := range config.CommentSubstrings {
 		for _, comment := range comments {
 			if strings.Contains(comment, blacklistedSubstring) {
 				return true, fmt.Sprintf("PR comment matches one of specified blacklist comment substrings: %q", blacklistedSubstring), nil
 			}
+		}
+
+		if strings.Contains(body, blacklistedSubstring) {
+			return true, fmt.Sprintf("PR body matches one of specified blacklist comment substrings: %q", blacklistedSubstring), nil
 		}
 	}
 
@@ -94,11 +104,21 @@ func IsPRWhitelisted(ctx context.Context, pullCtx pull.Context, config Signals) 
 		return true, fmt.Sprintf("PR comment matches one of specified whitelist comments: %q", config.Comments[idx]), nil
 	}
 
+	for _, whitelistedComment := range config.Comments {
+		if whitelistedComment == body {
+			return true, fmt.Sprintf("PR body matches one of specified whitelist comments: %q", whitelistedComment), nil
+		}
+	}
+
 	for _, whitelistedSubstring := range config.CommentSubstrings {
 		for _, comment := range comments {
 			if strings.Contains(comment, whitelistedSubstring) {
 				return true, fmt.Sprintf("PR comment matches one of specified whitelist comment substrings: %q", whitelistedSubstring), nil
 			}
+		}
+
+		if strings.Contains(body, whitelistedSubstring) {
+			return true, fmt.Sprintf("PR body matches one of specified whitelist comment substrings: %q", whitelistedSubstring), nil
 		}
 	}
 
