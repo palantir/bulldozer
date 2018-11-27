@@ -89,7 +89,7 @@ merge:
       body: summarize_commits # or `pull_request_body`, `empty_body`
 ```
 
-#### Bulldozer isn't merging my commit when it should, what could be happening?
+#### Bulldozer isn't merging my commit or updating my branch when it should, what could be happening?
 Bulldozer will attempt to merge a branch whenever it passes the whitelist/blacklist
 criteria. GitHub may prevent it from merging a branch in certain conditions, some of
 which are to be expected, and others that may be caused by mis-configuring Bulldozer.
