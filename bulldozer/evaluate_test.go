@@ -31,11 +31,13 @@ func TestSimpleXListed(t *testing.T) {
 			Labels:            []string{"LABEL_MERGE"},
 			Comments:          []string{"FULL_COMMENT_PLZ_MERGE"},
 			CommentSubstrings: []string{":+1:"},
+			PRBodySubstrings:  []string{"BODY_MERGE_PLZ"},
 		},
 		Blacklist: Signals{
 			Labels:            []string{"LABEL_NOMERGE"},
 			Comments:          []string{"NO_WAY"},
 			CommentSubstrings: []string{":-1:"},
+			PRBodySubstrings:  []string{"BODY_NOMERGE"},
 		},
 	}
 
@@ -166,6 +168,114 @@ func TestSimpleXListed(t *testing.T) {
 		require.Nil(t, err)
 		assert.True(t, actualWhitelist)
 		assert.Equal(t, "PR label matches one of specified whitelist labels: \"LABEL_MERGE\"", actualWhitelistReason)
+	})
+
+	t.Run("bodyCausesWhitelist", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			BodyValue: "My PR Body\n\n\n BODY_MERGE_PLZ",
+		}
+
+		actualWhitelist, actualWhitelistReason, err := IsPRWhitelisted(ctx, pc, mergeConfig.Whitelist)
+		require.Nil(t, err)
+		assert.True(t, actualWhitelist)
+		assert.Equal(t, "PR body matches one of specified whitelist substrings: \"BODY_MERGE_PLZ\"", actualWhitelistReason)
+	})
+
+	t.Run("bodyCausesCommentSubstringWhitelist", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			BodyValue: "My PR Body\n\n\n :+1:",
+		}
+
+		actualWhitelist, actualWhitelistReason, err := IsPRWhitelisted(ctx, pc, mergeConfig.Whitelist)
+		require.Nil(t, err)
+		assert.True(t, actualWhitelist)
+		assert.Equal(t, "PR body matches one of specified whitelist comment substrings: \":+1:\"", actualWhitelistReason)
+	})
+
+	t.Run("bodyCausesCommentWhitelist", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			BodyValue: "FULL_COMMENT_PLZ_MERGE",
+		}
+
+		actualWhitelist, actualWhitelistReason, err := IsPRWhitelisted(ctx, pc, mergeConfig.Whitelist)
+		require.Nil(t, err)
+		assert.True(t, actualWhitelist)
+		assert.Equal(t, "PR body matches one of specified whitelist comments: \"FULL_COMMENT_PLZ_MERGE\"", actualWhitelistReason)
+	})
+
+	t.Run("bodyCausesBlacklist", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			BodyValue: "My PR Body\n\n\n BODY_NOMERGE",
+		}
+
+		actualBlacklist, actualBlacklistReason, err := IsPRBlacklisted(ctx, pc, mergeConfig.Blacklist)
+		require.Nil(t, err)
+		assert.True(t, actualBlacklist)
+		assert.Equal(t, "PR body matches one of specified blacklist substrings: \"BODY_NOMERGE\"", actualBlacklistReason)
+	})
+
+	t.Run("bodyCausesCommentSubstringBlacklist", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			BodyValue: "My PR Body\n\n\n :-1:",
+		}
+
+		actualBlacklist, actualBlacklistReason, err := IsPRBlacklisted(ctx, pc, mergeConfig.Blacklist)
+		require.Nil(t, err)
+		assert.True(t, actualBlacklist)
+		assert.Equal(t, "PR body matches one of specified blacklist comment substrings: \":-1:\"", actualBlacklistReason)
+	})
+
+	t.Run("bodyCausesCommentBlacklist", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			BodyValue: "NO_WAY",
+		}
+
+		actualBlacklist, actualBlacklistReason, err := IsPRBlacklisted(ctx, pc, mergeConfig.Blacklist)
+		require.Nil(t, err)
+		assert.True(t, actualBlacklist)
+		assert.Equal(t, "PR body matches one of specified blacklist comments: \"NO_WAY\"", actualBlacklistReason)
+	})
+
+	t.Run("errBodyFailsClosedBlacklist", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			BodyValue:    "My PR Body",
+			BodyErrValue: errors.New("failure"),
+		}
+
+		actualBlacklist, _, err := IsPRBlacklisted(ctx, pc, mergeConfig.Blacklist)
+		require.NotNil(t, err)
+		assert.True(t, actualBlacklist)
+	})
+
+	t.Run("errBodyFailsClosedWhitelist", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			BodyValue:    "My PR Body",
+			BodyErrValue: errors.New("failure"),
+		}
+
+		actualWhitelist, _, err := IsPRWhitelisted(ctx, pc, mergeConfig.Whitelist)
+		require.NotNil(t, err)
+		assert.False(t, actualWhitelist)
+	})
+
+	t.Run("errLabelFailsClosedWhitelist", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			LabelErrValue: errors.New("failure"),
+		}
+
+		actualWhitelist, _, err := IsPRWhitelisted(ctx, pc, mergeConfig.Whitelist)
+		require.NotNil(t, err)
+		assert.False(t, actualWhitelist)
+	})
+
+	t.Run("errCommentsFailsClosedWhitelist", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			CommentErrValue: errors.New("failure"),
+		}
+
+		actualWhitelist, _, err := IsPRWhitelisted(ctx, pc, mergeConfig.Whitelist)
+		require.NotNil(t, err)
+		assert.False(t, actualWhitelist)
 	})
 }
 

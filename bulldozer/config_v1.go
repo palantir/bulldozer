@@ -31,6 +31,7 @@ type Signals struct {
 	Labels            []string `yaml:"labels"`
 	CommentSubstrings []string `yaml:"comment_substrings"`
 	Comments          []string `yaml:"comments"`
+	PRBodySubstrings  []string `yaml:"pr_body_substrings"`
 }
 
 func (s *Signals) Enabled() bool {

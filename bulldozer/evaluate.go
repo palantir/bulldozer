@@ -69,6 +69,12 @@ func IsPRBlacklisted(ctx context.Context, pullCtx pull.Context, config Signals) 
 		}
 	}
 
+	for _, blacklistedSubstring := range config.PRBodySubstrings {
+		if strings.Contains(body, blacklistedSubstring) {
+			return true, fmt.Sprintf("PR body matches one of specified blacklist substrings: %q", blacklistedSubstring), nil
+		}
+	}
+
 	return false, "no matching blacklist found", nil
 }
 
@@ -113,6 +119,12 @@ func IsPRWhitelisted(ctx context.Context, pullCtx pull.Context, config Signals) 
 
 		if strings.Contains(body, whitelistedSubstring) {
 			return true, fmt.Sprintf("PR body matches one of specified whitelist comment substrings: %q", whitelistedSubstring), nil
+		}
+	}
+
+	for _, whitelistedSubstring := range config.PRBodySubstrings {
+		if strings.Contains(body, whitelistedSubstring) {
+			return true, fmt.Sprintf("PR body matches one of specified whitelist substrings: %q", whitelistedSubstring), nil
 		}
 	}
 
