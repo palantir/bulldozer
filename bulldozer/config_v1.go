@@ -53,7 +53,8 @@ type MergeConfig struct {
 }
 
 type MergeOption struct {
-	Body MessageStrategy `yaml:"body"`
+	Body                       MessageStrategy `yaml:"body"`
+	CommitDescriptionDelimiter *string         `yaml:"commit_description_delimiter,optional"`
 }
 
 type UpdateConfig struct {

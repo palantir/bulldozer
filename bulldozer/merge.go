@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -47,7 +48,7 @@ func MergePR(ctx context.Context, pullCtx pull.Context, client *github.Client, m
 		opt, ok := mergeConfig.Options[SquashAndMerge]
 		if !ok {
 			logger.Error().Msgf("Unable to find matching %s in merge option configuration; using default %s", SquashAndMerge, EmptyBody)
-			opt = MergeOption{EmptyBody}
+			opt = MergeOption{EmptyBody, nil}
 		}
 
 		switch opt.Body {
@@ -56,7 +57,18 @@ func MergePR(ctx context.Context, pullCtx pull.Context, client *github.Client, m
 			if err != nil {
 				return errors.Wrap(err, "failed to determine pull request body")
 			}
-			commitMessage = body
+
+			if opt.CommitDescriptionDelimiter != nil {
+				var rString = fmt.Sprintf(
+					`(?sm:(%s\s*)^(.*)$(\s*%s))`, *opt.CommitDescriptionDelimiter, *opt.CommitDescriptionDelimiter)
+				if m := regexp.MustCompile(rString).FindStringSubmatch(body); len(m) == 4 {
+					commitMessage = m[2]
+				} else {
+					commitMessage = body
+				}
+			} else {
+				commitMessage = body
+			}
 		case SummarizeCommits:
 			summarizedMessages, err := summarizeCommitMessages(ctx, pullCtx, client)
 			if err != nil {
