@@ -35,7 +35,7 @@ type Signals struct {
 }
 
 func (s *Signals) Enabled() bool {
-	return len(s.Labels)+len(s.CommentSubstrings)+len(s.Comments) > 0
+	return len(s.Labels)+len(s.CommentSubstrings)+len(s.Comments)+len(s.PRBodySubstrings) > 0
 }
 
 type MergeConfig struct {
