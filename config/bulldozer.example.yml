@@ -25,8 +25,13 @@ github:
     integration_id: 1
     # A random string used to validate webhooks
     webhook_secret: "app_secret"
-    # The private key of the GitHub app
-    private_key: "app_private_key"
+    # The private key of the GitHub app (pem file download from GitHub)
+    private_key: |
+      -----BEGIN RSA PRIVATE KEY-----
+      xxxxx
+      xxxxx
+      xxxxx
+      -----END RSA PRIVATE KEY-----
 
 # Options for application behavior
 options:
