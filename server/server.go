@@ -96,13 +96,17 @@ func configureLogger(c LoggingConfig) (zerolog.Logger, error) {
 		out = zerolog.ConsoleWriter{Out: out}
 	}
 
-	logLevel, err := zerolog.ParseLevel(c.Level)
-	if err != nil {
-		return zerolog.New(out).With().Timestamp().Logger(), err
+	logger := zerolog.New(out).With().Timestamp().Logger()
+	if c.Level == "" {
+		return logger, nil
 	}
-	zerolog.SetGlobalLevel(logLevel)
 
-	return zerolog.New(out).With().Timestamp().Logger(), nil
+	level, err := zerolog.ParseLevel(c.Level)
+	if err != nil {
+		return logger, errors.Wrap(err, "failed to parse log level")
+	}
+
+	return logger.Level(level), nil
 }
 
 // Start is blocking and long-running
