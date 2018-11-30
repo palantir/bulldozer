@@ -117,8 +117,9 @@ that terminates TLS connections.
 
 ### GitHub App Configuration
 
-Webhook URL: 
-* http(s)://your.domain.com **/api/github/hook**
+Webhook URL:
+
+* `http(s)://your.domain.com/api/github/hook`
 
 bulldozer requires the following permissions as a GitHub app:
 
