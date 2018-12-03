@@ -182,6 +182,20 @@ merge:
 Anything that's contained between two `==COMMIT_MSG==` strings will become the
 commit message instead of whole pull request body.
 
+#### What if I don't want to put config files into each repo?
+You can enable global fallback configuration in your bulldozer config file.
+
+Global configuration will be used only when your repo config file not exists.
+
+```yaml
+options:
+  enable_global_config: true
+
+global:
+  blacklist:
+    labels: ["do not merge"] # or any other available config.
+```
+
 #### Bulldozer isn't merging my commit or updating my branch when it should, what could be happening?
 
 Bulldozer will attempt to merge a branch whenever it passes the whitelist/blacklist

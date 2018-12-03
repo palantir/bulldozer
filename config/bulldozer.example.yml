@@ -40,6 +40,9 @@ options:
   # The name of the application. This will affect the User-Agent header
   # when making requests to Github.
   app_name: bulldozer
+  # Whether a global fallback configuration is used 
+  # when repo config file (defined above) not exists. 
+  enable_global_config: false
 
 # Optional configuration to emit metrics to datadog
 datadog:
@@ -51,3 +54,9 @@ datadog:
   # Tags to include
   tags:
     - "bulldozer"
+
+# Global fallback configuration, this will operate same as config file described in readme.
+# Only availabe when `options.enable_global_config` (defined above) is enabled.
+global:
+  blacklist:
+    labels: ["do not merge"]
