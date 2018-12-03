@@ -15,6 +15,7 @@
 package server
 
 import (
+	"github.com/palantir/bulldozer/bulldozer"
 	"github.com/palantir/go-baseapp/baseapp"
 	"github.com/palantir/go-baseapp/baseapp/datadog"
 	"github.com/palantir/go-githubapp/githubapp"
@@ -33,6 +34,7 @@ type Config struct {
 	Options Options            `yaml:"options"`
 	Logging LoggingConfig      `yaml:"logging"`
 	Datadog datadog.Config     `yaml:"datadog"`
+	Global  bulldozer.Config   `yaml:"global"`
 }
 
 type LoggingConfig struct {
@@ -43,6 +45,7 @@ type LoggingConfig struct {
 type Options struct {
 	AppName              string   `yaml:"app_name"`
 	ConfigurationPath    string   `yaml:"configuration_path"`
+	EnableGlobalConfig   bool     `yaml:"enable_global_config"`
 	ConfigurationV0Paths []string `yaml:"configuration_v0_paths"`
 }
 

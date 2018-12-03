@@ -65,7 +65,7 @@ func New(c *Config) (*Server, error) {
 
 	baseHandler := handler.Base{
 		ClientCreator: clientCreator,
-		ConfigFetcher: bulldozer.NewConfigFetcher(c.Options.ConfigurationPath, c.Options.ConfigurationV0Paths),
+		ConfigFetcher: bulldozer.NewConfigFetcher(c.Options.ConfigurationPath, c.Options.ConfigurationV0Paths, c.Options.EnableGlobalConfig, c.Global),
 	}
 
 	webhookHandler := githubapp.NewDefaultEventDispatcher(c.Github,
