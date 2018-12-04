@@ -58,16 +58,13 @@ func MergePR(ctx context.Context, pullCtx pull.Context, client *github.Client, m
 				return errors.Wrap(err, "failed to determine pull request body")
 			}
 
-			if opt.CommitDescriptionDelimiter != nil {
-				var rString = fmt.Sprintf(
-					`(?sm:(%s\s*)^(.*)$(\s*%s))`, *opt.CommitDescriptionDelimiter, *opt.CommitDescriptionDelimiter)
+			commitMessage = body
+			if opt.MessageDelimiter != "" {
+				var quotedDelimiter = regexp.QuoteMeta(opt.MessageDelimiter)
+				var rString = fmt.Sprintf(`(?sm:(%s\s*)^(.*)$(\s*%s))`, quotedDelimiter, quotedDelimiter)
 				if m := regexp.MustCompile(rString).FindStringSubmatch(body); len(m) == 4 {
 					commitMessage = m[2]
-				} else {
-					commitMessage = body
 				}
-			} else {
-				commitMessage = body
 			}
 		case SummarizeCommits:
 			summarizedMessages, err := summarizeCommitMessages(ctx, pullCtx, client)
