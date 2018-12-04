@@ -48,7 +48,7 @@ func MergePR(ctx context.Context, pullCtx pull.Context, client *github.Client, m
 		opt, ok := mergeConfig.Options[SquashAndMerge]
 		if !ok {
 			logger.Error().Msgf("Unable to find matching %s in merge option configuration; using default %s", SquashAndMerge, EmptyBody)
-			opt = MergeOption{EmptyBody, nil}
+			opt = MergeOption{Body: EmptyBody}
 		}
 
 		switch opt.Body {
