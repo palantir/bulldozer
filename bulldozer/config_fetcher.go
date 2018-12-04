@@ -25,8 +25,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var commitMsgString = "==COMMIT_MSG=="
-
 type FetchedConfig struct {
 	Owner  string
 	Repo   string
@@ -216,7 +214,7 @@ func (cf *ConfigFetcher) unmarshalConfigV0(bytes []byte) (*Config, error) {
 				DeleteAfterMerge: configv0.DeleteAfterMerge,
 				Method:           configv0.Strategy,
 				Options: map[MergeMethod]MergeOption{
-					configv0.Strategy: {PullRequestBody, &commitMsgString},
+					configv0.Strategy: {PullRequestBody, "==COMMIT_MSG=="},
 				},
 			},
 		}
