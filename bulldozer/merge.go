@@ -51,31 +51,11 @@ func MergePR(ctx context.Context, pullCtx pull.Context, client *github.Client, m
 			opt = MergeOption{Body: EmptyBody}
 		}
 
-		switch opt.Body {
-		case PullRequestBody:
-			body, err := pullCtx.Body(ctx)
-			if err != nil {
-				return errors.Wrap(err, "failed to determine pull request body")
-			}
-
-			commitMessage = body
-			if opt.MessageDelimiter != "" {
-				var quotedDelimiter = regexp.QuoteMeta(opt.MessageDelimiter)
-				var rString = fmt.Sprintf(`(?sm:(%s\s*)^(.*)$(\s*%s))`, quotedDelimiter, quotedDelimiter)
-				if m := regexp.MustCompile(rString).FindStringSubmatch(body); len(m) == 4 {
-					commitMessage = m[2]
-				}
-			}
-		case SummarizeCommits:
-			summarizedMessages, err := summarizeCommitMessages(ctx, pullCtx, client)
-			if err != nil {
-				return errors.Wrap(err, "failed to collect pull request commit messages")
-			}
-
-			commitMessage = summarizedMessages
-		case EmptyBody:
-		default:
+		squashAndMergeMessage, err := calculateCommitMessage(ctx, pullCtx, client, opt)
+		if err != nil {
+			return err
 		}
+		commitMessage = squashAndMergeMessage
 	}
 
 	go func(ctx context.Context) {
@@ -167,6 +147,42 @@ func MergePR(ctx context.Context, pullCtx pull.Context, client *github.Client, m
 	}(zerolog.Ctx(ctx).WithContext(context.Background()))
 
 	return nil
+}
+
+func calculateCommitMessage(ctx context.Context, pullCtx pull.Context, client *github.Client, option MergeOption) (string, error) {
+	commitMessage := ""
+	switch option.Body {
+	case PullRequestBody:
+		body, err := pullCtx.Body(ctx)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to determine pull request body")
+		}
+
+		commitMessage = body
+		if option.MessageDelimiter != "" {
+			var quotedDelimiter = regexp.QuoteMeta(option.MessageDelimiter)
+			var rString = fmt.Sprintf(`(?sm:(%s\s*)^(.*)$(\s*%s))`, quotedDelimiter, quotedDelimiter)
+			matcher, err := regexp.Compile(rString)
+			if err != nil {
+				return "", errors.Wrap(err, "failed to compile message delimiter regex")
+			}
+
+			if m := matcher.FindStringSubmatch(body); len(m) == 4 {
+				commitMessage = m[2]
+			}
+		}
+	case SummarizeCommits:
+		summarizedMessages, err := summarizeCommitMessages(ctx, pullCtx, client)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to collect pull request commit messages")
+		}
+
+		commitMessage = summarizedMessages
+	case EmptyBody:
+	default:
+	}
+
+	return commitMessage, nil
 }
 
 func summarizeCommitMessages(ctx context.Context, pullCtx pull.Context, client *github.Client) (string, error) {
