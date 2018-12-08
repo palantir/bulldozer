@@ -90,6 +90,7 @@ merge:
 ```
 
 #### Bulldozer isn't merging my commit or updating my branch when it should, what could be happening?
+
 Bulldozer will attempt to merge a branch whenever it passes the whitelist/blacklist
 criteria. GitHub may prevent it from merging a branch in certain conditions, some of
 which are to be expected, and others that may be caused by mis-configuring Bulldozer.
@@ -121,14 +122,16 @@ Webhook URL:
 
 * `http(s)://your.domain.com/api/github/hook`
 
-bulldozer requires the following permissions as a GitHub app:
+Bulldozer requires the following permissions as a GitHub app:
 
-* Repository Admin - read-only
-* Repository Contents - read & write
-* Issues - read-only
-* Repository metadata - read-only
-* Pull requests - read & write
-* Commit status - read-only
+| Permission | Access | Reason |
+| ---------- | ------ | ------ |
+| Repository administration | Read-only | Determine required status checks |
+| Repository contents | Read & write | Read configuration, perform merges |
+| Issues | Read & write | Read comments, close linked issues |
+| Repository metadata | Read-only | Basic repository data |
+| Pull requests | Read & write | Merge and close pull requests |
+| Commit status | Read-only | Evaluate pull request status |
 
 It should be subscribed to the following events:
 
@@ -156,7 +159,7 @@ Example `.bulldozer.yml` files can be found in [`config/examples`](https://githu
 The server configuration for bulldozer allows you to specify `configuration_v0_path`, which is a list of paths
 to check for `0.4.X` style bulldozer configuration. When a `1.X` style configuration file does not appear
 at the configured path, bulldozer will attempt to read from the paths configured by `configuration_v0_path`,
-converting the legacy configuration into an equivalent `v1` configuration internally. 
+converting the legacy configuration into an equivalent `v1` configuration internally.
 
 The upgrade process is therefore to deploy the latest version of bulldozer with both `configuration_path` and
 `configuration_v0_path` configured, and to enable the bulldozer GitHub App on all organizations where it was
