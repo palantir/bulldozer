@@ -23,15 +23,14 @@ Bulldozer might be useful if you:
 - Have CI builds that take longer than the normal review process. It will merge
   reviewed PRs as soon as the tests pass so you don't have to watch the pull
   request or remember to merge it later.
-
 - Combine it with [policy-bot](https://github.com/palantir/policy-bot) to
   automatically merge certain types of pre-approved or automated changes.
-
 - Want to give contributors more control over when they can merge PRs without
   granting them write access to the repository.
-
 - Have a lot of active development that makes it difficult to merge a pull
   request while it is up-to-date with the target branch.
+
+## Contents
 
 * [Behavior](#behavior)
 * [Configuration](#configuration)
