@@ -110,7 +110,7 @@ merge:
     squash:
       # "body" defines how the body of the commit message is created when
       # generating a squash commit. The options are "pull_request_body",
-      # "summaryize_commits", and "empty_body".
+      # "summarize_commits", and "empty_body".
       body: "summarize_commits"
 
   # "required_status" is a list of additional status contexts that must pass
