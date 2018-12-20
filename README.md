@@ -16,8 +16,6 @@ Additionally, `bulldozer` can:
   branch
 - Wait for additional status checks that are not required by GitHub
 
-This behavior is configured by a file in each repository.
-
 Bulldozer might be useful if you:
 
 - Have CI builds that take longer than the normal review process. It will merge
