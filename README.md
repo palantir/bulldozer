@@ -74,7 +74,7 @@ version: 1
 # missing, bulldozer will consider all pull requests and use default settings.
 merge:
   # "whitelist" defines the set of pull requests considered by bulldozer. If
-  # the section is missing, bulldozer considers all pull requests not excluded 
+  # the section is missing, bulldozer considers all pull requests not excluded
   # by the blacklist.
   whitelist:
     # Pull requests with any of these labels (case-insensitive) are added to
@@ -112,6 +112,9 @@ merge:
       # generating a squash commit. The options are "pull_request_body",
       # "summarize_commits", and "empty_body".
       body: "summarize_commits"
+      # if "body" is "pull_request_body" then the commit message will be part
+      # of the pull request body delinated by "message_delimiter" string
+      message_delimiter: ==COMMIT_MSG==
 
   # "required_status" is a list of additional status contexts that must pass
   # before bulldozer can merge a pull request. This is useful if you want to
@@ -155,6 +158,21 @@ merge:
     squash:
       body: summarize_commits # or `pull_request_body`, `empty_body`
 ```
+
+You can also define part of pull request body to pick as a commit message when
+`body` is `pull_request_body`.
+
+```yaml
+merge:
+  method: squash
+  options:
+    squash:
+      body: pull_request_body
+      message_delimiter: ==COMMIT_MSG==
+```
+
+Anything that's contained between two `==COMMIT_MSG==` strings will become the
+commit message instead of whole pull request body.
 
 #### Bulldozer isn't merging my commit or updating my branch when it should, what could be happening?
 

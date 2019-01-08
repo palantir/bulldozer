@@ -176,7 +176,7 @@ func (cf *ConfigFetcher) unmarshalConfigV0(bytes []byte) (*Config, error) {
 				DeleteAfterMerge: configv0.DeleteAfterMerge,
 				Method:           configv0.Strategy,
 				Options: map[MergeMethod]MergeOption{
-					configv0.Strategy: {SummarizeCommits},
+					configv0.Strategy: {Body: SummarizeCommits},
 				},
 			},
 		}
@@ -195,7 +195,7 @@ func (cf *ConfigFetcher) unmarshalConfigV0(bytes []byte) (*Config, error) {
 				DeleteAfterMerge: configv0.DeleteAfterMerge,
 				Method:           configv0.Strategy,
 				Options: map[MergeMethod]MergeOption{
-					configv0.Strategy: {SummarizeCommits},
+					configv0.Strategy: {Body: SummarizeCommits},
 				},
 			},
 		}
@@ -214,7 +214,7 @@ func (cf *ConfigFetcher) unmarshalConfigV0(bytes []byte) (*Config, error) {
 				DeleteAfterMerge: configv0.DeleteAfterMerge,
 				Method:           configv0.Strategy,
 				Options: map[MergeMethod]MergeOption{
-					configv0.Strategy: {PullRequestBody},
+					configv0.Strategy: {PullRequestBody, "==COMMIT_MSG=="},
 				},
 			},
 		}
