@@ -36,12 +36,23 @@ func MergePR(ctx context.Context, pullCtx pull.Context, client *github.Client, m
 
 	mergeOpts := &github.PullRequestOptions{}
 
-	switch mergeConfig.Method {
-	case SquashAndMerge, MergeCommit, RebaseAndMerge:
-		mergeOpts.MergeMethod = string(mergeConfig.Method)
-	default:
-		mergeOpts.MergeMethod = string(MergeCommit)
+	base, _, err := pullCtx.Branches(ctx)
+	if err != nil {
+		logger.Error().Msg("Unable to find the base branch. Aborting.")
+		return err
 	}
+
+	var mergeMethod = mergeConfig.Method
+
+	if baseMergeOption, ok := mergeConfig.BranchMergeMethod[base]; ok {
+		mergeMethod = baseMergeOption
+	}
+
+	if !isValidMergeMethod(mergeMethod) {
+		mergeMethod = MergeCommit
+	}
+
+	mergeOpts.MergeMethod = string(mergeMethod)
 
 	commitMessage := ""
 	if mergeConfig.Method == SquashAndMerge {
@@ -147,6 +158,10 @@ func MergePR(ctx context.Context, pullCtx pull.Context, client *github.Client, m
 	}(zerolog.Ctx(ctx).WithContext(context.Background()))
 
 	return nil
+}
+
+func isValidMergeMethod(input MergeMethod) bool {
+	return input == SquashAndMerge || input == RebaseAndMerge || input == MergeCommit
 }
 
 func calculateCommitMessage(ctx context.Context, pullCtx pull.Context, client *github.Client, option MergeOption) (string, error) {
