@@ -42,10 +42,10 @@ func MergePR(ctx context.Context, pullCtx pull.Context, client *github.Client, m
 		return err
 	}
 
-	var mergeMethod = mergeConfig.Method
+	mergeMethod := mergeConfig.Method
 
-	if baseMergeOption, ok := mergeConfig.BranchMergeMethod[base]; ok {
-		mergeMethod = baseMergeOption
+	if branchMergeMethod, ok := mergeConfig.BranchMethod[base]; ok {
+		mergeMethod = branchMergeMethod
 	}
 
 	if !isValidMergeMethod(mergeMethod) {

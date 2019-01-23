@@ -47,7 +47,7 @@ type MergeConfig struct {
 	Method  MergeMethod                 `yaml:"method"`
 	Options map[MergeMethod]MergeOption `yaml:"options"`
 
-	BranchMergeMethod map[string]MergeMethod `yaml:"branch_merge_method"`
+	BranchMethod map[string]MergeMethod `yaml:"branch_method"`
 
 	// Additional status checks that bulldozer should require
 	// (even if the branch protection settings doesn't require it)
