@@ -103,6 +103,14 @@ merge:
   # "method" defines the merge method. The available options are "merge",
   # "rebase", and "squash".
   method: squash
+  
+  # Allows the merge method that is used when auto-merging a PR to be different based on the 
+  # target branch. The keys of the hash are the target branch name, and the values are the merge method that 
+  # will be used for PRs targeting that branch. The valid values are the same as for the "method" key.
+  # Note: If the target branch does not match any of the specified keys, the "method" key is used instead.
+  branch_method:
+    develop: squash
+    master: merge
 
   # "options" defines additional options for the individual merge methods.
   options:
