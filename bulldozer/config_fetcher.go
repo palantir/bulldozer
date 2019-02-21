@@ -50,16 +50,16 @@ func (fc FetchedConfig) String() string {
 }
 
 type ConfigFetcher struct {
-	configurationV1Path  string
-	configurationV0Paths []string
-	globalConfig         *Config
+	configurationV1Path     string
+	configurationV0Paths    []string
+	defaultRepositoryConfig *Config
 }
 
-func NewConfigFetcher(configurationV1Path string, configurationV0Paths []string, globalConfig *Config) ConfigFetcher {
+func NewConfigFetcher(configurationV1Path string, configurationV0Paths []string, defaultRepositoryConfig *Config) ConfigFetcher {
 	return ConfigFetcher{
-		configurationV1Path:  configurationV1Path,
-		configurationV0Paths: configurationV0Paths,
-		globalConfig:         globalConfig,
+		configurationV1Path:     configurationV1Path,
+		configurationV0Paths:    configurationV0Paths,
+		defaultRepositoryConfig: defaultRepositoryConfig,
 	}
 }
 
@@ -108,9 +108,9 @@ func (cf *ConfigFetcher) ConfigForPR(ctx context.Context, client *github.Client,
 		return fc, nil
 	}
 
-	if cf.globalConfig != nil {
-		logger.Debug().Msgf("global config is used as fallback")
-		fc.Config = cf.globalConfig
+	if cf.defaultRepositoryConfig != nil {
+		logger.Debug().Msgf("Default repository config is used as fallback")
+		fc.Config = cf.defaultRepositoryConfig
 		return fc, nil
 	}
 

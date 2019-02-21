@@ -63,13 +63,13 @@ func New(c *Config) (*Server, error) {
 		return nil, errors.Wrap(err, "failed to initialize Github client creator")
 	}
 
-	globalConfig := &c.Global
+	defaultRepositoryConfig := &c.Options.DefaultRepositoryConfig
 	if !c.Options.EnableGlobalConfig {
-		globalConfig = nil
+		defaultRepositoryConfig = nil
 	}
 	baseHandler := handler.Base{
 		ClientCreator: clientCreator,
-		ConfigFetcher: bulldozer.NewConfigFetcher(c.Options.ConfigurationPath, c.Options.ConfigurationV0Paths, globalConfig),
+		ConfigFetcher: bulldozer.NewConfigFetcher(c.Options.ConfigurationPath, c.Options.ConfigurationV0Paths, defaultRepositoryConfig),
 	}
 
 	webhookHandler := githubapp.NewDefaultEventDispatcher(c.Github,

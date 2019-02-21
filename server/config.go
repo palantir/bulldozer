@@ -35,7 +35,6 @@ type Config struct {
 	Options Options            `yaml:"options"`
 	Logging LoggingConfig      `yaml:"logging"`
 	Datadog datadog.Config     `yaml:"datadog"`
-	Global  bulldozer.Config   `yaml:"global"`
 }
 
 type LoggingConfig struct {
@@ -44,10 +43,11 @@ type LoggingConfig struct {
 }
 
 type Options struct {
-	AppName              string   `yaml:"app_name"`
-	ConfigurationPath    string   `yaml:"configuration_path"`
-	EnableGlobalConfig   bool     `yaml:"enable_global_config"`
-	ConfigurationV0Paths []string `yaml:"configuration_v0_paths"`
+	AppName                 string           `yaml:"app_name"`
+	ConfigurationPath       string           `yaml:"configuration_path"`
+	EnableGlobalConfig      bool             `yaml:"enable_global_config"`
+	DefaultRepositoryConfig bulldozer.Config `yaml:"default_repository_config"`
+	ConfigurationV0Paths    []string         `yaml:"configuration_v0_paths"`
 }
 
 func (o *Options) fillDefaults() {
