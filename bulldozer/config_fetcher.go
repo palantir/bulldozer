@@ -52,15 +52,13 @@ func (fc FetchedConfig) String() string {
 type ConfigFetcher struct {
 	configurationV1Path  string
 	configurationV0Paths []string
-	enableGlobalConfig   bool
-	globalConfig         Config
+	globalConfig         *Config
 }
 
-func NewConfigFetcher(configurationV1Path string, configurationV0Paths []string, enableGlobalConfig bool, globalConfig Config) ConfigFetcher {
+func NewConfigFetcher(configurationV1Path string, configurationV0Paths []string, globalConfig *Config) ConfigFetcher {
 	return ConfigFetcher{
 		configurationV1Path:  configurationV1Path,
 		configurationV0Paths: configurationV0Paths,
-		enableGlobalConfig:   enableGlobalConfig,
 		globalConfig:         globalConfig,
 	}
 }
@@ -110,9 +108,9 @@ func (cf *ConfigFetcher) ConfigForPR(ctx context.Context, client *github.Client,
 		return fc, nil
 	}
 
-	if cf.enableGlobalConfig {
+	if cf.globalConfig != nil {
 		logger.Debug().Msgf("global config is used as fallback")
-		fc.Config = &cf.globalConfig
+		fc.Config = cf.globalConfig
 		return fc, nil
 	}
 
