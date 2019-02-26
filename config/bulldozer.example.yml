@@ -40,11 +40,7 @@ options:
   # The name of the application. This will affect the User-Agent header
   # when making requests to Github.
   app_name: bulldozer
-  # Whether a global fallback configuration is used 
-  # when repository config file (defined above) does not exist.
-  enable_global_config: false
   # Default repository config, this will operate same as config file described in readme.
-  # Only availabe when `options.enable_global_config` (defined above) is enabled.
   default_repository_config:
     blacklist:
       labels: ["do not merge"]

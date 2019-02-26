@@ -183,13 +183,12 @@ Anything that's contained between two `==COMMIT_MSG==` strings will become the
 commit message instead of whole pull request body.
 
 #### What if I don't want to put config files into each repo?
-You can enable global fallback configuration in your bulldozer config file.
+You can add default repository configuration in your bulldozer config file.
 
-Global configuration will be used only when your repo config file does not exist.
+It will be used only when your repo config file does not exist.
 
 ```yaml
 options:
-  enable_global_config: true
   default_repository_config:
     blacklist:
       labels: ["do not merge"] # or any other available config.
