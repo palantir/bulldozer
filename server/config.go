@@ -20,6 +20,8 @@ import (
 	"github.com/palantir/go-githubapp/githubapp"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
+
+	"github.com/palantir/bulldozer/bulldozer"
 )
 
 const (
@@ -41,9 +43,10 @@ type LoggingConfig struct {
 }
 
 type Options struct {
-	AppName              string   `yaml:"app_name"`
-	ConfigurationPath    string   `yaml:"configuration_path"`
-	ConfigurationV0Paths []string `yaml:"configuration_v0_paths"`
+	AppName                 string            `yaml:"app_name"`
+	ConfigurationPath       string            `yaml:"configuration_path"`
+	DefaultRepositoryConfig *bulldozer.Config `yaml:"default_repository_config"`
+	ConfigurationV0Paths    []string          `yaml:"configuration_v0_paths"`
 }
 
 func (o *Options) fillDefaults() {

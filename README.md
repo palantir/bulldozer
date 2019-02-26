@@ -182,6 +182,18 @@ merge:
 Anything that's contained between two `==COMMIT_MSG==` strings will become the
 commit message instead of whole pull request body.
 
+#### What if I don't want to put config files into each repo?
+You can add default repository configuration in your bulldozer config file.
+
+It will be used only when your repo config file does not exist.
+
+```yaml
+options:
+  default_repository_config:
+    blacklist:
+      labels: ["do not merge"] # or any other available config.
+```
+
 #### Bulldozer isn't merging my commit or updating my branch when it should, what could be happening?
 
 Bulldozer will attempt to merge a branch whenever it passes the whitelist/blacklist

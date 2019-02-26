@@ -40,6 +40,10 @@ options:
   # The name of the application. This will affect the User-Agent header
   # when making requests to Github.
   app_name: bulldozer
+  # Default repository config, this will operate same as config file described in readme.
+  default_repository_config:
+    blacklist:
+      labels: ["do not merge"]
 
 # Optional configuration to emit metrics to datadog
 datadog:

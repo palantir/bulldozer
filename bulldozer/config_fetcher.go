@@ -50,14 +50,16 @@ func (fc FetchedConfig) String() string {
 }
 
 type ConfigFetcher struct {
-	configurationV1Path  string
-	configurationV0Paths []string
+	configurationV1Path     string
+	configurationV0Paths    []string
+	defaultRepositoryConfig *Config
 }
 
-func NewConfigFetcher(configurationV1Path string, configurationV0Paths []string) ConfigFetcher {
+func NewConfigFetcher(configurationV1Path string, configurationV0Paths []string, defaultRepositoryConfig *Config) ConfigFetcher {
 	return ConfigFetcher{
-		configurationV1Path:  configurationV1Path,
-		configurationV0Paths: configurationV0Paths,
+		configurationV1Path:     configurationV1Path,
+		configurationV0Paths:    configurationV0Paths,
+		defaultRepositoryConfig: defaultRepositoryConfig,
 	}
 }
 
@@ -103,6 +105,12 @@ func (cf *ConfigFetcher) ConfigForPR(ctx context.Context, client *github.Client,
 		logger.Debug().Msgf("found v0 configuration at %s with merge method %s", configV0Path, config.Merge.Method)
 
 		fc.Config = config
+		return fc, nil
+	}
+
+	if cf.defaultRepositoryConfig != nil {
+		logger.Debug().Msgf("Default repository config is used as fallback")
+		fc.Config = cf.defaultRepositoryConfig
 		return fc, nil
 	}
 
