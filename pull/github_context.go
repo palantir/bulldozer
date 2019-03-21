@@ -115,6 +115,35 @@ func (ghc *GithubContext) Comments(ctx context.Context) ([]string, error) {
 	return ghc.comments, nil
 }
 
+func (ghc *GithubContext) Commits(ctx context.Context) ([]*Commit, error) {
+	opts := &github.ListOptions{
+		PerPage: 100,
+	}
+
+	var allCommits []*github.RepositoryCommit
+	for {
+		commits, resp, err := ghc.client.PullRequests.ListCommits(ctx, ghc.owner, ghc.repo, ghc.number, opts)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to list pull request commits")
+		}
+		allCommits = append(allCommits, commits...)
+		if resp.NextPage == 0 {
+			break
+		}
+
+		opts.Page = resp.NextPage
+	}
+
+	commits := make([]*Commit, len(allCommits))
+	for i, c := range allCommits {
+		commits[i] = &Commit{
+			SHA:     c.GetCommit().GetSHA(),
+			Message: c.GetCommit().GetMessage(),
+		}
+	}
+	return commits, nil
+}
+
 func (ghc *GithubContext) RequiredStatuses(ctx context.Context) ([]string, error) {
 	if ghc.requiredStatuses == nil {
 		requiredStatuses, _, err := ghc.client.Repositories.GetRequiredStatusChecks(ctx, ghc.owner, ghc.repo, ghc.pr.GetBase().GetRef())

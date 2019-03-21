@@ -183,10 +183,12 @@ func (cf *ConfigFetcher) unmarshalConfigV0(bytes []byte) (*Config, error) {
 				},
 				DeleteAfterMerge: configv0.DeleteAfterMerge,
 				Method:           configv0.Strategy,
-				Options: map[MergeMethod]MergeOption{
-					configv0.Strategy: {Body: SummarizeCommits},
-				},
 			},
+		}
+		if config.Merge.Method == SquashAndMerge {
+			config.Merge.Options.Squash = &SquashOptions{
+				Body: SummarizeCommits,
+			}
 		}
 	case ModeBlacklistV0:
 		config = Config{
@@ -202,10 +204,12 @@ func (cf *ConfigFetcher) unmarshalConfigV0(bytes []byte) (*Config, error) {
 				},
 				DeleteAfterMerge: configv0.DeleteAfterMerge,
 				Method:           configv0.Strategy,
-				Options: map[MergeMethod]MergeOption{
-					configv0.Strategy: {Body: SummarizeCommits},
-				},
 			},
+		}
+		if config.Merge.Method == SquashAndMerge {
+			config.Merge.Options.Squash = &SquashOptions{
+				Body: SummarizeCommits,
+			}
 		}
 	case ModeBodyV0:
 		config = Config{
@@ -221,10 +225,13 @@ func (cf *ConfigFetcher) unmarshalConfigV0(bytes []byte) (*Config, error) {
 				},
 				DeleteAfterMerge: configv0.DeleteAfterMerge,
 				Method:           configv0.Strategy,
-				Options: map[MergeMethod]MergeOption{
-					configv0.Strategy: {PullRequestBody, "==COMMIT_MSG=="},
-				},
 			},
+		}
+		if config.Merge.Method == SquashAndMerge {
+			config.Merge.Options.Squash = &SquashOptions{
+				Body:             PullRequestBody,
+				MessageDelimiter: "==COMMIT_MSG==",
+			}
 		}
 	default:
 	}
