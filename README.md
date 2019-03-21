@@ -93,6 +93,9 @@ merge:
     # to the whitelist.
     pr_body_substrings: ["==MERGE_WHEN_READY=="]
 
+    # Pull requests targeting any of these branches are added to the whitelist.
+    branches: ["develop"]
+
   # "blacklist" defines the set of pull request ignored by bulldozer. If the
   # section is missing, bulldozer considers all pull requests. It takes the
   # same keys as the "whitelist" section.
