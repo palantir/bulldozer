@@ -66,7 +66,7 @@ func MergePR(ctx context.Context, pullCtx pull.Context, client *github.Client, m
 			opt.Title = PullRequestTitle
 		}
 		if opt.Body == "" {
-			opt.Body = SummarizeCommits
+			opt.Body = EmptyBody
 		}
 
 		message, err := calculateCommitMessage(ctx, pullCtx, *opt)
