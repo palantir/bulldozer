@@ -1,6 +1,9 @@
 package zerolog
 
-import "time"
+import (
+	"strconv"
+	"time"
+)
 import "sync/atomic"
 
 var (
@@ -9,6 +12,11 @@ var (
 
 	// LevelFieldName is the field name used for the level field.
 	LevelFieldName = "level"
+
+	// LevelFieldMarshalFunc allows customization of global level field marshaling
+	LevelFieldMarshalFunc = func(l Level) string {
+		return l.String()
+	}
 
 	// MessageFieldName is the field name used for the message field.
 	MessageFieldName = "message"
@@ -21,6 +29,22 @@ var (
 
 	// CallerSkipFrameCount is the number of stack frames to skip to find the caller.
 	CallerSkipFrameCount = 2
+
+	// CallerMarshalFunc allows customization of global caller marshaling
+	CallerMarshalFunc = func(file string, line int) string {
+		return file + ":" + strconv.Itoa(line)
+	}
+
+	// ErrorStackFieldName is the field name used for error stacks.
+	ErrorStackFieldName = "stack"
+
+	// ErrorStackMarshaler extract the stack from err if any.
+	ErrorStackMarshaler func(err error) interface{}
+
+	// ErrorMarshalFunc allows customization of global error marshaling
+	ErrorMarshalFunc = func(err error) interface{} {
+		return err
+	}
 
 	// TimeFieldFormat defines the time format of the Time field type.
 	// If set to an empty string, the time is formatted as an UNIX timestamp
@@ -37,6 +61,11 @@ var (
 	// DurationFieldInteger renders Dur fields as integer instead of float if
 	// set to true.
 	DurationFieldInteger = false
+
+	// ErrorHandler is called whenever zerolog fails to write an event on its
+	// output. If not set, an error is printed on the stderr. This handler must
+	// be thread safe and non-blocking.
+	ErrorHandler func(err error)
 )
 
 var (
