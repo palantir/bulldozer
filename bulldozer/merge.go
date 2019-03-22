@@ -226,7 +226,7 @@ func calculateCommitTitle(ctx context.Context, pullCtx pull.Context, option Squa
 			return "", err
 		}
 		// commits are ordered from oldest to newest, must have at least one to make a PR
-		title = strings.SplitN(commits[0].Message, "\n", 1)[0]
+		title = strings.SplitN(commits[0].Message, "\n", 2)[0]
 	case GithubDefaultTitle:
 	}
 
