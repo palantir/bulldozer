@@ -12,18 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package baseapp
-
-type TLSConfig struct {
-	CertFile string `yaml:"cert_file" json:"certFile"`
-	KeyFile  string `yaml:"key_file" json:"keyFile"`
-}
-
-// HTTPConfig contains options for HTTP servers. It is usually embedded in a
-// larger configuration struct.
-type HTTPConfig struct {
-	Address   string     `yaml:"address" json:"address"`
-	Port      int        `yaml:"port" json:"port"`
-	PublicURL string     `yaml:"public_url" json:"publicUrl"`
-	TLSConfig *TLSConfig `yaml:"tls_config" json:"tlsConfig"`
-}
+// Package githubapp implements an http.Handler for GitHub events and provides
+// utilities for building GitHub applications. Most users will create
+// implementations of githubapp.EventHandler to handle different webhook event
+// types and register them with the event dispatcher.
+//
+// Many functions are instrumented with optional logging and metrics
+// collection. The package also defines functions to create authenticated
+// GitHub clients and manage application installations.
+package githubapp

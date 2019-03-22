@@ -35,6 +35,7 @@ Bulldozer might be useful if you:
   + [bulldozer.yml Specification](#bulldozeryml-specification)
 * [FAQ](#faq)
 * [Deployment](#deployment)
+* [Development](#development)
 * [Contributing](#contributing)
 * [License](#license)
 
@@ -93,6 +94,9 @@ merge:
     # to the whitelist.
     pr_body_substrings: ["==MERGE_WHEN_READY=="]
 
+    # Pull requests targeting any of these branches are added to the whitelist.
+    branches: ["develop"]
+
   # "blacklist" defines the set of pull request ignored by bulldozer. If the
   # section is missing, bulldozer considers all pull requests. It takes the
   # same keys as the "whitelist" section.
@@ -103,9 +107,9 @@ merge:
   # "method" defines the merge method. The available options are "merge",
   # "rebase", and "squash".
   method: squash
-  
-  # Allows the merge method that is used when auto-merging a PR to be different based on the 
-  # target branch. The keys of the hash are the target branch name, and the values are the merge method that 
+
+  # Allows the merge method that is used when auto-merging a PR to be different based on the
+  # target branch. The keys of the hash are the target branch name, and the values are the merge method that
   # will be used for PRs targeting that branch. The valid values are the same as for the "method" key.
   # Note: If the target branch does not match any of the specified keys, the "method" key is used instead.
   branch_method:
@@ -275,6 +279,37 @@ converting the legacy configuration into an equivalent `v1` configuration intern
 The upgrade process is therefore to deploy the latest version of bulldozer with both `configuration_path` and
 `configuration_v0_path` configured, and to enable the bulldozer GitHub App on all organizations where it was
 previously installed.
+
+## Development
+
+To develop `bulldozer`, you will need a [Go installation](https://golang.org/doc/install).
+
+**Run style checks and tests**
+
+    ./godelw verify
+
+**Running the server locally**
+
+    # copy and edit the server config
+    cp config/bulldozer.example.yml config/bulldozer.yml
+
+    ./godelw run bulldozer server
+
+- `config/bulldozer.yml` is used as the default configuration file
+- The server is available at `http://localhost:8080/`
+
+**Running the server via Docker**
+
+    # copy and edit the server config
+    cp config/bulldozer.example.yml config/bulldozer.yml
+
+    # build the docker image
+    ./godelw docker build --verbose
+
+    docker run --rm -v "$(pwd)/config:/secrets/" -p 8080:8080 palantirtechnologies/bulldozer:latest
+
+- This mounts the `config` directory (which should contain the `bulldozer.yml` configuration file) at the expected location
+- The server is available at `http://localhost:8080/`
 
 ## Contributing
 

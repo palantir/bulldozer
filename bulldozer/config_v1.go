@@ -32,17 +32,6 @@ const (
 	RebaseAndMerge MergeMethod = "rebase"
 )
 
-type Signals struct {
-	Labels            []string `yaml:"labels"`
-	CommentSubstrings []string `yaml:"comment_substrings"`
-	Comments          []string `yaml:"comments"`
-	PRBodySubstrings  []string `yaml:"pr_body_substrings"`
-}
-
-func (s *Signals) Enabled() bool {
-	return len(s.Labels)+len(s.CommentSubstrings)+len(s.Comments)+len(s.PRBodySubstrings) > 0
-}
-
 type MergeConfig struct {
 	Whitelist Signals `yaml:"whitelist"`
 	Blacklist Signals `yaml:"blacklist"`
