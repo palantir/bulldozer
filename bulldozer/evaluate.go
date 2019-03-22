@@ -16,7 +16,6 @@ package bulldozer
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -28,130 +27,23 @@ import (
 // IsPRBlacklisted returns true if the PR is identified as blacklisted,
 // false otherwise. Additionally, a description of the reason will be returned.
 func IsPRBlacklisted(ctx context.Context, pullCtx pull.Context, config Signals) (bool, string, error) {
-	labels, err := pullCtx.Labels(ctx)
+	matches, reason, err := config.Matches(ctx, pullCtx, "blacklist")
 	if err != nil {
-		return true, "unable to list PR labels", err
+		// blacklist must always fail closed (matches on error)
+		matches = true
 	}
-
-	if inSlice, idx := anyInSliceCaseInsensitive(labels, config.Labels); inSlice {
-		return true, fmt.Sprintf("PR label matches one of specified blacklist labels: %q", config.Labels[idx]), nil
-	}
-
-	body, err := pullCtx.Body(ctx)
-	if err != nil {
-		return true, "unable to list PR body", err
-	}
-
-	comments, err := pullCtx.Comments(ctx)
-	if err != nil {
-		return true, "unable to list PR comments", err
-	}
-
-	if inSlice, idx := anyInSlice(comments, config.Comments); inSlice {
-		return true, fmt.Sprintf("PR comment matches one of specified blacklist comments: %q", config.Comments[idx]), nil
-	}
-
-	for _, blacklistedComment := range config.Comments {
-		if blacklistedComment == body {
-			return true, fmt.Sprintf("PR body matches one of specified blacklist comments: %q", blacklistedComment), nil
-		}
-	}
-
-	for _, blacklistedSubstring := range config.CommentSubstrings {
-		for _, comment := range comments {
-			if strings.Contains(comment, blacklistedSubstring) {
-				return true, fmt.Sprintf("PR comment matches one of specified blacklist comment substrings: %q", blacklistedSubstring), nil
-			}
-		}
-
-		if strings.Contains(body, blacklistedSubstring) {
-			return true, fmt.Sprintf("PR body matches one of specified blacklist comment substrings: %q", blacklistedSubstring), nil
-		}
-	}
-
-	for _, blacklistedSubstring := range config.PRBodySubstrings {
-		if strings.Contains(body, blacklistedSubstring) {
-			return true, fmt.Sprintf("PR body matches one of specified blacklist substrings: %q", blacklistedSubstring), nil
-		}
-	}
-
-	return false, "no matching blacklist found", nil
+	return matches, reason, err
 }
 
 // IsPRWhitelisted returns true if the PR is identified as whitelisted,
 // false otherwise. Additionally, a description of the reason will be returned.
 func IsPRWhitelisted(ctx context.Context, pullCtx pull.Context, config Signals) (bool, string, error) {
-	labels, err := pullCtx.Labels(ctx)
+	matches, reason, err := config.Matches(ctx, pullCtx, "whitelist")
 	if err != nil {
-		return false, "unable to list PR labels", err
+		// whitelist must always fail closed (no match on error)
+		return false, reason, err
 	}
-
-	if inSlice, idx := anyInSliceCaseInsensitive(labels, config.Labels); inSlice {
-		return true, fmt.Sprintf("PR label matches one of specified whitelist labels: %q", config.Labels[idx]), nil
-	}
-
-	body, err := pullCtx.Body(ctx)
-	if err != nil {
-		return false, "unable to list PR body", err
-	}
-
-	comments, err := pullCtx.Comments(ctx)
-	if err != nil {
-		return false, "unable to list PR comments", err
-	}
-
-	if inSlice, idx := anyInSlice(comments, config.Comments); inSlice {
-		return true, fmt.Sprintf("PR comment matches one of specified whitelist comments: %q", config.Comments[idx]), nil
-	}
-
-	for _, whitelistedComment := range config.Comments {
-		if whitelistedComment == body {
-			return true, fmt.Sprintf("PR body matches one of specified whitelist comments: %q", whitelistedComment), nil
-		}
-	}
-
-	for _, whitelistedSubstring := range config.CommentSubstrings {
-		for _, comment := range comments {
-			if strings.Contains(comment, whitelistedSubstring) {
-				return true, fmt.Sprintf("PR comment matches one of specified whitelist comment substrings: %q", whitelistedSubstring), nil
-			}
-		}
-
-		if strings.Contains(body, whitelistedSubstring) {
-			return true, fmt.Sprintf("PR body matches one of specified whitelist comment substrings: %q", whitelistedSubstring), nil
-		}
-	}
-
-	for _, whitelistedSubstring := range config.PRBodySubstrings {
-		if strings.Contains(body, whitelistedSubstring) {
-			return true, fmt.Sprintf("PR body matches one of specified whitelist substrings: %q", whitelistedSubstring), nil
-		}
-	}
-
-	return false, "no matching whitelist found", nil
-}
-
-func anyInSlice(testValues []string, elements []string) (bool, int) {
-	for _, testValue := range testValues {
-		for index, element := range elements {
-			if testValue == element {
-				return true, index
-			}
-		}
-	}
-	return false, -1
-}
-
-func anyInSliceCaseInsensitive(testValues []string, elements []string) (bool, int) {
-	for _, testValue := range testValues {
-		for index, element := range elements {
-			if strings.EqualFold(testValue, element) {
-				return true, index
-			}
-		}
-	}
-
-	return false, -1
+	return matches, reason, err
 }
 
 // setDifference returns all elements in set1 that
