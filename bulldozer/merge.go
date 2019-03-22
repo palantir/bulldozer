@@ -225,10 +225,8 @@ func calculateCommitTitle(ctx context.Context, pullCtx pull.Context, option Squa
 		if err != nil {
 			return "", err
 		}
-		// TODO(bkeyes): check this assumption
-		// commits are ordered from newest to oldest
-		firstCommit := commits[len(commits)-1]
-		title = strings.SplitN(firstCommit.Message, "\n", 1)[0]
+		// commits are ordered from oldest to newest, must have at least one to make a PR
+		title = strings.SplitN(commits[0].Message, "\n", 1)[0]
 	case GithubDefaultTitle:
 	}
 
