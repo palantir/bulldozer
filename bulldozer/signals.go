@@ -41,10 +41,10 @@ func (s *Signals) Enabled() bool {
 }
 
 // Matches returns true if the pull request meets one or more signals. It also
-// returns a description of the signal that was met. The mode argument appears
-// in this description and indicates the mode (whitelist, blacklist) this set
-// of signals is associated with.
-func (s *Signals) Matches(ctx context.Context, pullCtx pull.Context, mode string) (bool, string, error) {
+// returns a description of the signal that was met. The tag argument appears
+// in this description and indicates the behavior (whitelist, blacklist) this
+// set of signals is associated with.
+func (s *Signals) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
 	labels, err := pullCtx.Labels(ctx)
 	if err != nil {
 		return false, "unable to list pull request labels", err
@@ -53,7 +53,7 @@ func (s *Signals) Matches(ctx context.Context, pullCtx pull.Context, mode string
 	for _, signalLabel := range s.Labels {
 		for _, label := range labels {
 			if strings.EqualFold(signalLabel, label) {
-				return true, fmt.Sprintf("pull request has a %s label: %q", mode, signalLabel), nil
+				return true, fmt.Sprintf("pull request has a %s label: %q", tag, signalLabel), nil
 			}
 		}
 	}
@@ -69,29 +69,29 @@ func (s *Signals) Matches(ctx context.Context, pullCtx pull.Context, mode string
 
 	for _, signalComment := range s.Comments {
 		if body == signalComment {
-			return true, fmt.Sprintf("pull request body is a %s comment: %q", mode, signalComment), nil
+			return true, fmt.Sprintf("pull request body is a %s comment: %q", tag, signalComment), nil
 		}
 		for _, comment := range comments {
 			if comment == signalComment {
-				return true, fmt.Sprintf("pull request has a %s comment: %q", mode, signalComment), nil
+				return true, fmt.Sprintf("pull request has a %s comment: %q", tag, signalComment), nil
 			}
 		}
 	}
 
 	for _, signalSubstring := range s.CommentSubstrings {
 		if strings.Contains(body, signalSubstring) {
-			return true, fmt.Sprintf("pull request body matches a %s substring: %q", mode, signalSubstring), nil
+			return true, fmt.Sprintf("pull request body matches a %s substring: %q", tag, signalSubstring), nil
 		}
 		for _, comment := range comments {
 			if strings.Contains(comment, signalSubstring) {
-				return true, fmt.Sprintf("pull request comment matches a %s substring: %q", mode, signalSubstring), nil
+				return true, fmt.Sprintf("pull request comment matches a %s substring: %q", tag, signalSubstring), nil
 			}
 		}
 	}
 
 	for _, signalSubstring := range s.PRBodySubstrings {
 		if strings.Contains(body, signalSubstring) {
-			return true, fmt.Sprintf("pull request body matches a %s substring: %q", mode, signalSubstring), nil
+			return true, fmt.Sprintf("pull request body matches a %s substring: %q", tag, signalSubstring), nil
 		}
 	}
 
@@ -102,9 +102,9 @@ func (s *Signals) Matches(ctx context.Context, pullCtx pull.Context, mode string
 
 	for _, signalBranch := range s.Branches {
 		if targetBranch == signalBranch {
-			return true, fmt.Sprintf("pull request target is a %s branch: %q", mode, signalBranch), nil
+			return true, fmt.Sprintf("pull request target is a %s branch: %q", tag, signalBranch), nil
 		}
 	}
 
-	return false, fmt.Sprintf("pull request does not match the %s", mode), nil
+	return false, fmt.Sprintf("pull request does not match the %s", tag), nil
 }
