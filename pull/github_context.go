@@ -35,6 +35,7 @@ type GithubContext struct {
 
 	// cached fields
 	comments         []string
+	commits          []*Commit
 	requiredStatuses []string
 	successStatuses  []string
 }
@@ -116,32 +117,34 @@ func (ghc *GithubContext) Comments(ctx context.Context) ([]string, error) {
 }
 
 func (ghc *GithubContext) Commits(ctx context.Context) ([]*Commit, error) {
-	opts := &github.ListOptions{
-		PerPage: 100,
-	}
-
-	var allCommits []*github.RepositoryCommit
-	for {
-		commits, resp, err := ghc.client.PullRequests.ListCommits(ctx, ghc.owner, ghc.repo, ghc.number, opts)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to list pull request commits")
-		}
-		allCommits = append(allCommits, commits...)
-		if resp.NextPage == 0 {
-			break
+	if ghc.commits == nil {
+		opts := &github.ListOptions{
+			PerPage: 100,
 		}
 
-		opts.Page = resp.NextPage
-	}
+		var allCommits []*github.RepositoryCommit
+		for {
+			commits, resp, err := ghc.client.PullRequests.ListCommits(ctx, ghc.owner, ghc.repo, ghc.number, opts)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to list pull request commits")
+			}
+			allCommits = append(allCommits, commits...)
+			if resp.NextPage == 0 {
+				break
+			}
 
-	commits := make([]*Commit, len(allCommits))
-	for i, c := range allCommits {
-		commits[i] = &Commit{
-			SHA:     c.GetCommit().GetSHA(),
-			Message: c.GetCommit().GetMessage(),
+			opts.Page = resp.NextPage
+		}
+
+		ghc.commits = make([]*Commit, len(allCommits))
+		for i, c := range allCommits {
+			ghc.commits[i] = &Commit{
+				SHA:     c.GetCommit().GetSHA(),
+				Message: c.GetCommit().GetMessage(),
+			}
 		}
 	}
-	return commits, nil
+	return ghc.commits, nil
 }
 
 func (ghc *GithubContext) RequiredStatuses(ctx context.Context) ([]string, error) {
