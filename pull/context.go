@@ -52,10 +52,13 @@ type Context interface {
 	// successful status checks for the pull request.
 	CurrentSuccessStatuses(ctx context.Context) ([]string, error)
 
-	// Comments lists all comments on a Pull Request
+	// Comments lists all comments on the pull request.
 	Comments(ctx context.Context) ([]string, error)
 
-	// Labels lists all labels on a Pull Request
+	// Commits lists all commits on the pull request.
+	Commits(ctx context.Context) ([]*Commit, error)
+
+	// Labels lists all labels on the pull request.
 	Labels(ctx context.Context) ([]string, error)
 
 	// Branches returns the base (also known as target) and head branch names
@@ -63,4 +66,9 @@ type Context interface {
 	// branches in forks are prefixed with the owner of the fork and a colon.
 	// The base branch will always be unprefixed.
 	Branches(ctx context.Context) (base string, head string, err error)
+}
+
+type Commit struct {
+	SHA     string
+	Message string
 }

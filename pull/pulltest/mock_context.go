@@ -40,6 +40,9 @@ type MockPullContext struct {
 	CommentValue    []string
 	CommentErrValue error
 
+	CommitsValue    []*pull.Commit
+	CommitsErrValue error
+
 	RequiredStatusesValue    []string
 	RequiredStatusesErrValue error
 
@@ -80,6 +83,10 @@ func (c *MockPullContext) Body(ctx context.Context) (string, error) {
 
 func (c *MockPullContext) Comments(ctx context.Context) ([]string, error) {
 	return c.CommentValue, c.CommentErrValue
+}
+
+func (c *MockPullContext) Commits(ctx context.Context) ([]*pull.Commit, error) {
+	return c.CommitsValue, c.CommitsErrValue
 }
 
 func (c *MockPullContext) RequiredStatuses(ctx context.Context) ([]string, error) {

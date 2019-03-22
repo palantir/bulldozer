@@ -56,17 +56,30 @@ func MergePR(ctx context.Context, pullCtx pull.Context, client *github.Client, m
 
 	commitMessage := ""
 	if mergeConfig.Method == SquashAndMerge {
-		opt, ok := mergeConfig.Options[SquashAndMerge]
-		if !ok {
-			logger.Error().Msgf("Unable to find matching %s in merge option configuration; using default %s", SquashAndMerge, EmptyBody)
-			opt = MergeOption{Body: EmptyBody}
+		opt := mergeConfig.Options.Squash
+		if opt == nil {
+			logger.Info().Msgf("No squash options defined; using defaults")
+			opt = &SquashOptions{}
 		}
 
-		squashAndMergeMessage, err := calculateCommitMessage(ctx, pullCtx, client, opt)
-		if err != nil {
-			return err
+		if opt.Title == "" {
+			opt.Title = PullRequestTitle
 		}
-		commitMessage = squashAndMergeMessage
+		if opt.Body == "" {
+			opt.Body = EmptyBody
+		}
+
+		message, err := calculateCommitMessage(ctx, pullCtx, *opt)
+		if err != nil {
+			return errors.Wrap(err, "failed to calculate commit message")
+		}
+		commitMessage = message
+
+		title, err := calculateCommitTitle(ctx, pullCtx, *opt)
+		if err != nil {
+			return errors.Wrap(err, "failed to calculate commit title")
+		}
+		mergeOpts.CommitTitle = title
 	}
 
 	go func(ctx context.Context) {
@@ -164,13 +177,13 @@ func isValidMergeMethod(input MergeMethod) bool {
 	return input == SquashAndMerge || input == RebaseAndMerge || input == MergeCommit
 }
 
-func calculateCommitMessage(ctx context.Context, pullCtx pull.Context, client *github.Client, option MergeOption) (string, error) {
+func calculateCommitMessage(ctx context.Context, pullCtx pull.Context, option SquashOptions) (string, error) {
 	commitMessage := ""
 	switch option.Body {
 	case PullRequestBody:
 		body, err := pullCtx.Body(ctx)
 		if err != nil {
-			return "", errors.Wrap(err, "failed to determine pull request body")
+			return "", err
 		}
 
 		commitMessage = body
@@ -187,51 +200,51 @@ func calculateCommitMessage(ctx context.Context, pullCtx pull.Context, client *g
 			}
 		}
 	case SummarizeCommits:
-		summarizedMessages, err := summarizeCommitMessages(ctx, pullCtx, client)
+		summarizedMessages, err := summarizeCommitMessages(ctx, pullCtx)
 		if err != nil {
-			return "", errors.Wrap(err, "failed to collect pull request commit messages")
+			return "", errors.Wrap(err, "failed to summarize pull request commit messages")
 		}
-
 		commitMessage = summarizedMessages
 	case EmptyBody:
-	default:
 	}
 
 	return commitMessage, nil
 }
 
-func summarizeCommitMessages(ctx context.Context, pullCtx pull.Context, client *github.Client) (string, error) {
-	var builder strings.Builder
-	repositoryCommits, err := allCommits(ctx, pullCtx, client)
-	if err != nil {
-		return "", errors.Wrapf(err, "cannot list commits for %q", pullCtx.Locator())
+func calculateCommitTitle(ctx context.Context, pullCtx pull.Context, option SquashOptions) (string, error) {
+	var title string
+	switch option.Title {
+	case PullRequestTitle:
+		prTitle, err := pullCtx.Title(ctx)
+		if err != nil {
+			return "", err
+		}
+		title = prTitle
+	case FirstCommitTitle:
+		commits, err := pullCtx.Commits(ctx)
+		if err != nil {
+			return "", err
+		}
+		// commits are ordered from oldest to newest, must have at least one to make a PR
+		title = strings.SplitN(commits[0].Message, "\n", 1)[0]
+	case GithubDefaultTitle:
 	}
 
-	for _, repositoryCommit := range repositoryCommits {
-		fmt.Fprintf(&builder, "* %s\n", repositoryCommit.Commit.GetMessage())
+	if title != "" {
+		title = fmt.Sprintf("%s (#%d)", title, pullCtx.Number())
 	}
-
-	return builder.String(), nil
+	return title, nil
 }
 
-func allCommits(ctx context.Context, pullCtx pull.Context, client *github.Client) ([]*github.RepositoryCommit, error) {
-	var repositoryCommits []*github.RepositoryCommit
-	opts := &github.ListOptions{
-		PerPage: 100,
+func summarizeCommitMessages(ctx context.Context, pullCtx pull.Context) (string, error) {
+	commits, err := pullCtx.Commits(ctx)
+	if err != nil {
+		return "", err
 	}
 
-	for {
-		commits, resp, err := client.PullRequests.ListCommits(ctx, pullCtx.Owner(), pullCtx.Repo(), pullCtx.Number(), opts)
-		if err != nil {
-			return nil, err
-		}
-		repositoryCommits = append(repositoryCommits, commits...)
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opts.Page = resp.NextPage
+	var builder strings.Builder
+	for _, c := range commits {
+		fmt.Fprintf(&builder, "* %s\n", c.Message)
 	}
-
-	return repositoryCommits, nil
+	return builder.String(), nil
 }

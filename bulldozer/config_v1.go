@@ -15,12 +15,17 @@
 package bulldozer
 
 type MessageStrategy string
+type TitleStrategy string
 type MergeMethod string
 
 const (
 	PullRequestBody  MessageStrategy = "pull_request_body"
 	SummarizeCommits MessageStrategy = "summarize_commits"
 	EmptyBody        MessageStrategy = "empty_body"
+
+	PullRequestTitle   TitleStrategy = "pull_request_title"
+	FirstCommitTitle   TitleStrategy = "first_commit_title"
+	GithubDefaultTitle TitleStrategy = "github_default"
 
 	MergeCommit    MergeMethod = "merge"
 	SquashAndMerge MergeMethod = "squash"
@@ -33,8 +38,8 @@ type MergeConfig struct {
 
 	DeleteAfterMerge bool `yaml:"delete_after_merge"`
 
-	Method  MergeMethod                 `yaml:"method"`
-	Options map[MergeMethod]MergeOption `yaml:"options"`
+	Method  MergeMethod  `yaml:"method"`
+	Options MergeOptions `yaml:"options"`
 
 	BranchMethod map[string]MergeMethod `yaml:"branch_method"`
 
@@ -43,7 +48,12 @@ type MergeConfig struct {
 	RequiredStatuses []string `yaml:"required_statuses"`
 }
 
-type MergeOption struct {
+type MergeOptions struct {
+	Squash *SquashOptions `yaml:"squash"`
+}
+
+type SquashOptions struct {
+	Title            TitleStrategy   `yaml:"title"`
 	Body             MessageStrategy `yaml:"body"`
 	MessageDelimiter string          `yaml:"message_delimiter"`
 }

@@ -120,12 +120,20 @@ merge:
   options:
     # "squash" options are only used when the merge method is "squash"
     squash:
+      # "title" defines how the title of the commit message is created when
+      # generating a squash commit. The options are "pull_request_title",
+      # "first_commit_title", and "github_default_title". The default is
+      # "pull_request_title".
+      title: "pull_request_title"
+
       # "body" defines how the body of the commit message is created when
       # generating a squash commit. The options are "pull_request_body",
-      # "summarize_commits", and "empty_body".
-      body: "summarize_commits"
-      # if "body" is "pull_request_body" then the commit message will be part
-      # of the pull request body delinated by "message_delimiter" string
+      # "summarize_commits", and "empty_body". The default is "empty_body".
+      body: "empty_body"
+
+      # If "body" is "pull_request_body", then the commit message will be the
+      # part of the pull request body surrounded by "message_delimiter"
+      # strings. This is disabled (empty string) by default.
       message_delimiter: ==COMMIT_MSG==
 
   # "required_status" is a list of additional status contexts that must pass
