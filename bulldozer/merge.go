@@ -58,7 +58,7 @@ func MergePR(ctx context.Context, pullCtx pull.Context, client *github.Client, m
 	if mergeConfig.Method == SquashAndMerge {
 		opt := mergeConfig.Options.Squash
 		if opt == nil {
-			logger.Info().Msgf("No squash options defined using defaults")
+			logger.Info().Msgf("No squash options defined; using defaults")
 			opt = &SquashOptions{}
 		}
 
