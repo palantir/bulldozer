@@ -51,6 +51,16 @@ func TestCalculateCommitTitle(t *testing.T) {
 			Strategy:    FirstCommitTitle,
 			Output:      "The first commit message! (#12)",
 		},
+		"firstCommitTitleMultiline": {
+			PullContext: &pulltest.MockPullContext{
+				NumberValue: 12,
+				CommitsValue: []*pull.Commit{
+					{SHA: "409c973bbaa5e5e6d8cb0b057f2e74398577aaa0", Message: "This is the title\n\nThe message has\nmore lines\n"},
+				},
+			},
+			Strategy: FirstCommitTitle,
+			Output:   "This is the title (#12)",
+		},
 		"githubDefaultTitle": {
 			PullContext: defaultPullContext,
 			Strategy:    GithubDefaultTitle,
