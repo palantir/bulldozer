@@ -36,12 +36,7 @@ func MergePR(ctx context.Context, pullCtx pull.Context, client *github.Client, m
 
 	mergeOpts := &github.PullRequestOptions{}
 
-	base, _, err := pullCtx.Branches(ctx)
-	if err != nil {
-		logger.Error().Msg("Unable to find the base branch. Aborting.")
-		return err
-	}
-
+	base, head := pullCtx.Branches()
 	mergeMethod := mergeConfig.Method
 
 	if branchMergeMethod, ok := mergeConfig.BranchMethod[base]; ok {
@@ -89,23 +84,23 @@ func MergePR(ctx context.Context, pullCtx pull.Context, client *github.Client, m
 		for i := 0; i < MaxPullRequestPollCount; i++ {
 			<-ticker.C
 
-			pr, _, err := client.PullRequests.Get(ctx, pullCtx.Owner(), pullCtx.Repo(), pullCtx.Number())
+			mergeState, err := pullCtx.MergeState(ctx)
 			if err != nil {
-				logger.Error().Err(errors.WithStack(err)).Msgf("Failed to retrieve pull request %q", pullCtx.Locator())
+				logger.Error().Err(err).Msgf("Failed to get merge state for %q", pullCtx.Locator())
 				return
 			}
 
-			if pr.GetState() == "closed" {
+			if mergeState.Closed {
 				logger.Debug().Msg("Pull request already closed")
 				return
 			}
 
-			if pr.Mergeable == nil {
+			if mergeState.Mergeable == nil {
 				logger.Debug().Msg("Pull request mergeability not yet known")
 				continue
 			}
 
-			if !pr.GetMergeable() {
+			if !*mergeState.Mergeable {
 				logger.Debug().Msg("Pull request is not mergeable")
 				return
 			}
@@ -135,11 +130,10 @@ func MergePR(ctx context.Context, pullCtx pull.Context, client *github.Client, m
 
 			logger.Info().Msgf("Successfully merged pull request for sha %s with message %q", result.GetSHA(), result.GetMessage())
 
-			// Delete ref if owner of BASE and HEAD match
-			// otherwise, its from a fork that we cannot delete
-			if pr.GetBase().GetUser().GetLogin() == pr.GetHead().GetUser().GetLogin() {
+			// if head is qualified (contains ":"), PR is from a fork and we don't have delete permission
+			if !strings.ContainsRune(head, ':') {
 				if mergeConfig.DeleteAfterMerge {
-					ref := fmt.Sprintf("refs/heads/%s", pr.Head.GetRef())
+					ref := fmt.Sprintf("refs/heads/%s", head)
 
 					// check other open PRs to make sure that nothing is trying to merge into the ref we're about to delete
 					prs, err := pull.ListOpenPullRequestsForRef(ctx, client, pullCtx.Owner(), pullCtx.Repo(), ref)
@@ -156,11 +150,11 @@ func MergePR(ctx context.Context, pullCtx pull.Context, client *github.Client, m
 					logger.Debug().Msgf("Attempting to delete ref %s", ref)
 					_, err = client.Git.DeleteRef(ctx, pullCtx.Owner(), pullCtx.Repo(), ref)
 					if err != nil {
-						logger.Error().Err(errors.WithStack(err)).Msgf("Failed to delete ref %s on %q", pr.Head.GetRef(), pullCtx.Locator())
+						logger.Error().Err(errors.WithStack(err)).Msgf("Failed to delete ref %s on %q", head, pullCtx.Locator())
 						return
 					}
 
-					logger.Info().Msgf("Successfully deleted ref %s on %q", pr.Head.GetRef(), pullCtx.Locator())
+					logger.Info().Msgf("Successfully deleted ref %s on %q", head, pullCtx.Locator())
 				}
 			} else {
 				logger.Debug().Msg("Pull Request is from a fork, not deleting")
@@ -181,12 +175,7 @@ func calculateCommitMessage(ctx context.Context, pullCtx pull.Context, option Sq
 	commitMessage := ""
 	switch option.Body {
 	case PullRequestBody:
-		body, err := pullCtx.Body(ctx)
-		if err != nil {
-			return "", err
-		}
-
-		commitMessage = body
+		commitMessage = pullCtx.Body()
 		if option.MessageDelimiter != "" {
 			var quotedDelimiter = regexp.QuoteMeta(option.MessageDelimiter)
 			var rString = fmt.Sprintf(`(?sm:(%s\s*)^(.*)$(\s*%s))`, quotedDelimiter, quotedDelimiter)
@@ -195,7 +184,7 @@ func calculateCommitMessage(ctx context.Context, pullCtx pull.Context, option Sq
 				return "", errors.Wrap(err, "failed to compile message delimiter regex")
 			}
 
-			if m := matcher.FindStringSubmatch(body); len(m) == 4 {
+			if m := matcher.FindStringSubmatch(commitMessage); len(m) == 4 {
 				commitMessage = m[2]
 			}
 		}
@@ -215,11 +204,7 @@ func calculateCommitTitle(ctx context.Context, pullCtx pull.Context, option Squa
 	var title string
 	switch option.Title {
 	case PullRequestTitle:
-		prTitle, err := pullCtx.Title(ctx)
-		if err != nil {
-			return "", err
-		}
-		title = prTitle
+		title = pullCtx.Title()
 	case FirstCommitTitle:
 		commits, err := pullCtx.Commits(ctx)
 		if err != nil {

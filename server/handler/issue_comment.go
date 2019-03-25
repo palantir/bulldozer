@@ -55,7 +55,7 @@ func (h *IssueComment) Handle(ctx context.Context, eventType, deliveryID string,
 	if err != nil {
 		return errors.Wrapf(err, "failed to get pull request %s/%s#%d", owner, repoName, number)
 	}
-	pullCtx := pull.NewGithubContext(client, pr, owner, repoName, number)
+	pullCtx := pull.NewGithubContext(client, pr)
 
 	if err := h.ProcessPullRequest(ctx, pullCtx, client, pr); err != nil {
 		logger.Error().Err(errors.WithStack(err)).Msg("Error processing pull request")

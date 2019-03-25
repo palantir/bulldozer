@@ -26,13 +26,15 @@ type MockPullContext struct {
 	RepoValue   string
 	NumberValue int
 
-	TitleValue    string
-	TitleErrValue error
-
+	TitleValue   string
 	BodyValue    string
-	BodyErrValue error
-
 	LocatorValue string
+
+	BranchBase string
+	BranchName string
+
+	MergeStateValue    *pull.MergeState
+	MergeStateErrValue error
 
 	LabelValue    []string
 	LabelErrValue error
@@ -48,10 +50,6 @@ type MockPullContext struct {
 
 	SuccessStatusesValue    []string
 	SuccessStatusesErrValue error
-
-	BranchBase     string
-	BranchName     string
-	BranchErrValue error
 }
 
 func (c *MockPullContext) Owner() string {
@@ -73,12 +71,20 @@ func (c *MockPullContext) Locator() string {
 	return "pulltest/context#1"
 }
 
-func (c *MockPullContext) Title(ctx context.Context) (string, error) {
-	return c.TitleValue, c.TitleErrValue
+func (c *MockPullContext) Title() string {
+	return c.TitleValue
 }
 
-func (c *MockPullContext) Body(ctx context.Context) (string, error) {
-	return c.BodyValue, c.BodyErrValue
+func (c *MockPullContext) Body() string {
+	return c.BodyValue
+}
+
+func (c *MockPullContext) Branches() (base string, head string) {
+	return c.BranchBase, c.BranchName
+}
+
+func (c *MockPullContext) MergeState(ctx context.Context) (*pull.MergeState, error) {
+	return c.MergeStateValue, c.MergeStateErrValue
 }
 
 func (c *MockPullContext) Comments(ctx context.Context) ([]string, error) {
@@ -95,10 +101,6 @@ func (c *MockPullContext) RequiredStatuses(ctx context.Context) ([]string, error
 
 func (c *MockPullContext) CurrentSuccessStatuses(ctx context.Context) ([]string, error) {
 	return c.SuccessStatusesValue, c.SuccessStatusesErrValue
-}
-
-func (c *MockPullContext) Branches(ctx context.Context) (base string, head string, err error) {
-	return c.BranchBase, c.BranchName, c.BranchErrValue
 }
 
 func (c *MockPullContext) Labels(ctx context.Context) ([]string, error) {

@@ -45,10 +45,9 @@ func TestSimpleXListed(t *testing.T) {
 
 	ctx := context.Background()
 
-	t.Run("errBodyFailsClosedBlacklist", func(t *testing.T) {
+	t.Run("errCommentFailsClosedBlacklist", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
-			BodyValue:    "My PR Body",
-			BodyErrValue: errors.New("failure"),
+			CommentErrValue: errors.New("failure"),
 		}
 
 		actualBlacklist, _, err := IsPRBlacklisted(ctx, pc, mergeConfig.Blacklist)
@@ -56,10 +55,9 @@ func TestSimpleXListed(t *testing.T) {
 		assert.True(t, actualBlacklist)
 	})
 
-	t.Run("errBodyFailsClosedWhitelist", func(t *testing.T) {
+	t.Run("errCommentFailsClosedWhitelist", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
-			BodyValue:    "My PR Body",
-			BodyErrValue: errors.New("failure"),
+			CommentErrValue: errors.New("failure"),
 		}
 
 		actualWhitelist, _, err := IsPRWhitelisted(ctx, pc, mergeConfig.Whitelist)
