@@ -29,9 +29,42 @@ import (
 	"github.com/palantir/bulldozer/pull"
 )
 
+type Merger interface {
+	// Merge merges the pull request in the context using the commit message
+	// and options. It returns the SHA of the merge commit on success.
+	Merge(ctx context.Context, pullCtx pull.Context, message string, options *github.PullRequestOptions) (string, error)
+
+	// DeleteHead deletes the head branch of the pull request in the context.
+	DeleteHead(ctx context.Context, pullCtx pull.Context) error
+}
+
+type GitHubMerger struct {
+	client *github.Client
+}
+
+func NewGitHubMerger(client *github.Client) Merger {
+	return &GitHubMerger{
+		client: client,
+	}
+}
+
+func (m *GitHubMerger) Merge(ctx context.Context, pullCtx pull.Context, message string, options *github.PullRequestOptions) (string, error) {
+	result, _, err := m.client.PullRequests.Merge(ctx, pullCtx.Owner(), pullCtx.Repo(), pullCtx.Number(), message, options)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	return result.GetSHA(), nil
+}
+
+func (m *GitHubMerger) DeleteHead(ctx context.Context, pullCtx pull.Context) error {
+	_, head := pullCtx.Branches()
+	_, err := m.client.Git.DeleteRef(ctx, pullCtx.Owner(), pullCtx.Repo(), fmt.Sprintf("refs/heads/%s", head))
+	return errors.WithStack(err)
+}
+
 const MaxPullRequestPollCount = 5
 
-func MergePR(ctx context.Context, pullCtx pull.Context, client *github.Client, mergeConfig MergeConfig) error {
+func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConfig MergeConfig) error {
 	logger := zerolog.Ctx(ctx)
 
 	mergeOpts := &github.PullRequestOptions{}
@@ -107,28 +140,28 @@ func MergePR(ctx context.Context, pullCtx pull.Context, client *github.Client, m
 
 			// Try a merge, a 405 is expected if required reviews are not satisfied
 			logger.Info().Msgf("Attempting to merge pull request with method %s", mergeOpts.MergeMethod)
-			result, _, err := client.PullRequests.Merge(ctx, pullCtx.Owner(), pullCtx.Repo(), pullCtx.Number(), commitMessage, mergeOpts)
+			sha, err := merger.Merge(ctx, pullCtx, commitMessage, mergeOpts)
 			if err != nil {
-				gerr, ok := err.(*github.ErrorResponse)
+				gerr, ok := errors.Cause(err).(*github.ErrorResponse)
 				if !ok {
-					logger.Error().Err(errors.WithStack(err)).Msg("Merge failed unexpectedly")
+					logger.Error().Err(err).Msg("Merge failed unexpectedly")
 					continue
 				}
 
 				switch gerr.Response.StatusCode {
 				case http.StatusMethodNotAllowed:
-					logger.Info().Msgf("Merge rejected due to unsatisfied condition %q", gerr.Message)
+					logger.Info().Msgf("Merge rejected due to unsatisfied condition: %q", gerr.Message)
 					return
 				case http.StatusConflict:
-					logger.Info().Msgf("Merge rejected due to being invalid %q", gerr.Message)
+					logger.Info().Msgf("Merge rejected due to being invalid: %q", gerr.Message)
 					return
 				default:
-					logger.Error().Err(errors.WithStack(err)).Msgf("Merge failed unexpectedly %q", gerr.Message)
+					logger.Error().Msgf("Merge failed with unexpected status: %d: %q", gerr.Response.StatusCode, gerr.Message)
 					continue
 				}
 			}
 
-			logger.Info().Msgf("Successfully merged pull request for sha %s with message %q", result.GetSHA(), result.GetMessage())
+			logger.Info().Msgf("Successfully merged pull request as SHA %s", sha)
 
 			// if head is qualified (contains ":"), PR is from a fork and we don't have delete permission
 			if !strings.ContainsRune(head, ':') {
@@ -147,13 +180,12 @@ func MergePR(ctx context.Context, pullCtx pull.Context, client *github.Client, m
 					}
 
 					logger.Debug().Msgf("Attempting to delete ref %s", ref)
-					_, err = client.Git.DeleteRef(ctx, pullCtx.Owner(), pullCtx.Repo(), ref)
-					if err != nil {
-						logger.Error().Err(errors.WithStack(err)).Msgf("Failed to delete ref %s on %q", head, pullCtx.Locator())
+					if err := merger.DeleteHead(ctx, pullCtx); err != nil {
+						logger.Error().Err(err).Msgf("Failed to delete ref %s on %q", ref, pullCtx.Locator())
 						return
 					}
 
-					logger.Info().Msgf("Successfully deleted ref %s on %q", head, pullCtx.Locator())
+					logger.Info().Msgf("Successfully deleted ref %s on %q", ref, pullCtx.Locator())
 				}
 			} else {
 				logger.Debug().Msg("Pull Request is from a fork, not deleting")

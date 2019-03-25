@@ -53,7 +53,7 @@ func (b *Base) ProcessPullRequest(ctx context.Context, pullCtx pull.Context, cli
 		}
 		if shouldMerge {
 			logger.Debug().Msg("Pull request should be merged")
-			if err := bulldozer.MergePR(ctx, pullCtx, client, config.Merge); err != nil {
+			if err := bulldozer.MergePR(ctx, pullCtx, bulldozer.NewGitHubMerger(client), config.Merge); err != nil {
 				return errors.Wrap(err, "failed to merge pull request")
 			}
 		}
