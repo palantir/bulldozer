@@ -70,6 +70,10 @@ type Context interface {
 
 	// Labels lists all labels on the pull request.
 	Labels(ctx context.Context) ([]string, error)
+
+	// IsTargeted returns true if the head branch of this pull request is the
+	// target branch of other open PRs on the repository.
+	IsTargeted(ctx context.Context) (bool, error)
 }
 
 type MergeState struct {

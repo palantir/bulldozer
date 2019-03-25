@@ -50,6 +50,9 @@ type MockPullContext struct {
 
 	SuccessStatusesValue    []string
 	SuccessStatusesErrValue error
+
+	IsTargetedValue    bool
+	IsTargetedErrValue error
 }
 
 func (c *MockPullContext) Owner() string {
@@ -105,6 +108,10 @@ func (c *MockPullContext) CurrentSuccessStatuses(ctx context.Context) ([]string,
 
 func (c *MockPullContext) Labels(ctx context.Context) ([]string, error) {
 	return c.LabelValue, c.LabelErrValue
+}
+
+func (c *MockPullContext) IsTargeted(ctx context.Context) (bool, error) {
+	return c.IsTargetedValue, c.IsTargetedErrValue
 }
 
 // type assertion

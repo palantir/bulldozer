@@ -230,5 +230,15 @@ func (ghc *GithubContext) Labels(ctx context.Context) ([]string, error) {
 	return labelNames, nil
 }
 
+func (ghc *GithubContext) IsTargeted(ctx context.Context) (bool, error) {
+	ref := fmt.Sprintf("refs/heads/%s", ghc.pr.GetHead().GetRef())
+
+	prs, err := ListOpenPullRequestsForRef(ctx, ghc.client, ghc.owner, ghc.repo, ref)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to determine targeted status")
+	}
+	return len(prs) > 0, nil
+}
+
 // type assertion
 var _ Context = &GithubContext{}
