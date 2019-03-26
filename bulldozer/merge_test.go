@@ -18,12 +18,31 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/go-github/github"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/palantir/bulldozer/pull"
 	"github.com/palantir/bulldozer/pull/pulltest"
 )
+
+type MockMerger struct {
+	MergeCount int
+	MergeError error
+
+	DeleteCount int
+	DeleteError error
+}
+
+func (m *MockMerger) Merge(ctx context.Context, pullCtx pull.Context, message string, options *github.PullRequestOptions) (string, error) {
+	m.MergeCount++
+	return "deadbeef", m.MergeError
+}
+
+func (m *MockMerger) DeleteHead(ctx context.Context, pullCtx pull.Context) error {
+	m.DeleteCount++
+	return m.DeleteError
+}
 
 func TestCalculateCommitTitle(t *testing.T) {
 	defaultPullContext := &pulltest.MockPullContext{
@@ -77,4 +96,31 @@ func TestCalculateCommitTitle(t *testing.T) {
 			assert.Equal(t, test.Output, output, "calculated title is incorrect")
 		})
 	}
+}
+
+func TestPushRestrictionMerger(t *testing.T) {
+	normal := &MockMerger{}
+	restricted := &MockMerger{}
+	merger := NewPushRestrictionMerger(normal, restricted)
+
+	ctx := context.Background()
+	pullCtx := &pulltest.MockPullContext{}
+
+	_, _ = merger.Merge(ctx, pullCtx, "", nil)
+	assert.Equal(t, 1, normal.MergeCount, "normal merge was not called")
+	assert.Equal(t, 0, restricted.MergeCount, "restricted merge was incorrectly called")
+
+	_ = merger.DeleteHead(ctx, pullCtx)
+	assert.Equal(t, 1, normal.DeleteCount, "normal delete was not called")
+	assert.Equal(t, 0, restricted.DeleteCount, "restricted delete was incorrectly called")
+
+	pullCtx.PushRestrictionsValue = true
+
+	_, _ = merger.Merge(ctx, pullCtx, "", nil)
+	assert.Equal(t, 1, normal.MergeCount, "normal merge was incorrectly called")
+	assert.Equal(t, 1, restricted.MergeCount, "restricted merge was not called")
+
+	_ = merger.DeleteHead(ctx, pullCtx)
+	assert.Equal(t, 1, normal.DeleteCount, "normal delete was incorrectly called")
+	assert.Equal(t, 1, restricted.DeleteCount, "restricted delete was not called")
 }
