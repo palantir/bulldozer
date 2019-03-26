@@ -73,7 +73,7 @@ func (h *Push) Handle(ctx context.Context, eventType, deliveryID string, payload
 	}
 
 	for _, pr := range prs {
-		pullCtx := pull.NewGithubContext(client, pr, owner, repoName, pr.GetNumber())
+		pullCtx := pull.NewGithubContext(client, pr)
 		logger := logger.With().Int(githubapp.LogKeyPRNum, pr.GetNumber()).Logger()
 
 		logger.Debug().Msgf("checking status for updated sha %s", baseRef)

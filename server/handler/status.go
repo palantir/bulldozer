@@ -66,7 +66,7 @@ func (h *Status) Handle(ctx context.Context, eventType, deliveryID string, paylo
 	}
 
 	for _, pr := range prs {
-		pullCtx := pull.NewGithubContext(client, pr, owner, repoName, pr.GetNumber())
+		pullCtx := pull.NewGithubContext(client, pr)
 		logger := logger.With().Int(githubapp.LogKeyPRNum, pr.GetNumber()).Logger()
 		if err := h.ProcessPullRequest(logger.WithContext(ctx), pullCtx, client, pr); err != nil {
 			logger.Error().Err(errors.WithStack(err)).Msg("Error processing pull request")

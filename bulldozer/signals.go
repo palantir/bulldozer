@@ -58,10 +58,7 @@ func (s *Signals) Matches(ctx context.Context, pullCtx pull.Context, tag string)
 		}
 	}
 
-	body, err := pullCtx.Body(ctx)
-	if err != nil {
-		return false, "unable to get pull request body", err
-	}
+	body := pullCtx.Body()
 	comments, err := pullCtx.Comments(ctx)
 	if err != nil {
 		return false, "unable to list pull request comments", err
@@ -95,7 +92,7 @@ func (s *Signals) Matches(ctx context.Context, pullCtx pull.Context, tag string)
 		}
 	}
 
-	targetBranch, _, err := pullCtx.Branches(ctx)
+	targetBranch, _ := pullCtx.Branches()
 	if err != nil {
 		return false, "unable to get pull request branches", err
 	}

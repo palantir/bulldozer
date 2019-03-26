@@ -40,14 +40,14 @@ type GithubContext struct {
 	successStatuses  []string
 }
 
-func NewGithubContext(client *github.Client, pr *github.PullRequest, owner, repo string, number int) Context {
+func NewGithubContext(client *github.Client, pr *github.PullRequest) Context {
 	return &GithubContext{
 		client: client,
 
 		pr:     pr,
-		owner:  owner,
-		repo:   repo,
-		number: number,
+		owner:  pr.GetBase().GetRepo().GetOwner().GetLogin(),
+		repo:   pr.GetBase().GetRepo().GetName(),
+		number: pr.GetNumber(),
 	}
 }
 
@@ -67,12 +67,24 @@ func (ghc *GithubContext) Locator() string {
 	return fmt.Sprintf("%s/%s#%d", ghc.owner, ghc.repo, ghc.number)
 }
 
-func (ghc *GithubContext) Title(ctx context.Context) (string, error) {
-	return ghc.pr.GetTitle(), nil
+func (ghc *GithubContext) Title() string {
+	return ghc.pr.GetTitle()
 }
 
-func (ghc *GithubContext) Body(ctx context.Context) (string, error) {
-	return ghc.pr.GetBody(), nil
+func (ghc *GithubContext) Body() string {
+	return ghc.pr.GetBody()
+}
+
+func (ghc *GithubContext) MergeState(ctx context.Context) (*MergeState, error) {
+	pr, _, err := ghc.client.PullRequests.Get(ctx, ghc.owner, ghc.repo, ghc.number)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get pull request merge state")
+	}
+
+	return &MergeState{
+		Closed:    pr.GetState() == "closed",
+		Mergeable: pr.Mergeable,
+	}, nil
 }
 
 func (ghc *GithubContext) Comments(ctx context.Context) ([]string, error) {
@@ -197,10 +209,10 @@ func (ghc *GithubContext) CurrentSuccessStatuses(ctx context.Context) ([]string,
 	return ghc.successStatuses, nil
 }
 
-func (ghc *GithubContext) Branches(ctx context.Context) (base string, head string, err error) {
+func (ghc *GithubContext) Branches() (base string, head string) {
 	base = ghc.pr.GetBase().GetRef()
 
-	// Check for forks
+	// if the repository is a fork, use label to include the owner prefix
 	if ghc.pr.GetHead().GetRepo().GetID() == ghc.pr.GetBase().GetRepo().GetID() {
 		head = ghc.pr.GetHead().GetRef()
 	} else {
@@ -216,6 +228,16 @@ func (ghc *GithubContext) Labels(ctx context.Context) ([]string, error) {
 		labelNames = append(labelNames, label.GetName())
 	}
 	return labelNames, nil
+}
+
+func (ghc *GithubContext) IsTargeted(ctx context.Context) (bool, error) {
+	ref := fmt.Sprintf("refs/heads/%s", ghc.pr.GetHead().GetRef())
+
+	prs, err := ListOpenPullRequestsForRef(ctx, ghc.client, ghc.owner, ghc.repo, ref)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to determine targeted status")
+	}
+	return len(prs) > 0, nil
 }
 
 // type assertion

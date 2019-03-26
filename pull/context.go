@@ -25,24 +25,34 @@ import (
 // A new Context should be created each time a Pull Request is being evaluated
 // such that implementations are not required to consider cache invalidation.
 type Context interface {
-	// The Pull Request repository owner
+	// Owner returns the pull request repository owner.
 	Owner() string
 
-	// The Pull Request repository name
+	// Repo returns the pull request repository name.
 	Repo() string
 
-	// The Pull Request Number
+	// Number returns the pull request number.
 	Number() int
 
 	// Locator returns a locator string for the pull request. The locator
 	// string is formatted as "<owner>/<repository>#<number>"
 	Locator() string
 
-	// Title returns the pull request title
-	Title(ctx context.Context) (string, error)
+	// Title returns the pull request title.
+	Title() string
 
-	// Body returns the pull request body
-	Body(ctx context.Context) (string, error)
+	// Body returns the pull request body.
+	Body() string
+
+	// Branches returns the base (also known as target) and head branch names
+	// of this pull request. Branches in this repository have no prefix, while
+	// branches in forks are prefixed with the owner of the fork and a colon.
+	// The base branch will always be unprefixed.
+	Branches() (base string, head string)
+
+	// MergeState returns the current mergability of the pull request. It
+	// always returns the most up-to-date state possible.
+	MergeState(ctx context.Context) (*MergeState, error)
 
 	// RequiredStatuses returns the names of the required status
 	// checks for the pull request.
@@ -61,11 +71,14 @@ type Context interface {
 	// Labels lists all labels on the pull request.
 	Labels(ctx context.Context) ([]string, error)
 
-	// Branches returns the base (also known as target) and head branch names
-	// of this pull request. Branches in this repository have no prefix, while
-	// branches in forks are prefixed with the owner of the fork and a colon.
-	// The base branch will always be unprefixed.
-	Branches(ctx context.Context) (base string, head string, err error)
+	// IsTargeted returns true if the head branch of this pull request is the
+	// target branch of other open PRs on the repository.
+	IsTargeted(ctx context.Context) (bool, error)
+}
+
+type MergeState struct {
+	Closed    bool
+	Mergeable *bool
 }
 
 type Commit struct {
