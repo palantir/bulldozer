@@ -29,6 +29,8 @@ import (
 	"github.com/palantir/bulldozer/pull"
 )
 
+const MaxPullRequestPollCount = 5
+
 type Merger interface {
 	// Merge merges the pull request in the context using the commit message
 	// and options. It returns the SHA of the merge commit on success.
@@ -43,6 +45,7 @@ type CommitMessage struct {
 	Message string
 }
 
+// GitHubMerger merges pull requests using a GitHub client.
 type GitHubMerger struct {
 	client *github.Client
 }
@@ -72,8 +75,51 @@ func (m *GitHubMerger) DeleteHead(ctx context.Context, pullCtx pull.Context) err
 	return errors.WithStack(err)
 }
 
-const MaxPullRequestPollCount = 5
+// PushRestrictionMerger delegates merge operations to different Mergers based
+// on whether or not the pull requests targets a branch with push restrictions.
+type PushRestrictionMerger struct {
+	Normal     Merger
+	Restricted Merger
+}
 
+func NewPushRestrictionMerger(normal, restricted Merger) Merger {
+	return &PushRestrictionMerger{
+		Normal:     normal,
+		Restricted: restricted,
+	}
+}
+
+func (m *PushRestrictionMerger) Merge(ctx context.Context, pullCtx pull.Context, method MergeMethod, msg CommitMessage) (string, error) {
+	restricted, err := pullCtx.PushRestrictions(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	if restricted {
+		zerolog.Ctx(ctx).Info().Msg("Target branch has push restrictions, using restricted client for merge")
+		return m.Restricted.Merge(ctx, pullCtx, method, msg)
+	}
+	return m.Normal.Merge(ctx, pullCtx, method, msg)
+}
+
+func (m *PushRestrictionMerger) DeleteHead(ctx context.Context, pullCtx pull.Context) error {
+	restricted, err := pullCtx.PushRestrictions(ctx)
+	if err != nil {
+		return err
+	}
+
+	// this is not necessary: the normal client should have delete permissions,
+	// but having the merge user also delete the branch is a better UX
+	if restricted {
+		zerolog.Ctx(ctx).Info().Msg("Target branch has push restrictions, using restricted client for delete")
+		return m.Restricted.DeleteHead(ctx, pullCtx)
+	}
+	return m.Normal.DeleteHead(ctx, pullCtx)
+}
+
+// MergePR spawns a goroutine that attempts to merge a pull request. It returns
+// an error if an error occurs while preparing for the merge before starting
+// the goroutine.
 func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConfig MergeConfig) error {
 	logger := zerolog.Ctx(ctx)
 
@@ -184,7 +230,7 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 						return
 					}
 
-					logger.Debug().Msgf("Attempting to delete ref %s", ref)
+					logger.Info().Msgf("Attempting to delete ref %s", ref)
 					if err := merger.DeleteHead(ctx, pullCtx); err != nil {
 						logger.Error().Err(err).Msgf("Failed to delete ref %s on %q", ref, pullCtx.Locator())
 						return

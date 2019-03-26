@@ -29,6 +29,8 @@ import (
 type Base struct {
 	githubapp.ClientCreator
 	bulldozer.ConfigFetcher
+
+	PushRestrictionUserToken string
 }
 
 func (b *Base) ProcessPullRequest(ctx context.Context, pullCtx pull.Context, client *github.Client, pr *github.PullRequest) error {
@@ -37,6 +39,15 @@ func (b *Base) ProcessPullRequest(ctx context.Context, pullCtx pull.Context, cli
 	bulldozerConfig, err := b.ConfigForPR(ctx, client, pr)
 	if err != nil {
 		return errors.Wrap(err, "failed to fetch configuration")
+	}
+
+	merger := bulldozer.NewGitHubMerger(client)
+	if b.PushRestrictionUserToken != "" {
+		tokenClient, err := b.NewTokenClient(b.PushRestrictionUserToken)
+		if err != nil {
+			return errors.Wrap(err, "failed to create token client")
+		}
+		merger = bulldozer.NewPushRestrictionMerger(merger, bulldozer.NewGitHubMerger(tokenClient))
 	}
 
 	switch {
@@ -53,7 +64,7 @@ func (b *Base) ProcessPullRequest(ctx context.Context, pullCtx pull.Context, cli
 		}
 		if shouldMerge {
 			logger.Debug().Msg("Pull request should be merged")
-			if err := bulldozer.MergePR(ctx, pullCtx, bulldozer.NewGitHubMerger(client), config.Merge); err != nil {
+			if err := bulldozer.MergePR(ctx, pullCtx, merger, config.Merge); err != nil {
 				return errors.Wrap(err, "failed to merge pull request")
 			}
 		}

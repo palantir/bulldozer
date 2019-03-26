@@ -58,6 +58,10 @@ type Context interface {
 	// checks for the pull request.
 	RequiredStatuses(ctx context.Context) ([]string, error)
 
+	// PushRestrictions returns true if the target barnch of the pull request
+	// restricts the users or teams that have push access.
+	PushRestrictions(ctx context.Context) (bool, error)
+
 	// CurrentSuccessStatuses returns the names of all currently
 	// successful status checks for the pull request.
 	CurrentSuccessStatuses(ctx context.Context) ([]string, error)
