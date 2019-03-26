@@ -96,7 +96,7 @@ func (m *PushRestrictionMerger) Merge(ctx context.Context, pullCtx pull.Context,
 	}
 
 	if restricted {
-		zerolog.Ctx(ctx).Info().Msg("target branch has push restrictions, using restricted client for merge")
+		zerolog.Ctx(ctx).Info().Msg("Target branch has push restrictions, using restricted client for merge")
 		return m.Restricted.Merge(ctx, pullCtx, method, msg)
 	}
 	return m.Normal.Merge(ctx, pullCtx, method, msg)
@@ -111,7 +111,7 @@ func (m *PushRestrictionMerger) DeleteHead(ctx context.Context, pullCtx pull.Con
 	// this is not necessary: the normal client should have delete permissions,
 	// but having the merge user also delete the branch is a better UX
 	if restricted {
-		zerolog.Ctx(ctx).Info().Msg("target branch has push restrictions, using restricted client for delete")
+		zerolog.Ctx(ctx).Info().Msg("Target branch has push restrictions, using restricted client for delete")
 		return m.Restricted.DeleteHead(ctx, pullCtx)
 	}
 	return m.Normal.DeleteHead(ctx, pullCtx)
