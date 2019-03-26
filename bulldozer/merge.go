@@ -32,10 +32,15 @@ import (
 type Merger interface {
 	// Merge merges the pull request in the context using the commit message
 	// and options. It returns the SHA of the merge commit on success.
-	Merge(ctx context.Context, pullCtx pull.Context, message string, options *github.PullRequestOptions) (string, error)
+	Merge(ctx context.Context, pullCtx pull.Context, method MergeMethod, msg CommitMessage) (string, error)
 
 	// DeleteHead deletes the head branch of the pull request in the context.
 	DeleteHead(ctx context.Context, pullCtx pull.Context) error
+}
+
+type CommitMessage struct {
+	Title   string
+	Message string
 }
 
 type GitHubMerger struct {
@@ -48,8 +53,13 @@ func NewGitHubMerger(client *github.Client) Merger {
 	}
 }
 
-func (m *GitHubMerger) Merge(ctx context.Context, pullCtx pull.Context, message string, options *github.PullRequestOptions) (string, error) {
-	result, _, err := m.client.PullRequests.Merge(ctx, pullCtx.Owner(), pullCtx.Repo(), pullCtx.Number(), message, options)
+func (m *GitHubMerger) Merge(ctx context.Context, pullCtx pull.Context, method MergeMethod, msg CommitMessage) (string, error) {
+	opts := github.PullRequestOptions{
+		CommitTitle: msg.Title,
+		MergeMethod: string(method),
+	}
+
+	result, _, err := m.client.PullRequests.Merge(ctx, pullCtx.Owner(), pullCtx.Repo(), pullCtx.Number(), msg.Message, &opts)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
@@ -67,23 +77,18 @@ const MaxPullRequestPollCount = 5
 func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConfig MergeConfig) error {
 	logger := zerolog.Ctx(ctx)
 
-	mergeOpts := &github.PullRequestOptions{}
-
 	base, head := pullCtx.Branches()
 	mergeMethod := mergeConfig.Method
 
 	if branchMergeMethod, ok := mergeConfig.BranchMethod[base]; ok {
 		mergeMethod = branchMergeMethod
 	}
-
 	if !isValidMergeMethod(mergeMethod) {
 		mergeMethod = MergeCommit
 	}
 
-	mergeOpts.MergeMethod = string(mergeMethod)
-
-	commitMessage := ""
-	if mergeConfig.Method == SquashAndMerge {
+	commitMsg := CommitMessage{}
+	if mergeMethod == SquashAndMerge {
 		opt := mergeConfig.Options.Squash
 		if opt == nil {
 			logger.Info().Msgf("No squash options defined; using defaults")
@@ -101,13 +106,13 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 		if err != nil {
 			return errors.Wrap(err, "failed to calculate commit message")
 		}
-		commitMessage = message
+		commitMsg.Message = message
 
 		title, err := calculateCommitTitle(ctx, pullCtx, *opt)
 		if err != nil {
 			return errors.Wrap(err, "failed to calculate commit title")
 		}
-		mergeOpts.CommitTitle = title
+		commitMsg.Title = title
 	}
 
 	go func(ctx context.Context) {
@@ -139,8 +144,8 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 			}
 
 			// Try a merge, a 405 is expected if required reviews are not satisfied
-			logger.Info().Msgf("Attempting to merge pull request with method %s", mergeOpts.MergeMethod)
-			sha, err := merger.Merge(ctx, pullCtx, commitMessage, mergeOpts)
+			logger.Info().Msgf("Attempting to merge pull request with method %s", mergeMethod)
+			sha, err := merger.Merge(ctx, pullCtx, mergeMethod, commitMsg)
 			if err != nil {
 				gerr, ok := errors.Cause(err).(*github.ErrorResponse)
 				if !ok {
