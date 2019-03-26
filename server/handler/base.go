@@ -30,7 +30,7 @@ type Base struct {
 	githubapp.ClientCreator
 	bulldozer.ConfigFetcher
 
-	RestrictionUserToken string
+	PushRestrictionUserToken string
 }
 
 func (b *Base) ProcessPullRequest(ctx context.Context, pullCtx pull.Context, client *github.Client, pr *github.PullRequest) error {
@@ -42,8 +42,8 @@ func (b *Base) ProcessPullRequest(ctx context.Context, pullCtx pull.Context, cli
 	}
 
 	merger := bulldozer.NewGitHubMerger(client)
-	if b.RestrictionUserToken != "" {
-		tokenClient, err := b.NewTokenClient(b.RestrictionUserToken)
+	if b.PushRestrictionUserToken != "" {
+		tokenClient, err := b.NewTokenClient(b.PushRestrictionUserToken)
 		if err != nil {
 			return errors.Wrap(err, "failed to create token client")
 		}

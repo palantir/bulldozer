@@ -242,7 +242,7 @@ with [push restrictions][]. To work around this, you can:
 
    ```yaml
    options:
-     restriction_user_token: <token-value>
+     push_restriction_user_token: <token-value>
    ```
 
    The token is _only_ used if the target branch has push restrictions enabled.

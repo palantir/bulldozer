@@ -42,7 +42,7 @@ options:
   app_name: bulldozer
   # An optional personal access token associated with a normal GitHub user that
   # is used to merge pull requests into protected branches with push restrictions.
-  restriction_user_token: token
+  push_restriction_user_token: token
   # Default repository config, the same as the config file described in README
   default_repository_config:
     merge:
