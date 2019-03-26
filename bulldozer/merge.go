@@ -89,16 +89,16 @@ func NewPushRestrictionMerger(normal, restricted Merger) Merger {
 	}
 }
 
-func (m *PushRestrictionMerger) Merge(ctx context.Context, pullCtx pull.Context, message string, options *github.PullRequestOptions) (string, error) {
+func (m *PushRestrictionMerger) Merge(ctx context.Context, pullCtx pull.Context, method MergeMethod, msg CommitMessage) (string, error) {
 	restricted, err := pullCtx.PushRestrictions(ctx)
 	if err != nil {
 		return "", err
 	}
 
 	if restricted {
-		return m.Restricted.Merge(ctx, pullCtx, message, options)
+		return m.Restricted.Merge(ctx, pullCtx, method, msg)
 	}
-	return m.Normal.Merge(ctx, pullCtx, message, options)
+	return m.Normal.Merge(ctx, pullCtx, method, msg)
 }
 
 func (m *PushRestrictionMerger) DeleteHead(ctx context.Context, pullCtx pull.Context) error {

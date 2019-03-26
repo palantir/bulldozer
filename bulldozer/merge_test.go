@@ -18,7 +18,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/google/go-github/github"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -34,7 +33,7 @@ type MockMerger struct {
 	DeleteError error
 }
 
-func (m *MockMerger) Merge(ctx context.Context, pullCtx pull.Context, message string, options *github.PullRequestOptions) (string, error) {
+func (m *MockMerger) Merge(ctx context.Context, pullCtx pull.Context, method MergeMethod, msg CommitMessage) (string, error) {
 	m.MergeCount++
 	return "deadbeef", m.MergeError
 }
@@ -106,7 +105,7 @@ func TestPushRestrictionMerger(t *testing.T) {
 	ctx := context.Background()
 	pullCtx := &pulltest.MockPullContext{}
 
-	_, _ = merger.Merge(ctx, pullCtx, "", nil)
+	_, _ = merger.Merge(ctx, pullCtx, SquashAndMerge, CommitMessage{})
 	assert.Equal(t, 1, normal.MergeCount, "normal merge was not called")
 	assert.Equal(t, 0, restricted.MergeCount, "restricted merge was incorrectly called")
 
@@ -116,7 +115,7 @@ func TestPushRestrictionMerger(t *testing.T) {
 
 	pullCtx.PushRestrictionsValue = true
 
-	_, _ = merger.Merge(ctx, pullCtx, "", nil)
+	_, _ = merger.Merge(ctx, pullCtx, SquashAndMerge, CommitMessage{})
 	assert.Equal(t, 1, normal.MergeCount, "normal merge was incorrectly called")
 	assert.Equal(t, 1, restricted.MergeCount, "restricted merge was not called")
 
