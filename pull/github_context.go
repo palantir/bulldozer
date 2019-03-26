@@ -36,7 +36,7 @@ type GithubContext struct {
 	// cached fields
 	comments         []string
 	commits          []*Commit
-	requiredStatuses []string
+	branchProtection *github.Protection
 	successStatuses  []string
 }
 
@@ -160,19 +160,40 @@ func (ghc *GithubContext) Commits(ctx context.Context) ([]*Commit, error) {
 }
 
 func (ghc *GithubContext) RequiredStatuses(ctx context.Context) ([]string, error) {
-	if ghc.requiredStatuses == nil {
-		requiredStatuses, _, err := ghc.client.Repositories.GetRequiredStatusChecks(ctx, ghc.owner, ghc.repo, ghc.pr.GetBase().GetRef())
-		if err != nil {
-			if isNotFound(err) {
-				// Github returns 404 when there are no branch protections
-				return nil, nil
-			}
-			return ghc.requiredStatuses, errors.Wrapf(err, "cannot get required status checks for %s", ghc.Locator())
+	if ghc.branchProtection == nil {
+		if err := ghc.loadBranchProtection(ctx); err != nil {
+			return nil, err
 		}
-		ghc.requiredStatuses = requiredStatuses.Contexts
 	}
+	if checks := ghc.branchProtection.GetRequiredStatusChecks(); checks != nil {
+		return checks.Contexts, nil
+	}
+	return nil, nil
+}
 
-	return ghc.requiredStatuses, nil
+func (ghc *GithubContext) PushRestrictions(ctx context.Context) (bool, error) {
+	if ghc.branchProtection == nil {
+		if err := ghc.loadBranchProtection(ctx); err != nil {
+			return false, err
+		}
+	}
+	if r := ghc.branchProtection.GetRestrictions(); r != nil {
+		return len(r.Users) > 0 || len(r.Teams) > 0, nil
+	}
+	return false, nil
+}
+
+func (ghc *GithubContext) loadBranchProtection(ctx context.Context) error {
+	protection, _, err := ghc.client.Repositories.GetBranchProtection(ctx, ghc.owner, ghc.repo, ghc.pr.GetBase().GetRef())
+	if err != nil {
+		if isNotFound(err) {
+			ghc.branchProtection = &github.Protection{}
+			return nil
+		}
+		return errors.Wrapf(err, "cannot get branch protection for %s", ghc.Locator())
+	}
+	ghc.branchProtection = protection
+	return nil
 }
 
 func isNotFound(err error) bool {

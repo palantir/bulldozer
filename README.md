@@ -195,6 +195,7 @@ Anything that's contained between two `==COMMIT_MSG==` strings will become the
 commit message instead of whole pull request body.
 
 #### What if I don't want to put config files into each repo?
+
 You can add default repository configuration in your bulldozer config file.
 
 It will be used only when your repo config file does not exist.
@@ -214,9 +215,38 @@ which are to be expected, and others that may be caused by mis-configuring Bulld
 
 * Required status checks have not passed
 * Review requirements are not satisfied
-* The merge strategy configured in `.bulldozer.yml` is not allowed by your repository settings
-* Branch protection rules are preventing `bulldozer [bot]` from [pushing to the branch](https://help.github.com/articles/about-branch-restrictions/).
-  Unfortunately GitHub apps cannot be added to the list at this time.
+* The merge strategy configured in `.bulldozer.yml` is not allowed by your
+  repository settings
+* Branch protection rules are preventing `bulldozer[bot]` from [pushing to the
+  branch][push restrictions]. Unfortunately, GitHub apps cannot be added to
+  the list at this time, but there is [a workaround][] if you are running your
+  own Bulldozer server.
+
+[push restrictions]: https://help.github.com/articles/about-branch-restrictions/
+[a workaround]: #can-bulldozer-work-with-push-restrictions-on-branches
+
+#### Can Bulldozer work with push restrictions on branches?
+
+As mentioned above, GitHub Apps cannot be added to the list of users associated
+with [push restrictions][]. To work around this, you can:
+
+1. Use another app like [policy-bot](https://github.com/palantir/policy-bot) to
+   implement _approval_ restrictions as required status checks instead of using
+   push restrictions. This effectively limits who can push to a branch by
+   requiring changes to go through the pull request process and be approved.
+
+2. Configure Bulldozer to use a personal access token for a regular user to
+   perform merges in this case. The token must have the `repo` scope and the
+   user must be allowed to push to the branch. In the server configuration
+   file, set:
+
+   ```yaml
+   options:
+     restriction_user_token: <token-value>
+   ```
+
+   The token is _only_ used if the target branch has push restrictions enabled.
+   All other merges are performed as the normal GitHub App user.
 
 ## Deployment
 

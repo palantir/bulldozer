@@ -48,6 +48,9 @@ type MockPullContext struct {
 	RequiredStatusesValue    []string
 	RequiredStatusesErrValue error
 
+	PushRestrictionsValue    bool
+	PushRestrictionsErrValue error
+
 	SuccessStatusesValue    []string
 	SuccessStatusesErrValue error
 
@@ -100,6 +103,10 @@ func (c *MockPullContext) Commits(ctx context.Context) ([]*pull.Commit, error) {
 
 func (c *MockPullContext) RequiredStatuses(ctx context.Context) ([]string, error) {
 	return c.RequiredStatusesValue, c.RequiredStatusesErrValue
+}
+
+func (c *MockPullContext) PushRestrictions(ctx context.Context) (bool, error) {
+	return c.PushRestrictionsValue, c.PushRestrictionsErrValue
 }
 
 func (c *MockPullContext) CurrentSuccessStatuses(ctx context.Context) ([]string, error) {

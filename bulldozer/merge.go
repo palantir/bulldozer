@@ -29,6 +29,8 @@ import (
 	"github.com/palantir/bulldozer/pull"
 )
 
+const MaxPullRequestPollCount = 5
+
 type Merger interface {
 	// Merge merges the pull request in the context using the commit message
 	// and options. It returns the SHA of the merge commit on success.
@@ -43,6 +45,7 @@ type CommitMessage struct {
 	Message string
 }
 
+// GitHubMerger merges pull requests using a GitHub client.
 type GitHubMerger struct {
 	client *github.Client
 }
@@ -72,8 +75,49 @@ func (m *GitHubMerger) DeleteHead(ctx context.Context, pullCtx pull.Context) err
 	return errors.WithStack(err)
 }
 
-const MaxPullRequestPollCount = 5
+// PushRestrictionMerger delegates merge operations to different Mergers based
+// on whether or not the pull requests targets a branch with push restrictions.
+type PushRestrictionMerger struct {
+	Normal     Merger
+	Restricted Merger
+}
 
+func NewPushRestrictionMerger(normal, restricted Merger) Merger {
+	return &PushRestrictionMerger{
+		Normal:     normal,
+		Restricted: restricted,
+	}
+}
+
+func (m *PushRestrictionMerger) Merge(ctx context.Context, pullCtx pull.Context, message string, options *github.PullRequestOptions) (string, error) {
+	restricted, err := pullCtx.PushRestrictions(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	if restricted {
+		return m.Restricted.Merge(ctx, pullCtx, message, options)
+	}
+	return m.Normal.Merge(ctx, pullCtx, message, options)
+}
+
+func (m *PushRestrictionMerger) DeleteHead(ctx context.Context, pullCtx pull.Context) error {
+	restricted, err := pullCtx.PushRestrictions(ctx)
+	if err != nil {
+		return err
+	}
+
+	// this is not necessary: the normal client should have delete permissions,
+	// but having the merge user also delete the branch is a better UX
+	if restricted {
+		return m.Restricted.DeleteHead(ctx, pullCtx)
+	}
+	return m.Normal.DeleteHead(ctx, pullCtx)
+}
+
+// MergePR spawns a goroutine that attempts to merge a pull request. It returns
+// an error if an error occurs while preparing for the merge before starting
+// the goroutine.
 func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConfig MergeConfig) error {
 	logger := zerolog.Ctx(ctx)
 

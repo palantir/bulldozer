@@ -46,7 +46,9 @@ type Options struct {
 	AppName                 string            `yaml:"app_name"`
 	ConfigurationPath       string            `yaml:"configuration_path"`
 	DefaultRepositoryConfig *bulldozer.Config `yaml:"default_repository_config"`
-	ConfigurationV0Paths    []string          `yaml:"configuration_v0_paths"`
+	RestrictionUserToken    string            `yaml:"restriction_user_token"`
+
+	ConfigurationV0Paths []string `yaml:"configuration_v0_paths"`
 }
 
 func (o *Options) fillDefaults() {
