@@ -76,6 +76,7 @@ func New(c *Config) (*Server, error) {
 		&handler.PullRequestReview{Base: baseHandler},
 		&handler.Push{Base: baseHandler},
 		&handler.Status{Base: baseHandler},
+		&handler.CheckSuite{Base: baseHandler},
 	)
 
 	mux := base.Mux()
