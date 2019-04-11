@@ -16,8 +16,6 @@ package server
 
 import (
 	"fmt"
-	"io"
-	"os"
 
 	"github.com/palantir/go-baseapp/baseapp"
 	"github.com/palantir/go-baseapp/baseapp/datadog"
@@ -39,10 +37,7 @@ type Server struct {
 // New instantiates a new Server.
 // Callers must then invoke Start to run the Server.
 func New(c *Config) (*Server, error) {
-	logger, err := configureLogger(c.Logging)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to initialize logging")
-	}
+	logger := baseapp.NewLogger(c.Logging)
 
 	serverParams := baseapp.DefaultParams(logger, c.Options.AppName+".")
 	base, err := baseapp.NewServer(c.Server, serverParams...)
@@ -90,25 +85,6 @@ func New(c *Config) (*Server, error) {
 		config: c,
 		base:   base,
 	}, nil
-}
-
-func configureLogger(c LoggingConfig) (zerolog.Logger, error) {
-	out := io.Writer(os.Stdout)
-	if c.Text {
-		out = zerolog.ConsoleWriter{Out: out}
-	}
-
-	logger := zerolog.New(out).With().Timestamp().Logger()
-	if c.Level == "" {
-		return logger, nil
-	}
-
-	level, err := zerolog.ParseLevel(c.Level)
-	if err != nil {
-		return logger, errors.Wrap(err, "failed to parse log level")
-	}
-
-	return logger.Level(level), nil
 }
 
 // Start is blocking and long-running

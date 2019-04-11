@@ -91,6 +91,11 @@ func (s *Server) HTTPConfig() HTTPConfig {
 	return s.config
 }
 
+// HTTPServer returns the underlying HTTP Server.
+func (s *Server) HTTPServer() *http.Server {
+	return s.server
+}
+
 // Mux returns the root mux for the server.
 func (s *Server) Mux() *goji.Mux {
 	return s.mux
@@ -132,7 +137,7 @@ func WriteJSON(w http.ResponseWriter, status int, obj interface{}) {
 	b, err := json.Marshal(obj)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, `{"error": %s}`, strconv.Quote(err.Error()))
+		_, _ = fmt.Fprintf(w, `{"error": %s}`, strconv.Quote(err.Error()))
 	} else {
 		w.WriteHeader(status)
 		_, _ = w.Write(b)
