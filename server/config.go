@@ -30,11 +30,16 @@ const (
 )
 
 type Config struct {
-	Server  baseapp.HTTPConfig    `yaml:"server"`
-	Github  githubapp.Config      `yaml:"github"`
-	Options Options               `yaml:"options"`
-	Logging baseapp.LoggingConfig `yaml:"logging"`
-	Datadog datadog.Config        `yaml:"datadog"`
+	Server  baseapp.HTTPConfig `yaml:"server"`
+	Github  githubapp.Config   `yaml:"github"`
+	Options Options            `yaml:"options"`
+	Logging LoggingConfig      `yaml:"logging"`
+	Datadog datadog.Config     `yaml:"datadog"`
+}
+
+type LoggingConfig struct {
+	Level string `yaml:"level"`
+	Text  bool   `yaml:"text"`
 }
 
 type Options struct {

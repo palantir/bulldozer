@@ -37,7 +37,10 @@ type Server struct {
 // New instantiates a new Server.
 // Callers must then invoke Start to run the Server.
 func New(c *Config) (*Server, error) {
-	logger := baseapp.NewLogger(c.Logging)
+	logger := baseapp.NewLogger(baseapp.LoggingConfig{
+		Level:  c.Logging.Level,
+		Pretty: c.Logging.Text,
+	})
 
 	serverParams := baseapp.DefaultParams(logger, c.Options.AppName+".")
 	base, err := baseapp.NewServer(c.Server, serverParams...)
