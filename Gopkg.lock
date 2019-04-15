@@ -78,7 +78,7 @@
 
 [[projects]]
   branch = "develop"
-  digest = "1:717a942e7b7ec8da032c61a88a066bf3900b4abddfe7c8ae3e2e014441e1756f"
+  digest = "1:5ec96530838ec8dfc68abb6e443a80f982d6295c4f8d4d85171ec1837e7c0a7d"
   name = "github.com/palantir/go-baseapp"
   packages = [
     "baseapp",
@@ -86,7 +86,7 @@
     "pkg/errfmt",
   ]
   pruneopts = "NUT"
-  revision = "3359f464678742c31e41533d5468cdf7d12c160a"
+  revision = "47d033114f8e6941d5e6bb4b04e7c47ac91dea21"
 
 [[projects]]
   branch = "develop"
