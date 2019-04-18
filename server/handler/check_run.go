@@ -12,80 +12,77 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-  package handler
+package handler
 
-  import (
- 	"context"
- 	"encoding/json"
+import (
+	"context"
+	"encoding/json"
 
-  	"github.com/google/go-github/github"
- 	"github.com/palantir/go-githubapp/githubapp"
- 	"github.com/pkg/errors"
+	"github.com/google/go-github/github"
+	"github.com/palantir/go-githubapp/githubapp"
+	"github.com/pkg/errors"
 
-  	"github.com/palantir/bulldozer/pull"
- )
+	"github.com/palantir/bulldozer/pull"
+)
 
-  type CheckRun struct {
- 	Base
- }
+type CheckRun struct {
+	Base
+}
 
-  func (h *CheckRun) Handles() []string {
- 	return []string{"check_run"}
- }
+func (h *CheckRun) Handles() []string {
+	return []string{"check_run"}
+}
 
-  func (h *CheckRun) Handle(ctx context.Context, eventType, deliveryID string, payload []byte) error {
- 	var event github.CheckRunEvent
+func (h *CheckRun) Handle(ctx context.Context, eventType, deliveryID string, payload []byte) error {
+	var event github.CheckRunEvent
 
-  	if err := json.Unmarshal(payload, &event); err != nil {
- 		return errors.Wrap(err, "failed to parse status event payload")
- 	}
+	if err := json.Unmarshal(payload, &event); err != nil {
+		return errors.Wrap(err, "failed to parse status event payload")
+	}
 
- 	repo := event.GetRepo()
- 	installationID := githubapp.GetInstallationIDFromEvent(&event)
+	repo := event.GetRepo()
+	installationID := githubapp.GetInstallationIDFromEvent(&event)
 
- 	ctx, logger := githubapp.PrepareRepoContext(ctx, installationID, repo)
- 	logger.Debug().Msgf("Doing nothing since check_run action was %q instead of 'completed'", event.GetAction())
+	ctx, logger := githubapp.PrepareRepoContext(ctx, installationID, repo)
+	logger.Debug().Msgf("Doing nothing since check_run action was %q instead of 'completed'", event.GetAction())
 
+	if event.GetAction() != "completed" {
+		logger.Debug().Msgf("Doing nothing since check_run action was %q instead of 'completed'", event.GetAction())
+		return nil
+	}
+	suite := event.GetCheckRun()
 
- 	if event.GetAction() != "completed" {
- 		logger.Debug().Msgf("Doing nothing since check_run action was %q instead of 'completed'", event.GetAction())
- 		return nil
- 	}
- 	suite := event.GetCheckRun()
+	client, err := h.ClientCreator.NewInstallationClient(installationID)
+	if err != nil {
+		return errors.Wrap(err, "failed to instantiate github client")
+	}
 
-  	client, err := h.ClientCreator.NewInstallationClient(installationID)
- 	if err != nil {
- 		return errors.Wrap(err, "failed to instantiate github client")
- 	}
+	prs := suite.PullRequests
 
-  	prs := suite.PullRequests
+	if len(prs) == 0 {
+		logger.Debug().Msg("Doing nothing since status change event affects no open pull requests")
+		return nil
+	}
 
-  	if len(prs) == 0 {
- 		logger.Debug().Msg("Doing nothing since status change event affects no open pull requests")
- 		return nil
- 	}
+	for _, pr := range prs {
+		// The PR included in the CheckRun response is very slim on information.
+		// It does not contain the owner information or label information we
+		// need to process the pull request.
 
+		fullPR, _, err := client.PullRequests.Get(ctx, repo.GetOwner().GetLogin(), repo.GetName(), pr.GetNumber())
+		if err != nil {
+			return errors.Wrapf(err, "failed to fetch PR number %q for CheckRun", pr.GetNumber())
+		}
+		pullCtx := pull.NewGithubContext(client, fullPR)
 
-  	for _, pr := range prs {
-  		// The PR included in the CheckRun response is very slim on information.
-  		// It does not contain the owner information or label information we
-  		// need to process the pull request.
+		logger := logger.With().Int(githubapp.LogKeyPRNum, pr.GetNumber()).Logger()
+		if err := h.ProcessPullRequest(logger.WithContext(ctx), pullCtx, client, pr); err != nil {
+			logger.Error().Err(errors.WithStack(err)).Msg("Error processing pull request")
+		}
+	}
 
-  		fullPR, _, err := client.PullRequests.Get(ctx, repo.GetOwner().GetLogin(), repo.GetName(), pr.GetNumber())
-  		if err != nil {
-  			return errors.Wrapf(err, "failed to fetch PR number %q for CheckRun", pr.GetNumber())
-  		}
- 		pullCtx := pull.NewGithubContext(client, fullPR)
+	return nil
+}
 
-
- 		logger := logger.With().Int(githubapp.LogKeyPRNum, pr.GetNumber()).Logger()
- 		if err := h.ProcessPullRequest(logger.WithContext(ctx), pullCtx, client, pr); err != nil {
- 			logger.Error().Err(errors.WithStack(err)).Msg("Error processing pull request")
- 		}
- 	}
-
-  	return nil
- }
-
-  // type assertion
- var _ githubapp.EventHandler = &CheckRun{}
+// type assertion
+var _ githubapp.EventHandler = &CheckRun{}
