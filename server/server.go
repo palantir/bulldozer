@@ -69,6 +69,7 @@ func New(c *Config) (*Server, error) {
 	}
 
 	webhookHandler := githubapp.NewDefaultEventDispatcher(c.Github,
+		&handler.CheckRun{Base: baseHandler},
 		&handler.IssueComment{Base: baseHandler},
 		&handler.PullRequest{Base: baseHandler},
 		&handler.PullRequestReview{Base: baseHandler},
