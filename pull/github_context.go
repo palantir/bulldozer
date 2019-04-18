@@ -224,9 +224,9 @@ func (ghc *GithubContext) CurrentSuccessStatuses(ctx context.Context) ([]string,
 			opts.Page = res.NextPage
 		}
 
-		check_opts := &github.ListCheckRunsOptions{ListOptions: github.ListOptions{PerPage: 100}}
+		CheckOpts := &github.ListCheckRunsOptions{ListOptions: github.ListOptions{PerPage: 100}}
 		for {
-			checkRuns, res, err := ghc.client.Checks.ListCheckRunsForRef(ctx, ghc.owner, ghc.repo, ghc.pr.GetHead().GetSHA(), check_opts)
+			checkRuns, res, err := ghc.client.Checks.ListCheckRunsForRef(ctx, ghc.owner, ghc.repo, ghc.pr.GetHead().GetSHA(), CheckOpts)
 			if err != nil {
 				return ghc.successStatuses, errors.Wrapf(err, "cannot get check runs for SHA %s on %s", ghc.pr.GetHead().GetSHA(), ghc.Locator())
 			}
@@ -240,7 +240,7 @@ func (ghc *GithubContext) CurrentSuccessStatuses(ctx context.Context) ([]string,
 			if res.NextPage == 0 {
 				break
 			}
-			check_opts.Page = res.NextPage
+			CheckOpts.Page = res.NextPage
 		}
 
 		ghc.successStatuses = successStatuses

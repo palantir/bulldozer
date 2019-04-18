@@ -71,11 +71,11 @@
   		// It does not contain the owner information or label information we
   		// need to process the pull request.
 
-  		full_pr, _, err := client.PullRequests.Get(ctx, repo.GetOwner().GetLogin(), repo.GetName(), pr.GetNumber())
+  		fullPR, _, err := client.PullRequests.Get(ctx, repo.GetOwner().GetLogin(), repo.GetName(), pr.GetNumber())
   		if err != nil {
   			return errors.Wrapf(err, "failed to fetch PR number %q for CheckRun", pr.GetNumber())
   		}
- 		pullCtx := pull.NewGithubContext(client, full_pr)
+ 		pullCtx := pull.NewGithubContext(client, fullPR)
 
 
  		logger := logger.With().Int(githubapp.LogKeyPRNum, pr.GetNumber()).Logger()
