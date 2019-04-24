@@ -274,6 +274,7 @@ Bulldozer requires the following permissions as a GitHub app:
 | Permission | Access | Reason |
 | ---------- | ------ | ------ |
 | Repository administration | Read-only | Determine required status checks |
+| Checks | Read-only | Read checks for ref |
 | Repository contents | Read & write | Read configuration, perform merges |
 | Issues | Read & write | Read comments, close linked issues |
 | Repository metadata | Read-only | Basic repository data |
@@ -282,6 +283,7 @@ Bulldozer requires the following permissions as a GitHub app:
 
 It should be subscribed to the following events:
 
+* Check run
 * Commit comment
 * Pull request
 * Status
