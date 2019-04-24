@@ -49,15 +49,13 @@ func (h *CheckRun) Handle(ctx context.Context, eventType, deliveryID string, pay
 		logger.Debug().Msgf("Doing nothing since check_run action was %q instead of 'completed'", event.GetAction())
 		return nil
 	}
-	suite := event.GetCheckRun()
 
 	client, err := h.ClientCreator.NewInstallationClient(installationID)
 	if err != nil {
 		return errors.Wrap(err, "failed to instantiate github client")
 	}
 
-	prs := suite.PullRequests
-
+	prs := event.GetCheckRun().PullRequests
 	if len(prs) == 0 {
 		logger.Debug().Msg("Doing nothing since status change event affects no open pull requests")
 		return nil
