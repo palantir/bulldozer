@@ -37,14 +37,13 @@ func (h *CheckRun) Handle(ctx context.Context, eventType, deliveryID string, pay
 	var event github.CheckRunEvent
 
 	if err := json.Unmarshal(payload, &event); err != nil {
-		return errors.Wrap(err, "failed to parse status event payload")
+		return errors.Wrap(err, "failed to parse check_run event payload")
 	}
 
 	repo := event.GetRepo()
 	installationID := githubapp.GetInstallationIDFromEvent(&event)
 
 	ctx, logger := githubapp.PrepareRepoContext(ctx, installationID, repo)
-	logger.Debug().Msgf("Doing nothing since check_run action was %q instead of 'completed'", event.GetAction())
 
 	if event.GetAction() != "completed" {
 		logger.Debug().Msgf("Doing nothing since check_run action was %q instead of 'completed'", event.GetAction())
