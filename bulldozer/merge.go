@@ -216,9 +216,10 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 
 			// if head is qualified (contains ":"), PR is from a fork and we don't have delete permission
 			if !strings.ContainsRune(head, ':') {
-				if mergeConfig.DeleteAfterMerge {
-					ref := fmt.Sprintf("refs/heads/%s", head)
+				
+				ref := fmt.Sprintf("refs/heads/%s", head)
 
+				if mergeConfig.DeleteAfterMerge {
 					// check other open PRs to make sure that nothing is trying to merge into the ref we're about to delete
 					isTargeted, err := pullCtx.IsTargeted(ctx)
 					if err != nil {
