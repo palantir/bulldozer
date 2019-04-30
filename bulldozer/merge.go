@@ -237,6 +237,8 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 					}
 
 					logger.Info().Msgf("Successfully deleted ref %s on %q", ref, pullCtx.Locator())
+				} else {
+					logger.Debug().Msgf("Skipping deletion of ref %s, delete_after_merge not configured", ref)	
 				}
 			} else {
 				logger.Debug().Msg("Pull Request is from a fork, not deleting")
