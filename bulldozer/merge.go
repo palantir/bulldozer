@@ -216,9 +216,8 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 
 			// if head is qualified (contains ":"), PR is from a fork and we don't have delete permission
 			if !strings.ContainsRune(head, ':') {
+				ref := fmt.Sprintf("refs/heads/%s", head)
 				if mergeConfig.DeleteAfterMerge {
-					ref := fmt.Sprintf("refs/heads/%s", head)
-
 					// check other open PRs to make sure that nothing is trying to merge into the ref we're about to delete
 					isTargeted, err := pullCtx.IsTargeted(ctx)
 					if err != nil {
@@ -237,6 +236,8 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 					}
 
 					logger.Info().Msgf("Successfully deleted ref %s on %q", ref, pullCtx.Locator())
+				} else {
+					logger.Debug().Msgf("Not deleting ref %s, delete_after_merge is not enabled", ref)
 				}
 			} else {
 				logger.Debug().Msg("Pull Request is from a fork, not deleting")

@@ -78,23 +78,17 @@ func (cf *ConfigFetcher) ConfigForPR(ctx context.Context, client *github.Client,
 
 	bytes, err := cf.fetchConfigContents(ctx, client, fc.Owner, fc.Repo, fc.Ref, cf.configurationV1Path)
 	if err == nil && bytes != nil {
-		config, err := cf.unmarshalConfig(bytes)
-		if err != nil {
-			logger.Debug().Msgf("v1 config is invalid")
-		} else {
+		if config, err := cf.unmarshalConfig(bytes); err == nil {
+			logger.Debug().Msgf("Found v1 configuration at %s", cf.configurationV1Path)
 			fc.Config = config
 			return fc, nil
 		}
 	}
+	logger.Debug().Msgf("v1 configuration was missing or invalid, falling back to v0 or server configuration")
 
 	for _, configV0Path := range cf.configurationV0Paths {
-		logger.Debug().Msgf("v1 configuration not found; will attempt fetch v0 %s and unmarshal as v0", configV0Path)
 		bytes, err := cf.fetchConfigContents(ctx, client, fc.Owner, fc.Repo, fc.Ref, configV0Path)
-		if err != nil {
-			continue
-		}
-
-		if bytes == nil {
+		if err != nil || bytes == nil {
 			continue
 		}
 
@@ -102,19 +96,19 @@ func (cf *ConfigFetcher) ConfigForPR(ctx context.Context, client *github.Client,
 		if err != nil {
 			continue
 		}
-		logger.Debug().Msgf("found v0 configuration at %s with merge method %s", configV0Path, config.Merge.Method)
 
+		logger.Debug().Msgf("Found v0 configuration at %s", configV0Path)
 		fc.Config = config
 		return fc, nil
 	}
 
 	if cf.defaultRepositoryConfig != nil {
-		logger.Debug().Msgf("Default repository config is used as fallback")
+		logger.Debug().Msgf("No repository configuration found, using server-provided default")
 		fc.Config = cf.defaultRepositoryConfig
 		return fc, nil
 	}
 
-	fc.Error = errors.New("Unable to find valid v1 or v0 configuration")
+	fc.Error = errors.New("No configuration found")
 	return fc, nil
 }
 
