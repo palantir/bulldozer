@@ -52,18 +52,18 @@ func (b *Base) ProcessPullRequest(ctx context.Context, pullCtx pull.Context, cli
 
 	switch {
 	case bulldozerConfig.Missing():
-		logger.Debug().Msgf("No bulldozer configuration for %q", bulldozerConfig.String())
+		logger.Debug().Msgf("No configuration found for %s", bulldozerConfig)
 	case bulldozerConfig.Invalid():
-		logger.Debug().Msgf("Bulldozer configuration is invalid for %q", bulldozerConfig.String())
+		logger.Warn().Msgf("Configuration is invalid for %s", bulldozerConfig)
 	default:
-		logger.Debug().Msgf("Bulldozer configuration is valid for %q", bulldozerConfig.String())
+		logger.Debug().Msgf("Found valid configuration for %s", bulldozerConfig)
 		config := *bulldozerConfig.Config
+
 		shouldMerge, err := bulldozer.ShouldMergePR(ctx, pullCtx, config.Merge)
 		if err != nil {
 			return errors.Wrap(err, "unable to determine merge status")
 		}
 		if shouldMerge {
-			logger.Debug().Msg("Pull request should be merged")
 			if err := bulldozer.MergePR(ctx, pullCtx, merger, config.Merge); err != nil {
 				return errors.Wrap(err, "failed to merge pull request")
 			}
@@ -83,21 +83,19 @@ func (b *Base) UpdatePullRequest(ctx context.Context, pullCtx pull.Context, clie
 
 	switch {
 	case bulldozerConfig.Missing():
-		logger.Debug().Msgf("No bulldozer configuration for %q", bulldozerConfig.String())
+		logger.Debug().Msgf("No configuration found for %s", bulldozerConfig)
 	case bulldozerConfig.Invalid():
-		logger.Debug().Msgf("Bulldozer configuration is invalid for %q", bulldozerConfig.String())
+		logger.Warn().Msgf("Configuration is invalid for %s", bulldozerConfig)
 	default:
-		logger.Debug().Msgf("Bulldozer configuration is valid for %q", bulldozerConfig.String())
+		logger.Debug().Msgf("Found valid configuration for %s", bulldozerConfig)
 		config := *bulldozerConfig.Config
 
 		shouldUpdate, err := bulldozer.ShouldUpdatePR(ctx, pullCtx, config.Update)
-
 		if err != nil {
 			return errors.Wrap(err, "unable to determine update status")
 		}
 
 		if shouldUpdate {
-			logger.Debug().Msg("Pull request should be updated")
 			if err := bulldozer.UpdatePR(ctx, pullCtx, client, config.Update, baseRef); err != nil {
 				return errors.Wrap(err, "failed to update pull request")
 			}
