@@ -3,5 +3,6 @@
 *.iml
 *.ipr
 *.iws
+config/bulldozer.yml
 
 build/
