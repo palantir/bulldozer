@@ -54,9 +54,9 @@ func New(c *Config) (*Server, error) {
 		c.Github,
 		githubapp.WithClientUserAgent(userAgent),
 		githubapp.WithClientMiddleware(
-			githubapp.ClientCaching(func() httpcache.Cache { return httpcache.NewMemoryCache() }),
 			githubapp.ClientLogging(zerolog.DebugLevel),
 			githubapp.ClientMetrics(base.Registry()),
+			githubapp.ClientCaching(func() httpcache.Cache { return httpcache.NewMemoryCache() }),
 		),
 	)
 	if err != nil {
