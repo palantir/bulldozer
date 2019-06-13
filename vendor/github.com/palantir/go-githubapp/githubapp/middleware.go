@@ -18,7 +18,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gregjones/httpcache"
 	"github.com/rcrowley/go-metrics"
 	"github.com/rs/zerolog"
 )
@@ -29,8 +28,6 @@ const (
 	MetricsKeyRequests3xx = "github.requests.3xx"
 	MetricsKeyRequests4xx = "github.requests.4xx"
 	MetricsKeyRequests5xx = "github.requests.5xx"
-
-	MetricsKeyCache = "github.requests.cached"
 )
 
 // ClientMetrics creates client middleware that records metrics about all
@@ -42,7 +39,6 @@ func ClientMetrics(registry metrics.Registry) ClientMiddleware {
 		MetricsKeyRequests3xx,
 		MetricsKeyRequests4xx,
 		MetricsKeyRequests5xx,
-		MetricsKeyCache,
 	} {
 		// Use GetOrRegister for thread-safety when creating multiple
 		// RoundTrippers that share the same registry
@@ -57,10 +53,6 @@ func ClientMetrics(registry metrics.Registry) ClientMiddleware {
 				registry.Get(MetricsKeyRequests).(metrics.Counter).Inc(1)
 				if key := bucketStatus(res.StatusCode); key != "" {
 					registry.Get(key).(metrics.Counter).Inc(1)
-				}
-
-				if res.Header.Get(httpcache.XFromCache) != "" {
-					registry.Get(MetricsKeyCache).(metrics.Counter).Inc(1)
 				}
 			}
 
@@ -115,16 +107,6 @@ func ClientLogging(lvl zerolog.Level) ClientMiddleware {
 
 			return res, err
 		})
-	}
-}
-
-// ClientCaching creates client middleware that caches http responses
-// using the provided cache implementation
-func ClientCaching(cache func() httpcache.Cache) ClientMiddleware {
-	return func(next http.RoundTripper) http.RoundTripper {
-		cached := httpcache.NewTransport(cache())
-		cached.Transport = next
-		return cached
 	}
 }
 
