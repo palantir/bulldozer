@@ -58,14 +58,6 @@
   version = "v1.0.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:a2b4fa8b538f6e42d0f38cbdef92e771072d7a64a97ff1512da95554ab2680a1"
-  name = "github.com/gregjones/httpcache"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "3befbb6ad0cc97d4c25d851e9528915809e1a22f"
-
-[[projects]]
   digest = "1:52094d0f8bdf831d1a2401e9b6fee5795fdc0b2a2d1f8bb1980834c289e79129"
   name = "github.com/hashicorp/golang-lru"
   packages = [
@@ -98,11 +90,11 @@
 
 [[projects]]
   branch = "develop"
-  digest = "1:24c9fbd90584ecccb45170f8af8e884b81e68916ccec0042258d419d499e6dc4"
+  digest = "1:630fd596c926c094f1bd904cefb5a80497e169df35635356239ad709f76f2af9"
   name = "github.com/palantir/go-githubapp"
   packages = ["githubapp"]
   pruneopts = "NUT"
-  revision = "155147719d13247844bd85eaa827dcc0252d9927"
+  revision = "a3a32b23c2f767a61fccfcf51f334cb66c3f37ac"
 
 [[projects]]
   digest = "1:14715f705ff5dfe0ffd6571d7d201dd8e921030f8070321a79380d8ca4ec1a24"
@@ -250,7 +242,6 @@
   analyzer-version = 1
   input-imports = [
     "github.com/google/go-github/github",
-    "github.com/gregjones/httpcache",
     "github.com/palantir/go-baseapp/baseapp",
     "github.com/palantir/go-baseapp/baseapp/datadog",
     "github.com/palantir/go-baseapp/pkg/errfmt",
