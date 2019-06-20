@@ -17,6 +17,7 @@ package server
 import (
 	"fmt"
 
+	"github.com/gregjones/httpcache"
 	"github.com/palantir/go-baseapp/baseapp"
 	"github.com/palantir/go-baseapp/baseapp/datadog"
 	"github.com/palantir/go-githubapp/githubapp"
@@ -52,6 +53,7 @@ func New(c *Config) (*Server, error) {
 	clientCreator, err := githubapp.NewDefaultCachingClientCreator(
 		c.Github,
 		githubapp.WithClientUserAgent(userAgent),
+		githubapp.WithClientCaching(true, func() httpcache.Cache { return httpcache.NewMemoryCache() }),
 		githubapp.WithClientMiddleware(
 			githubapp.ClientLogging(zerolog.DebugLevel),
 			githubapp.ClientMetrics(base.Registry()),
