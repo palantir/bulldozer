@@ -46,7 +46,7 @@ type LoggingConfig struct {
 }
 
 type CacheConfig struct {
-	MaxSize int64         `yaml:"max_size"`
+	MaxSize string        `yaml:"max_size"`
 	MaxAge  time.Duration `yaml:"max_age"`
 }
 

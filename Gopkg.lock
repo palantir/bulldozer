@@ -93,6 +93,14 @@
   version = "v1.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:83809e21ef2c422e1c4c47d07027ae7b7222709be79ff45a16ca3925dc275eaa"
+  name = "github.com/inhies/go-bytesize"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "5990f52c6ad68c68c6edf5e4d93fc67191782e33"
+
+[[projects]]
   branch = "develop"
   digest = "1:5ec96530838ec8dfc68abb6e443a80f982d6295c4f8d4d85171ec1837e7c0a7d"
   name = "github.com/palantir/go-baseapp"
@@ -260,6 +268,7 @@
     "github.com/die-net/lrucache",
     "github.com/google/go-github/github",
     "github.com/gregjones/httpcache",
+    "github.com/inhies/go-bytesize",
     "github.com/palantir/go-baseapp/baseapp",
     "github.com/palantir/go-baseapp/baseapp/datadog",
     "github.com/palantir/go-baseapp/pkg/errfmt",

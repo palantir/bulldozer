@@ -20,6 +20,7 @@ import (
 
 	"github.com/die-net/lrucache"
 	"github.com/gregjones/httpcache"
+	"github.com/inhies/go-bytesize"
 	"github.com/palantir/go-baseapp/baseapp"
 	"github.com/palantir/go-baseapp/baseapp/datadog"
 	"github.com/palantir/go-githubapp/githubapp"
@@ -51,10 +52,13 @@ func New(c *Config) (*Server, error) {
 		return nil, errors.Wrap(err, "failed to initialize base server")
 	}
 
-	// Default to 50 MB for the cache size
-	maxSize := int64(50 * 1024 * 1024)
-	if c.Cache.MaxSize != 0 {
-		maxSize = c.Cache.MaxSize
+	maxSize := int64(50 * bytesize.MB)
+	if c.Cache.MaxSize != "" {
+		maxSizeBytes, err := bytesize.Parse(c.Cache.MaxSize)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse max size")
+		}
+		maxSize = int64(maxSizeBytes)
 	}
 
 	maxAge := 20 * time.Minute
