@@ -26,6 +26,14 @@
   version = "v0.1.2"
 
 [[projects]]
+  branch = "master"
+  digest = "1:2755397479777565ae0c383f63be30e8975da63805281283bdde46d73bed9a7d"
+  name = "github.com/c2h5oh/datasize"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "4eba002a5eaea69cf8d235a388fc6b65ae68d2dd"
+
+[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -91,14 +99,6 @@
   pruneopts = "NUT"
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
   version = "v1.0"
-
-[[projects]]
-  branch = "master"
-  digest = "1:83809e21ef2c422e1c4c47d07027ae7b7222709be79ff45a16ca3925dc275eaa"
-  name = "github.com/inhies/go-bytesize"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "5990f52c6ad68c68c6edf5e4d93fc67191782e33"
 
 [[projects]]
   branch = "develop"
@@ -265,10 +265,10 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/c2h5oh/datasize",
     "github.com/die-net/lrucache",
     "github.com/google/go-github/github",
     "github.com/gregjones/httpcache",
-    "github.com/inhies/go-bytesize",
     "github.com/palantir/go-baseapp/baseapp",
     "github.com/palantir/go-baseapp/baseapp/datadog",
     "github.com/palantir/go-baseapp/pkg/errfmt",

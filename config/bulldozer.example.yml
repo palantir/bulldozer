@@ -16,8 +16,6 @@ logging:
 
 # Options for the HTTP Cache
 cache:
-  # The max duration to keep entries in the cache before
-  max_age: 10m
   # The maximum size of the cache (specified in human readable units)
   max_size: 50 MB
 

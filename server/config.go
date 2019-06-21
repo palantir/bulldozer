@@ -15,8 +15,7 @@
 package server
 
 import (
-	"time"
-
+	"github.com/c2h5oh/datasize"
 	"github.com/palantir/go-baseapp/baseapp"
 	"github.com/palantir/go-baseapp/baseapp/datadog"
 	"github.com/palantir/go-githubapp/githubapp"
@@ -46,8 +45,7 @@ type LoggingConfig struct {
 }
 
 type CacheConfig struct {
-	MaxSize string        `yaml:"max_size"`
-	MaxAge  time.Duration `yaml:"max_age"`
+	MaxSize datasize.ByteSize `yaml:"max_size"`
 }
 
 type Options struct {
