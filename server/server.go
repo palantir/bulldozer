@@ -16,7 +16,9 @@ package server
 
 import (
 	"fmt"
+	"time"
 
+	"github.com/die-net/lrucache"
 	"github.com/gregjones/httpcache"
 	"github.com/palantir/go-baseapp/baseapp"
 	"github.com/palantir/go-baseapp/baseapp/datadog"
@@ -49,11 +51,22 @@ func New(c *Config) (*Server, error) {
 		return nil, errors.Wrap(err, "failed to initialize base server")
 	}
 
+	// Default to 50 MB for the cache size
+	maxSize := int64(50 * 1024 * 1024)
+	if c.Cache.MaxSize != 0 {
+		maxSize = c.Cache.MaxSize
+	}
+
+	maxAge := 20 * time.Minute
+	if c.Cache.MaxAge != 0 {
+		maxAge = c.Cache.MaxAge
+	}
+
 	userAgent := fmt.Sprintf("%s/%s", c.Options.AppName, version.GetVersion())
 	clientCreator, err := githubapp.NewDefaultCachingClientCreator(
 		c.Github,
 		githubapp.WithClientUserAgent(userAgent),
-		githubapp.WithClientCaching(true, func() httpcache.Cache { return httpcache.NewMemoryCache() }),
+		githubapp.WithClientCaching(true, func() httpcache.Cache { return lrucache.New(maxSize, maxAge.Nanoseconds()) }),
 		githubapp.WithClientMiddleware(
 			githubapp.ClientLogging(zerolog.DebugLevel),
 			githubapp.ClientMetrics(base.Registry()),

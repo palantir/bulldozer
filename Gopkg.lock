@@ -42,6 +42,14 @@
   version = "v3.2.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:ea77235a4b2c30ec49399bc8376fcb9ceab8b7726b7426e845fc651ae56af5f5"
+  name = "github.com/die-net/lrucache"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "19a39ef22a11a471b23c3beb9cb39903f6cff332"
+
+[[projects]]
   digest = "1:b4303d38d92c00af6603f3b865a9bd20e3c50cebe55489e5aeb721c26750e375"
   name = "github.com/google/go-github"
   packages = ["github"]
@@ -249,6 +257,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/die-net/lrucache",
     "github.com/google/go-github/github",
     "github.com/gregjones/httpcache",
     "github.com/palantir/go-baseapp/baseapp",
