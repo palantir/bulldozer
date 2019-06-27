@@ -97,6 +97,65 @@ func TestCalculateCommitTitle(t *testing.T) {
 	}
 }
 
+func TestCalculateCommitMessage(t *testing.T) {
+	defaultPullContext := &pulltest.MockPullContext{
+		TitleValue: "This is the PR title!",
+		BodyValue:  "This is the PR body!",
+		CommitsValue: []*pull.Commit{
+			{SHA: "f6374a30ec7a3f2dbf35b40ac984b64358ccd246", Message: "The first commit message!"},
+			{SHA: "89aec3244253260261351047f0bf6d9b7626c4f6", Message: "The second commit message!"},
+			{SHA: "9907911cde43652c51808f79047c98f0d48ae58f", Message: "The third commit message!"},
+		},
+	}
+
+	tests := map[string]struct {
+		PullContext pull.Context
+		Strategy    MessageStrategy
+		Delimiter   string
+		Output      string
+	}{
+		"emptyBody": {
+			PullContext: defaultPullContext,
+			Strategy:    EmptyBody,
+			Output:      "",
+		},
+		"summarizeCommits": {
+			PullContext: defaultPullContext,
+			Strategy:    SummarizeCommits,
+			Output:      "* The first commit message!\n* The second commit message!\n* The third commit message!\n",
+		},
+		"pullRequestBody": {
+			PullContext: defaultPullContext,
+			Strategy:    PullRequestBody,
+			Output:      "This is the PR body!",
+		},
+		"pullRequestBodyDelimiter": {
+			PullContext: &pulltest.MockPullContext{
+				BodyValue: "Prefix text...\n~~\nThe delimited body\n~~\nSuffix text...",
+			},
+			Strategy:  PullRequestBody,
+			Delimiter: "~~",
+			Output:    "The delimited body",
+		},
+		"pullRequestBodyMissingDelimiter": {
+			PullContext: defaultPullContext,
+			Strategy:    PullRequestBody,
+			Delimiter:   "~~",
+			Output:      "",
+		},
+	}
+
+	ctx := context.Background()
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			output, err := calculateCommitMessage(ctx, test.PullContext, SquashOptions{Body: test.Strategy, MessageDelimiter: test.Delimiter})
+			require.NoError(t, err)
+			assert.Equal(t, test.Output, output, "calculated body is incorrect")
+		})
+	}
+}
+
 func TestPushRestrictionMerger(t *testing.T) {
 	normal := &MockMerger{}
 	restricted := &MockMerger{}

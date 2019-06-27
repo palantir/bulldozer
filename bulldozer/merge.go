@@ -266,7 +266,7 @@ func calculateCommitMessage(ctx context.Context, pullCtx pull.Context, option Sq
 				return "", errors.Wrap(err, "failed to compile message delimiter regex")
 			}
 
-			if m := matcher.FindStringSubmatch(commitMessage); len(m) == 4 {
+			if m := matcher.FindStringSubmatch(pullCtx.Body()); len(m) == 4 {
 				commitMessage = m[2]
 			}
 		} else {
