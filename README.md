@@ -60,7 +60,7 @@ own instance of the server.
 
 The `.bulldozer.yml` file is read from the most recent commit on the target
 branch of each pull request. If `bulldozer` cannot find a configuration file,
-it will take no action. This means it is safe to enable the `bulldozer` on all.
+it will take no action. This means it is safe to enable the `bulldozer` on all
 repositories in an organization.
 
 ### bulldozer.yml Specification
