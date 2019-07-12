@@ -207,7 +207,7 @@ options:
       labels: ["do not merge"] # or any other available config.
 ```
 
-#### Bulldozer isn't merging my commit or updating my branch when it should, what could be happening?
+#### Bulldozer isn't merging my commit when it should, what could be happening?
 
 Bulldozer will attempt to merge a branch whenever it passes the whitelist/blacklist
 criteria. GitHub may prevent it from merging a branch in certain conditions, some of
@@ -224,6 +224,22 @@ which are to be expected, and others that may be caused by mis-configuring Bulld
 
 [push restrictions]: https://help.github.com/articles/about-branch-restrictions/
 [a workaround]: #can-bulldozer-work-with-push-restrictions-on-branches
+
+#### Bulldozer isn't updating my branch when it should, what could be happening?
+
+When using the branch update functionality, Bulldozer only acts when the target
+branch is updated _after_ updates are enabled for the pull request. For
+example:
+
+1. User A opens a pull request targetting `develop`
+2. User B pushes a commit to `develop`
+3. User A adds the `update me` label to the first pull request
+4. User C pushes a commit to `develop`
+5. Bulldozer updates the pull request with the commits from Users B and C
+
+Note that the update does _not_ happen when the `update me` label is added,
+even though there is a new commit on `develop` that is not part of the pull
+request.
 
 #### Can Bulldozer work with push restrictions on branches?
 
