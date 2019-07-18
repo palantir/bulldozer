@@ -136,7 +136,7 @@ merge:
       # strings. This is disabled (empty string) by default.
       message_delimiter: ==COMMIT_MSG==
 
-  # "required_status" is a list of additional status contexts that must pass
+  # "required_statuses" is a list of additional status contexts that must pass
   # before bulldozer can merge a pull request. This is useful if you want to
   # require extra testing for automated merges, but not for manual merges.
   required_statuses:
