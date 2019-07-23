@@ -15,6 +15,8 @@
 package server
 
 import (
+	"os"
+
 	"github.com/c2h5oh/datasize"
 	"github.com/palantir/go-baseapp/baseapp"
 	"github.com/palantir/go-baseapp/baseapp/datadog"
@@ -23,11 +25,6 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/palantir/bulldozer/bulldozer"
-)
-
-const (
-	DefaultAppName             = "bulldozer"
-	DefaultConfigurationV1Path = ".bulldozer.v1.yml"
 )
 
 type Config struct {
@@ -57,21 +54,15 @@ type Options struct {
 	ConfigurationV0Paths []string `yaml:"configuration_v0_paths"`
 }
 
-func (o *Options) fillDefaults() {
-	if o.AppName == "" {
-		o.AppName = DefaultAppName
-	}
-
-	if o.ConfigurationPath == "" {
-		o.ConfigurationPath = DefaultConfigurationV1Path
-	}
-}
-
 func ParseConfig(bytes []byte) (*Config, error) {
 	var c Config
-	err := yaml.UnmarshalStrict(bytes, &c)
-	if err != nil {
+	if err := yaml.UnmarshalStrict(bytes, &c); err != nil {
 		return nil, errors.Wrapf(err, "failed unmarshaling yaml")
+	}
+
+	c.Github.SetValuesFromEnv("")
+	if v, ok := os.LookupEnv("BULLDOZER_PUSH_RESTRICTION_USER_TOKEN"); ok {
+		c.Options.PushRestrictionUserToken = v
 	}
 
 	return &c, nil
