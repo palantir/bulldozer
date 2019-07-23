@@ -30,7 +30,7 @@ jobs:
     environment:
       TESTS_DIR: *results-dir
     docker:
-      - image: nmiyake/go:go-darwin-linux-1.11-t134
+      - image: circleci/golang:1.12.7
     steps:
       - checkout
       - *restore-godel-cache
@@ -49,7 +49,7 @@ jobs:
   dist:
     working_directory: /go/src/github.com/palantir/bulldozer
     docker:
-      - image: nmiyake/go:go-darwin-linux-1.11-docker-17.06.0-ce-bsdtar-unzip-t134
+      - image: circleci/golang:1.12.7
     steps:
       - checkout
       - setup_remote_docker
