@@ -275,17 +275,19 @@ We provide both a Docker container and a binary distribution of the server:
 - Binaries: https://bintray.com/palantir/releases/bulldozer
 - Docker Images: https://hub.docker.com/r/palantirtechnologies/bulldozer/
 
-A sample configuration file is provided at `config/bulldozer.example.yml`. We
-recommend deploying the application behind a reverse proxy or load balancer
-that terminates TLS connections.
+A sample configuration file is provided at `config/bulldozer.example.yml`.
+Certain values may also be set by environment variables; these are noted in the
+comments in the sample configuration file.
 
 ### GitHub App Configuration
 
-Webhook URL:
+To configure Bulldozer as a GitHub App, these general options are required:
 
-* `http(s)://your.domain.com/api/github/hook`
+- **Webhook URL**: `http(s)://<your-bulldozer-domain>/api/github/hook`
+- **Webhook secret**: A random string that matches the value of the
+  `github.app.webhook_secret` property in the server configuration
 
-Bulldozer requires the following permissions as a GitHub app:
+The app requires these permissions:
 
 | Permission | Access | Reason |
 | ---------- | ------ | ------ |
@@ -297,7 +299,7 @@ Bulldozer requires the following permissions as a GitHub app:
 | Pull requests | Read & write | Merge and close pull requests |
 | Commit status | Read-only | Evaluate pull request status |
 
-It should be subscribed to the following events:
+The app should be subscribed to these events:
 
 * Check run
 * Commit comment
