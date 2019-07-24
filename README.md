@@ -283,7 +283,7 @@ comments in the sample configuration file.
 
 To configure Bulldozer as a GitHub App, these general options are required:
 
-- **Webhook URL**: `http(s)://<your-policy-bot-domain>/api/github/hook`
+- **Webhook URL**: `http(s)://<your-bulldozer-domain>/api/github/hook`
 - **Webhook secret**: A random string that matches the value of the
   `github.app.webhook_secret` property in the server configuration
 
