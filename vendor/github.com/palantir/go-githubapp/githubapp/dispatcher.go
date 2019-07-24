@@ -96,7 +96,7 @@ type eventDispatcher struct {
 // dispatcher from configuration using the default error and response
 // callbacks.
 func NewDefaultEventDispatcher(c Config, handlers ...EventHandler) http.Handler {
-	return NewEventDispatcher(handlers, c.App.WebhookSecret, nil)
+	return NewEventDispatcher(handlers, c.App.WebhookSecret)
 }
 
 // NewEventDispatcher creates an http.Handler that dispatches GitHub webhook
