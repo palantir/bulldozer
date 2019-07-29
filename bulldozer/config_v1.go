@@ -25,7 +25,7 @@ const (
 
 	PullRequestTitle   TitleStrategy = "pull_request_title"
 	FirstCommitTitle   TitleStrategy = "first_commit_title"
-	GithubDefaultTitle TitleStrategy = "github_default"
+	GithubDefaultTitle TitleStrategy = "github_default_title"
 
 	MergeCommit    MergeMethod = "merge"
 	SquashAndMerge MergeMethod = "squash"
