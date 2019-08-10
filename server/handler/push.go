@@ -80,6 +80,10 @@ func (h *Push) Handle(ctx context.Context, eventType, deliveryID string, payload
 		if err := h.UpdatePullRequest(logger.WithContext(ctx), pullCtx, client, pr, baseRef); err != nil {
 			logger.Error().Err(errors.WithStack(err)).Msg("Error updating pull request")
 		}
+
+		if err := h.ProcessPullRequest(ctx, pullCtx, client, pr); err != nil {
+			logger.Error().Err(errors.WithStack(err)).Msg("Error processing pull request")
+		}
 	}
 
 	return nil
