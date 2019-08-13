@@ -157,6 +157,15 @@ update:
   # bulldozer. It accepts the same keys as the blacklist in the "merge" block.
   blacklist:
     labels: ["Do Not Update"]
+
+  # "required_statuses" is a list of status contexts that must pass
+  # before bulldozer can update a pull request. This is useful if you want to
+  # update the branch only after PR is reviewed and deemed mergeable.
+  #
+  # Unlike with merges, only these statuses will be consulted, and the list
+  # of required statuses in branch protection rules will not be used.
+  required_statuses:
+    - "code-review/reviewable"
 ```
 
 ## FAQ

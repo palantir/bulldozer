@@ -16,6 +16,7 @@ package bulldozer
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/google/go-github/github"
@@ -54,6 +55,20 @@ func ShouldUpdatePR(ctx context.Context, pullCtx pull.Context, updateConfig Upda
 		}
 
 		logger.Debug().Msgf("%s is whitelisted because whitelisting is enabled and %s", pullCtx.Locator(), reason)
+	}
+
+	if len(updateConfig.RequiredStatuses) > 0 {
+		successStatuses, err := pullCtx.CurrentSuccessStatuses(ctx)
+		if err != nil {
+			return false, errors.Wrap(err, "failed to determine currently successful status checks")
+		}
+
+		unsatisfiedStatuses := setDifference(updateConfig.RequiredStatuses, successStatuses)
+		if len(unsatisfiedStatuses) > 0 {
+			logger.Debug().Msgf("%s is deemed not updateable because of unfulfilled status checks: [%s]", pullCtx.Locator(),
+				strings.Join(unsatisfiedStatuses, ","))
+			return false, nil
+		}
 	}
 
 	return true, nil

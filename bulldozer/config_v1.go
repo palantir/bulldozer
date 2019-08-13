@@ -61,6 +61,9 @@ type SquashOptions struct {
 type UpdateConfig struct {
 	Whitelist Signals `yaml:"whitelist"`
 	Blacklist Signals `yaml:"blacklist"`
+
+	// Status checks to require for update
+	RequiredStatuses []string `yaml:"required_statuses"`
 }
 
 type Config struct {
