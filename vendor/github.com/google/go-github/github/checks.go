@@ -51,9 +51,10 @@ type CheckRunOutput struct {
 // CheckRunAnnotation represents an annotation object for a CheckRun output.
 type CheckRunAnnotation struct {
 	Path            *string `json:"path,omitempty"`
-	BlobHRef        *string `json:"blob_href,omitempty"`
 	StartLine       *int    `json:"start_line,omitempty"`
 	EndLine         *int    `json:"end_line,omitempty"`
+	StartColumn     *int    `json:"start_column,omitempty"`
+	EndColumn       *int    `json:"end_column,omitempty"`
 	AnnotationLevel *string `json:"annotation_level,omitempty"`
 	Message         *string `json:"message,omitempty"`
 	Title           *string `json:"title,omitempty"`
@@ -81,6 +82,9 @@ type CheckSuite struct {
 	App          *App           `json:"app,omitempty"`
 	Repository   *Repository    `json:"repository,omitempty"`
 	PullRequests []*PullRequest `json:"pull_requests,omitempty"`
+
+	// The following fields are only populated by Webhook events.
+	HeadCommit *Commit `json:"head_commit,omitempty"`
 }
 
 func (c CheckRun) String() string {
@@ -136,7 +140,6 @@ func (s *ChecksService) GetCheckSuite(ctx context.Context, owner, repo string, c
 // CreateCheckRunOptions sets up parameters needed to create a CheckRun.
 type CreateCheckRunOptions struct {
 	Name        string            `json:"name"`                   // The name of the check (e.g., "code-coverage"). (Required.)
-	HeadBranch  string            `json:"head_branch"`            // The name of the branch to perform a check against. (Required.)
 	HeadSHA     string            `json:"head_sha"`               // The SHA of the commit. (Required.)
 	DetailsURL  *string           `json:"details_url,omitempty"`  // The URL of the integrator's site that has the full details of the check. (Optional.)
 	ExternalID  *string           `json:"external_id,omitempty"`  // A reference for the run on the integrator's system. (Optional.)
@@ -179,7 +182,6 @@ func (s *ChecksService) CreateCheckRun(ctx context.Context, owner, repo string, 
 // UpdateCheckRunOptions sets up parameters needed to update a CheckRun.
 type UpdateCheckRunOptions struct {
 	Name        string            `json:"name"`                   // The name of the check (e.g., "code-coverage"). (Required.)
-	HeadBranch  *string           `json:"head_branch,omitempty"`  // The name of the branch to perform a check against. (Optional.)
 	HeadSHA     *string           `json:"head_sha,omitempty"`     // The SHA of the commit. (Optional.)
 	DetailsURL  *string           `json:"details_url,omitempty"`  // The URL of the integrator's site that has the full details of the check. (Optional.)
 	ExternalID  *string           `json:"external_id,omitempty"`  // A reference for the run on the integrator's system. (Optional.)
@@ -352,7 +354,7 @@ type AutoTriggerCheck struct {
 
 // CheckSuitePreferenceOptions set options for check suite preferences for a repository.
 type CheckSuitePreferenceOptions struct {
-	PreferenceList *PreferenceList `json:"auto_trigger_checks,omitempty"` // A list of auto trigger checks that can be set for a check suite in a repository.
+	AutoTriggerChecks []*AutoTriggerCheck `json:"auto_trigger_checks,omitempty"` // A slice of auto trigger checks that can be set for a check suite in a repository.
 }
 
 // CheckSuitePreferenceResults represents the results of the preference set operation.
@@ -361,7 +363,7 @@ type CheckSuitePreferenceResults struct {
 	Repository  *Repository     `json:"repository,omitempty"`
 }
 
-// PreferenceList represents a list of auto trigger checks for  repository
+// PreferenceList represents a list of auto trigger checks for repository
 type PreferenceList struct {
 	AutoTriggerChecks []*AutoTriggerCheck `json:"auto_trigger_checks,omitempty"` // A slice of auto trigger checks that can be set for a check suite in a repository.
 }

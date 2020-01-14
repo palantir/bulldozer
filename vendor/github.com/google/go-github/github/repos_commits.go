@@ -17,6 +17,7 @@ import (
 // Note that it's wrapping a Commit, so author/committer information is in two places,
 // but contain different details about them: in RepositoryCommit "github details", in Commit - "git details".
 type RepositoryCommit struct {
+	NodeID      *string  `json:"node_id,omitempty"`
 	SHA         *string  `json:"sha,omitempty"`
 	Commit      *Commit  `json:"commit,omitempty"`
 	Author      *User    `json:"author,omitempty"`
@@ -112,6 +113,13 @@ type CommitsListOptions struct {
 	Until time.Time `url:"until,omitempty"`
 
 	ListOptions
+}
+
+// BranchCommit is the result of listing branches with commit SHA.
+type BranchCommit struct {
+	Name      *string `json:"name,omitempty"`
+	Commit    *Commit `json:"commit,omitempty"`
+	Protected *bool   `json:"protected,omitempty"`
 }
 
 // ListCommits lists the commits of a repository.
@@ -230,4 +238,27 @@ func (s *RepositoriesService) CompareCommits(ctx context.Context, owner, repo st
 	}
 
 	return comp, resp, nil
+}
+
+// ListBranchesHeadCommit gets all branches where the given commit SHA is the HEAD,
+// or latest commit for the branch.
+//
+// GitHub API docs: https://developer.github.com/v3/repos/commits/#list-branches-for-head-commit
+func (s *RepositoriesService) ListBranchesHeadCommit(ctx context.Context, owner, repo, sha string) ([]*BranchCommit, *Response, error) {
+	u := fmt.Sprintf("repos/%v/%v/commits/%v/branches-where-head", owner, repo, sha)
+
+	req, err := s.client.NewRequest("GET", u, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// TODO: remove custom Accept header when this API fully launches.
+	req.Header.Set("Accept", mediaTypeListPullsOrBranchesForCommitPreview)
+	var branchCommits []*BranchCommit
+	resp, err := s.client.Do(ctx, req, &branchCommits)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return branchCommits, resp, nil
 }

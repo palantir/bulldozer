@@ -47,6 +47,7 @@ type User struct {
 	Collaborators           *int       `json:"collaborators,omitempty"`
 	TwoFactorAuthentication *bool      `json:"two_factor_authentication,omitempty"`
 	Plan                    *Plan      `json:"plan,omitempty"`
+	LdapDn                  *string    `json:"ldap_dn,omitempty"`
 
 	// API URLs
 	URL               *string `json:"url,omitempty"`
@@ -174,9 +175,6 @@ func (s *UsersService) GetHovercard(ctx context.Context, user string, opt *Hover
 	if err != nil {
 		return nil, nil, err
 	}
-
-	// TODO: remove custom Accept header when this API fully launches.
-	req.Header.Set("Accept", mediaTypeHovercardPreview)
 
 	hc := new(Hovercard)
 	resp, err := s.client.Do(ctx, req, hc)
