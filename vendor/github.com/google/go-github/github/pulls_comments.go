@@ -8,12 +8,14 @@ package github
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 )
 
 // PullRequestComment represents a comment left on a pull request.
 type PullRequestComment struct {
 	ID                  *int64     `json:"id,omitempty"`
+	NodeID              *string    `json:"node_id,omitempty"`
 	InReplyTo           *int64     `json:"in_reply_to_id,omitempty"`
 	Body                *string    `json:"body,omitempty"`
 	Path                *string    `json:"path,omitempty"`
@@ -21,6 +23,12 @@ type PullRequestComment struct {
 	PullRequestReviewID *int64     `json:"pull_request_review_id,omitempty"`
 	Position            *int       `json:"position,omitempty"`
 	OriginalPosition    *int       `json:"original_position,omitempty"`
+	StartLine           *int       `json:"start_line,omitempty"`
+	Line                *int       `json:"line,omitempty"`
+	OriginalLine        *int       `json:"original_line,omitempty"`
+	OriginalStartLine   *int       `json:"original_start_line,omitempty"`
+	Side                *string    `json:"side,omitempty"`
+	StartSide           *string    `json:"start_side,omitempty"`
 	CommitID            *string    `json:"commit_id,omitempty"`
 	OriginalCommitID    *string    `json:"original_commit_id,omitempty"`
 	User                *User      `json:"user,omitempty"`
@@ -77,7 +85,8 @@ func (s *PullRequestsService) ListComments(ctx context.Context, owner string, re
 	}
 
 	// TODO: remove custom Accept header when this API fully launches.
-	req.Header.Set("Accept", mediaTypeReactionsPreview)
+	acceptHeaders := []string{mediaTypeReactionsPreview, mediaTypeMultiLineCommentsPreview}
+	req.Header.Set("Accept", strings.Join(acceptHeaders, ", "))
 
 	var comments []*PullRequestComment
 	resp, err := s.client.Do(ctx, req, &comments)
@@ -99,7 +108,8 @@ func (s *PullRequestsService) GetComment(ctx context.Context, owner string, repo
 	}
 
 	// TODO: remove custom Accept header when this API fully launches.
-	req.Header.Set("Accept", mediaTypeReactionsPreview)
+	acceptHeaders := []string{mediaTypeReactionsPreview, mediaTypeMultiLineCommentsPreview}
+	req.Header.Set("Accept", strings.Join(acceptHeaders, ", "))
 
 	comment := new(PullRequestComment)
 	resp, err := s.client.Do(ctx, req, comment)
@@ -119,6 +129,9 @@ func (s *PullRequestsService) CreateComment(ctx context.Context, owner string, r
 	if err != nil {
 		return nil, nil, err
 	}
+	// TODO: remove custom Accept headers when their respective API fully launches.
+	acceptHeaders := []string{mediaTypeReactionsPreview, mediaTypeMultiLineCommentsPreview}
+	req.Header.Set("Accept", strings.Join(acceptHeaders, ", "))
 
 	c := new(PullRequestComment)
 	resp, err := s.client.Do(ctx, req, c)
