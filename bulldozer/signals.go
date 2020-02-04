@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/rs/zerolog"
+
 	"github.com/palantir/bulldozer/pull"
 )
 
@@ -45,11 +47,16 @@ func (s *Signals) Enabled() bool {
 // in this description and indicates the behavior (whitelist, blacklist) this
 // set of signals is associated with.
 func (s *Signals) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
+	logger := zerolog.Ctx(ctx)
+
 	labels, err := pullCtx.Labels(ctx)
 	if err != nil {
 		return false, "unable to list pull request labels", err
 	}
 
+	if len(labels) == 0 {
+		logger.Debug().Msgf("No labels found to match against")
+	}
 	for _, signalLabel := range s.Labels {
 		for _, label := range labels {
 			if strings.EqualFold(signalLabel, label) {
@@ -64,6 +71,9 @@ func (s *Signals) Matches(ctx context.Context, pullCtx pull.Context, tag string)
 		return false, "unable to list pull request comments", err
 	}
 
+	if len(comments) == 0 {
+		logger.Debug().Msgf("No comments found to match against")
+	}
 	for _, signalComment := range s.Comments {
 		if body == signalComment {
 			return true, fmt.Sprintf("pull request body is a %s comment: %q", tag, signalComment), nil
@@ -75,6 +85,9 @@ func (s *Signals) Matches(ctx context.Context, pullCtx pull.Context, tag string)
 		}
 	}
 
+	if len(s.CommentSubstrings) == 0 {
+		logger.Debug().Msgf("No comment substrings found to match against")
+	}
 	for _, signalSubstring := range s.CommentSubstrings {
 		if strings.Contains(body, signalSubstring) {
 			return true, fmt.Sprintf("pull request body matches a %s substring: %q", tag, signalSubstring), nil
@@ -86,6 +99,9 @@ func (s *Signals) Matches(ctx context.Context, pullCtx pull.Context, tag string)
 		}
 	}
 
+	if len(s.PRBodySubstrings) == 0 {
+		logger.Debug().Msgf("No PR body substrings found to match against")
+	}
 	for _, signalSubstring := range s.PRBodySubstrings {
 		if strings.Contains(body, signalSubstring) {
 			return true, fmt.Sprintf("pull request body matches a %s substring: %q", tag, signalSubstring), nil
@@ -93,10 +109,9 @@ func (s *Signals) Matches(ctx context.Context, pullCtx pull.Context, tag string)
 	}
 
 	targetBranch, _ := pullCtx.Branches()
-	if err != nil {
-		return false, "unable to get pull request branches", err
+	if len(s.Branches) == 0 {
+		logger.Debug().Msgf("No branches found to match against")
 	}
-
 	for _, signalBranch := range s.Branches {
 		if targetBranch == signalBranch {
 			return true, fmt.Sprintf("pull request target is a %s branch: %q", tag, signalBranch), nil
