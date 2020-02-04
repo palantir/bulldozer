@@ -80,6 +80,8 @@ func ShouldMergePR(ctx context.Context, pullCtx pull.Context, mergeConfig MergeC
 			logger.Debug().Msgf("%s is deemed not mergeable because blacklisting is enabled and %s", pullCtx.Locator(), reason)
 			return false, nil
 		}
+	} else {
+		logger.Debug().Msg("blacklisting is not enabled")
 	}
 
 	if mergeConfig.Whitelist.Enabled() {
@@ -93,6 +95,8 @@ func ShouldMergePR(ctx context.Context, pullCtx pull.Context, mergeConfig MergeC
 		}
 
 		logger.Debug().Msgf("%s is whitelisted because whitelisting is enabled and %s", pullCtx.Locator(), reason)
+	} else {
+		logger.Debug().Msg("whitelisting is not enabled")
 	}
 
 	requiredStatuses, err := pullCtx.RequiredStatuses(ctx)
