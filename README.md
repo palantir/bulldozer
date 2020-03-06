@@ -218,9 +218,8 @@ which are to be expected, and others that may be caused by mis-configuring Bulld
 * The merge strategy configured in `.bulldozer.yml` is not allowed by your
   repository settings
 * Branch protection rules are preventing `bulldozer[bot]` from [pushing to the
-  branch][push restrictions]. Unfortunately, GitHub apps cannot be added to
-  the list at this time, but there is [a workaround][] if you are running your
-  own Bulldozer server.
+  branch][push restrictions]. Github apps can be added to the list of restricted
+  push users, so you can whitelist bulldozer specifically for your repo.
 
 [push restrictions]: https://help.github.com/articles/about-branch-restrictions/
 [a workaround]: #can-bulldozer-work-with-push-restrictions-on-branches
@@ -243,8 +242,10 @@ request.
 
 #### Can Bulldozer work with push restrictions on branches?
 
-As mentioned above, GitHub Apps cannot be added to the list of users associated
-with [push restrictions][]. To work around this, you can:
+As mentioned above, as of Github ~2.19.x, GitHub Apps _can_ be added to the list of users associated
+with [push restrictions][]. If you don't want to do this, or if you're running
+an older version of Github that doesn't support this behaviour, you may work
+around this:
 
 1. Use another app like [policy-bot](https://github.com/palantir/policy-bot) to
    implement _approval_ restrictions as required status checks instead of using
