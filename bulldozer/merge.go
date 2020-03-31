@@ -71,7 +71,7 @@ func (m *GitHubMerger) ffOnlyMerge(ctx context.Context, pullCtx pull.Context) (s
 
 	ref, _, err := m.client.Git.GetRef(ctx, pullCtx.Owner(), pullCtx.Repo(), fmt.Sprintf("refs/heads/%s", base))
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "Could not get git reference of PR base branch")
 	}
 
 	headCommitSHA := pullCtx.HeadSHA()
