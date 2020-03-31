@@ -27,9 +27,10 @@ const (
 	FirstCommitTitle   TitleStrategy = "first_commit_title"
 	GithubDefaultTitle TitleStrategy = "github_default"
 
-	MergeCommit    MergeMethod = "merge"
-	SquashAndMerge MergeMethod = "squash"
-	RebaseAndMerge MergeMethod = "rebase"
+	MergeCommit     MergeMethod = "merge"
+	SquashAndMerge  MergeMethod = "squash"
+	RebaseAndMerge  MergeMethod = "rebase"
+	FastForwardOnly MergeMethod = "ff-only"
 )
 
 type MergeConfig struct {

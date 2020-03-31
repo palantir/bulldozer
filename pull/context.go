@@ -44,6 +44,9 @@ type Context interface {
 	// Body returns the pull request body.
 	Body() string
 
+	// HeadSHA returns the SHA hash of the latest commit in the pull request.
+	HeadSHA() string
+
 	// Branches returns the base (also known as target) and head branch names
 	// of this pull request. Branches in this repository have no prefix, while
 	// branches in forks are prefixed with the owner of the fork and a colon.

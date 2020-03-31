@@ -75,6 +75,10 @@ func (ghc *GithubContext) Body() string {
 	return ghc.pr.GetBody()
 }
 
+func (ghc *GithubContext) HeadSHA() string {
+	return ghc.pr.GetHead().GetSHA()
+}
+
 func (ghc *GithubContext) MergeState(ctx context.Context) (*MergeState, error) {
 	pr, _, err := ghc.client.PullRequests.Get(ctx, ghc.owner, ghc.repo, ghc.number)
 	if err != nil {
