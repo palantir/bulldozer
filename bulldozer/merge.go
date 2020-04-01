@@ -79,7 +79,7 @@ func (m *GitHubMerger) ffOnlyMerge(ctx context.Context, pullCtx pull.Context) (s
 
 	newRef, _, err := m.client.Git.UpdateRef(ctx, pullCtx.Owner(), pullCtx.Repo(), ref, false)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "Could not perform ff-only merge")
 	}
 
 	if newRef.GetObject().GetSHA() != headCommitSHA {
