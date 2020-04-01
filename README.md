@@ -105,7 +105,7 @@ merge:
     comment_substrings: ["==DO_NOT_MERGE=="]
 
   # "method" defines the merge method. The available options are "merge",
-  # "rebase", and "squash".
+  # "rebase", "squash", and "ff-only".
   method: squash
 
   # Allows the merge method that is used when auto-merging a PR to be different based on the

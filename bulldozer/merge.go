@@ -57,6 +57,39 @@ func NewGitHubMerger(client *github.Client) Merger {
 }
 
 func (m *GitHubMerger) Merge(ctx context.Context, pullCtx pull.Context, method MergeMethod, msg CommitMessage) (string, error) {
+	if method == FastForwardOnly {
+		return m.ffOnlyMerge(ctx, pullCtx)
+	}
+
+	return m.defaultMerge(ctx, pullCtx, method, msg)
+}
+
+func (m *GitHubMerger) ffOnlyMerge(ctx context.Context, pullCtx pull.Context) (string, error) {
+	// ff-only merge is accomplished by calling Git.UpdateRef with the force parameter set to false, and the new commit hash for the base branch's pointer
+
+	base, _ := pullCtx.Branches()
+
+	ref, _, err := m.client.Git.GetRef(ctx, pullCtx.Owner(), pullCtx.Repo(), fmt.Sprintf("refs/heads/%s", base))
+	if err != nil {
+		return "", errors.Wrap(err, "Could not get git reference of PR base branch")
+	}
+
+	headCommitSHA := pullCtx.HeadSHA()
+	ref.Object.SHA = &headCommitSHA
+
+	newRef, _, err := m.client.Git.UpdateRef(ctx, pullCtx.Owner(), pullCtx.Repo(), ref, false)
+	if err != nil {
+		return "", errors.Wrap(err, "Could not perform ff-only merge")
+	}
+
+	if newRef.GetObject().GetSHA() != headCommitSHA {
+		return "", fmt.Errorf("Expected reference to be updated to SHA %s, but instead it points to %s", headCommitSHA, newRef.GetObject().GetSHA())
+	}
+
+	return headCommitSHA, nil
+}
+
+func (m *GitHubMerger) defaultMerge(ctx context.Context, pullCtx pull.Context, method MergeMethod, msg CommitMessage) (string, error) {
 	opts := github.PullRequestOptions{
 		CommitTitle: msg.Title,
 		MergeMethod: string(method),
@@ -251,7 +284,7 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 }
 
 func isValidMergeMethod(input MergeMethod) bool {
-	return input == SquashAndMerge || input == RebaseAndMerge || input == MergeCommit
+	return input == SquashAndMerge || input == RebaseAndMerge || input == MergeCommit || input == FastForwardOnly
 }
 
 func calculateCommitMessage(ctx context.Context, pullCtx pull.Context, option SquashOptions) (string, error) {

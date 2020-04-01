@@ -28,6 +28,7 @@ type MockPullContext struct {
 
 	TitleValue   string
 	BodyValue    string
+	HeadSHAValue string
 	LocatorValue string
 
 	BranchBase string
@@ -83,6 +84,10 @@ func (c *MockPullContext) Title() string {
 
 func (c *MockPullContext) Body() string {
 	return c.BodyValue
+}
+
+func (c *MockPullContext) HeadSHA() string {
+	return c.HeadSHAValue
 }
 
 func (c *MockPullContext) Branches() (base string, head string) {
