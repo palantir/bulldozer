@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v30/github"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 
