@@ -16,9 +16,8 @@ package bulldozer
 
 import (
 	"context"
-	"time"
 
-	"github.com/google/go-github/v30/github"
+	"github.com/google/go-github/v31/github"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 
@@ -59,59 +58,43 @@ func ShouldUpdatePR(ctx context.Context, pullCtx pull.Context, updateConfig Upda
 	return true, nil
 }
 
-func UpdatePR(ctx context.Context, pullCtx pull.Context, client *github.Client, updateConfig UpdateConfig, baseRef string) error {
+func UpdatePR(ctx context.Context, pullCtx pull.Context, client *github.Client, updateConfig UpdateConfig, baseRef string) {
 	logger := zerolog.Ctx(ctx)
 
-	//todo: should the updateConfig struct provide any other details here?
+	pr, _, err := client.PullRequests.Get(ctx, pullCtx.Owner(), pullCtx.Repo(), pullCtx.Number())
+	if err != nil {
+		logger.Error().Err(errors.WithStack(err)).Msgf("Failed to retrieve pull request %q", pullCtx.Locator())
+		return
+	}
 
-	go func(ctx context.Context, baseRef string) {
-		ticker := time.NewTicker(2 * time.Second)
-		defer ticker.Stop()
+	if pr.GetState() == "closed" {
+		logger.Debug().Msg("Pull request already closed")
+		return
+	}
 
-		for i := 0; i < MaxPullRequestPollCount; i++ {
-			<-ticker.C
+	if pr.Head.Repo.GetFork() {
+		logger.Debug().Msg("Pull request is from a fork, cannot keep it up to date with base ref")
+		return
+	}
 
-			pr, _, err := client.PullRequests.Get(ctx, pullCtx.Owner(), pullCtx.Repo(), pullCtx.Number())
-			if err != nil {
-				logger.Error().Err(errors.WithStack(err)).Msgf("Failed to retrieve pull request %q", pullCtx.Locator())
-				return
-			}
+	comparison, _, err := client.Repositories.CompareCommits(ctx, pullCtx.Owner(), pullCtx.Repo(), baseRef, pr.GetHead().GetSHA())
+	if err != nil {
+		logger.Error().Err(errors.WithStack(err)).Msgf("Cannot compare %s and %s for %q", baseRef, pr.GetHead().GetSHA(), pullCtx.Locator())
+		return
+	}
+	if comparison.GetBehindBy() == 0 {
+		logger.Debug().Msg("Pull request is not out of date, not updating")
+		return
+	}
 
-			if pr.GetState() == "closed" {
-				logger.Debug().Msg("Pull request already closed")
-				return
-			}
-
-			if pr.Head.Repo.GetFork() {
-				logger.Debug().Msg("Pull request is from a fork, cannot keep it up to date with base ref")
-				return
-			}
-
-			comparison, _, err := client.Repositories.CompareCommits(ctx, pullCtx.Owner(), pullCtx.Repo(), baseRef, pr.GetHead().GetSHA())
-			if err != nil {
-				logger.Error().Err(errors.WithStack(err)).Msgf("cannot compare %s and %s for %q", baseRef, pr.GetHead().GetSHA(), pullCtx.Locator())
-			}
-			if comparison.GetBehindBy() > 0 {
-				logger.Debug().Msg("Pull request is not up to date")
-
-				mergeRequest := &github.RepositoryMergeRequest{
-					Base: github.String(pr.Head.GetRef()),
-					Head: github.String(baseRef),
-				}
-
-				mergeCommit, _, err := client.Repositories.Merge(ctx, pullCtx.Owner(), pullCtx.Repo(), mergeRequest)
-				if err != nil {
-					logger.Error().Err(errors.WithStack(err)).Msg("Merge failed unexpectedly")
-				}
-
-				logger.Info().Msgf("Successfully updated pull request from base ref %s as merge %s", baseRef, mergeCommit.GetSHA())
-			} else {
-				logger.Debug().Msg("Pull request is not out of date, not updating")
-			}
-
-			return
-		}
-	}(zerolog.Ctx(ctx).WithContext(context.Background()), baseRef)
-
-	return nil
+	logger.Debug().Msg("Pull request is not up to date, attempting an update")
+	mergeCommit, _, err := client.Repositories.Merge(ctx, pullCtx.Owner(), pullCtx.Repo(), &github.RepositoryMergeRequest{
+		Base: github.String(pr.Head.GetRef()),
+		Head: github.String(baseRef),
+	})
+	if err != nil {
+		logger.Error().Err(errors.WithStack(err)).Msg("Update merge failed unexpectedly")
+		return
+	}
+	logger.Info().Msgf("Successfully updated pull request from base ref %s as merge %s", baseRef, mergeCommit.GetSHA())
 }

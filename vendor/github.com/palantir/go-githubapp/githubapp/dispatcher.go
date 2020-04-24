@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/google/go-github/v30/github"
+	"github.com/google/go-github/v31/github"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 )
@@ -54,7 +54,7 @@ type ResponseCallback func(w http.ResponseWriter, r *http.Request, event string,
 // DispatcherOption configures properties of an event dispatcher.
 type DispatcherOption func(*eventDispatcher)
 
-// WithErrorCallback sets the error callback for an event dispatcher.
+// WithErrorCallback sets the error callback for a dispatcher.
 func WithErrorCallback(onError ErrorCallback) DispatcherOption {
 	return func(d *eventDispatcher) {
 		if onError != nil {
@@ -68,6 +68,20 @@ func WithResponseCallback(onResponse ResponseCallback) DispatcherOption {
 	return func(d *eventDispatcher) {
 		if onResponse != nil {
 			d.onResponse = onResponse
+		}
+	}
+}
+
+// WithScheduler sets the scheduler used to process events. Setting a
+// non-default scheduler can enable asynchronous processing. When a scheduler
+// is asynchronous, the dispatcher validatates event payloads, queues valid
+// events for handling, and then responds to GitHub without waiting for the
+// handler to complete.  This is useful when handlers may take longer than
+// GitHub's timeout for webhook deliveries.
+func WithScheduler(s Scheduler) DispatcherOption {
+	return func(d *eventDispatcher) {
+		if s != nil {
+			d.scheduler = s
 		}
 	}
 }
@@ -88,6 +102,7 @@ type eventDispatcher struct {
 	handlerMap map[string]EventHandler
 	secret     string
 
+	scheduler  Scheduler
 	onError    ErrorCallback
 	onResponse ResponseCallback
 }
@@ -118,6 +133,7 @@ func NewEventDispatcher(handlers []EventHandler, secret string, opts ...Dispatch
 	d := &eventDispatcher{
 		handlerMap: handlerMap,
 		secret:     secret,
+		scheduler:  DefaultScheduler(),
 		onError:    DefaultErrorCallback,
 		onResponse: DefaultResponseCallback,
 	}
@@ -172,7 +188,12 @@ func (d *eventDispatcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	handler, ok := d.handlerMap[eventType]
 	if ok {
-		if err := handler.Handle(ctx, eventType, deliveryID, payloadBytes); err != nil {
+		if err := d.scheduler.Schedule(ctx, Dispatch{
+			Handler:    handler,
+			EventType:  eventType,
+			DeliveryID: deliveryID,
+			Payload:    payloadBytes,
+		}); err != nil {
 			d.onError(w, r, err)
 			return
 		}
@@ -184,13 +205,19 @@ func (d *eventDispatcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func DefaultErrorCallback(w http.ResponseWriter, r *http.Request, err error) {
 	logger := zerolog.Ctx(r.Context())
 
-	if ve, ok := err.(ValidationError); ok {
+	var ve ValidationError
+	if errors.As(err, &ve) {
 		logger.Warn().Err(ve.Cause).Msgf("Received invalid webhook headers or payload")
 		http.Error(w, "Invalid webhook headers or payload", http.StatusBadRequest)
 		return
 	}
+	if errors.Is(err, ErrCapacityExceeded) {
+		logger.Warn().Msg("Dropping webhook event due to over-capacity scheduler")
+		http.Error(w, "No capacity available to processes this event", http.StatusServiceUnavailable)
+		return
+	}
 
-	logger.Error().Err(err).Msg("Unexpected error handling webhook request")
+	logger.Error().Err(err).Msg("Unexpected error handling webhook")
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 

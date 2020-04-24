@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v30/github"
+	"github.com/google/go-github/v31/github"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 
@@ -60,18 +60,18 @@ func (m *GitHubMerger) Merge(ctx context.Context, pullCtx pull.Context, method M
 	if method == FastForwardOnly {
 		return m.ffOnlyMerge(ctx, pullCtx)
 	}
-
 	return m.defaultMerge(ctx, pullCtx, method, msg)
 }
 
+// ff-only merge is accomplished by calling Git.UpdateRef with the force
+// parameter set to false, and the new commit hash for the base branch's
+// pointer
 func (m *GitHubMerger) ffOnlyMerge(ctx context.Context, pullCtx pull.Context) (string, error) {
-	// ff-only merge is accomplished by calling Git.UpdateRef with the force parameter set to false, and the new commit hash for the base branch's pointer
-
 	base, _ := pullCtx.Branches()
 
 	ref, _, err := m.client.Git.GetRef(ctx, pullCtx.Owner(), pullCtx.Repo(), fmt.Sprintf("refs/heads/%s", base))
 	if err != nil {
-		return "", errors.Wrap(err, "Could not get git reference of PR base branch")
+		return "", errors.Wrap(err, "could not get git reference of PR base branch")
 	}
 
 	headCommitSHA := pullCtx.HeadSHA()
@@ -79,11 +79,11 @@ func (m *GitHubMerger) ffOnlyMerge(ctx context.Context, pullCtx pull.Context) (s
 
 	newRef, _, err := m.client.Git.UpdateRef(ctx, pullCtx.Owner(), pullCtx.Repo(), ref, false)
 	if err != nil {
-		return "", errors.Wrap(err, "Could not perform ff-only merge")
+		return "", errors.Wrap(err, "could not perform ff-only merge")
 	}
 
 	if newRef.GetObject().GetSHA() != headCommitSHA {
-		return "", fmt.Errorf("Expected reference to be updated to SHA %s, but instead it points to %s", headCommitSHA, newRef.GetObject().GetSHA())
+		return "", fmt.Errorf("expected reference to be updated to SHA %s, but instead it points to %s", headCommitSHA, newRef.GetObject().GetSHA())
 	}
 
 	return headCommitSHA, nil
@@ -153,7 +153,7 @@ func (m *PushRestrictionMerger) DeleteHead(ctx context.Context, pullCtx pull.Con
 // MergePR spawns a goroutine that attempts to merge a pull request. It returns
 // an error if an error occurs while preparing for the merge before starting
 // the goroutine.
-func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConfig MergeConfig) error {
+func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConfig MergeConfig) {
 	logger := zerolog.Ctx(ctx)
 
 	base, head := pullCtx.Branches()
@@ -183,104 +183,128 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 
 		message, err := calculateCommitMessage(ctx, pullCtx, *opt)
 		if err != nil {
-			return errors.Wrap(err, "failed to calculate commit message")
+			logger.Error().Err(err).Msg("Failed to calculate commit message")
+			return
 		}
 		commitMsg.Message = message
 
 		title, err := calculateCommitTitle(ctx, pullCtx, *opt)
 		if err != nil {
-			return errors.Wrap(err, "failed to calculate commit title")
+			logger.Error().Err(err).Msg("Failed to calculate commit title")
+			return
 		}
 		commitMsg.Title = title
 	}
 
-	go func(ctx context.Context) {
-		ticker := time.NewTicker(4 * time.Second)
-		defer ticker.Stop()
+	var attempts int
+	var merged, retry bool
+	for {
+		merged, retry = attemptMerge(ctx, pullCtx, merger, mergeMethod, commitMsg)
+		if merged || !retry {
+			break
+		}
 
-		for i := 0; i < MaxPullRequestPollCount; i++ {
-			<-ticker.C
-
-			mergeState, err := pullCtx.MergeState(ctx)
-			if err != nil {
-				logger.Error().Err(err).Msgf("Failed to get merge state for %q", pullCtx.Locator())
-				return
-			}
-
-			if mergeState.Closed {
-				logger.Debug().Msg("Pull request already closed")
-				return
-			}
-
-			if mergeState.Mergeable == nil {
-				logger.Debug().Msg("Pull request mergeability not yet known")
-				continue
-			}
-
-			if !*mergeState.Mergeable {
-				logger.Debug().Msg("Pull request is not mergeable")
-				return
-			}
-
-			// Try a merge, a 405 is expected if required reviews are not satisfied
-			logger.Info().Msgf("Attempting to merge pull request with method %s", mergeMethod)
-			sha, err := merger.Merge(ctx, pullCtx, mergeMethod, commitMsg)
-			if err != nil {
-				gerr, ok := errors.Cause(err).(*github.ErrorResponse)
-				if !ok {
-					logger.Error().Err(err).Msg("Merge failed unexpectedly")
-					continue
-				}
-
-				switch gerr.Response.StatusCode {
-				case http.StatusMethodNotAllowed:
-					logger.Info().Msgf("Merge rejected due to unsatisfied condition: %q", gerr.Message)
-					return
-				case http.StatusConflict:
-					logger.Info().Msgf("Merge rejected due to being invalid: %q", gerr.Message)
-					return
-				default:
-					logger.Error().Msgf("Merge failed with unexpected status: %d: %q", gerr.Response.StatusCode, gerr.Message)
-					continue
-				}
-			}
-
-			logger.Info().Msgf("Successfully merged pull request as SHA %s", sha)
-
-			// if head is qualified (contains ":"), PR is from a fork and we don't have delete permission
-			if !strings.ContainsRune(head, ':') {
-				ref := fmt.Sprintf("refs/heads/%s", head)
-				if mergeConfig.DeleteAfterMerge {
-					// check other open PRs to make sure that nothing is trying to merge into the ref we're about to delete
-					isTargeted, err := pullCtx.IsTargeted(ctx)
-					if err != nil {
-						logger.Error().Err(err).Msgf("Unable to determine if ref %s is targeted by other open pull requests before deletion", ref)
-						return
-					}
-					if isTargeted {
-						logger.Info().Msgf("Unable to delete ref %s after merging %q because there are open PRs against this ref", ref, pullCtx.Locator())
-						return
-					}
-
-					logger.Info().Msgf("Attempting to delete ref %s", ref)
-					if err := merger.DeleteHead(ctx, pullCtx); err != nil {
-						logger.Error().Err(err).Msgf("Failed to delete ref %s on %q", ref, pullCtx.Locator())
-						return
-					}
-
-					logger.Info().Msgf("Successfully deleted ref %s on %q", ref, pullCtx.Locator())
-				} else {
-					logger.Debug().Msgf("Not deleting ref %s, delete_after_merge is not enabled", ref)
-				}
-			} else {
-				logger.Debug().Msg("Pull Request is from a fork, not deleting")
-			}
-
+		attempts++
+		if attempts >= MaxPullRequestPollCount {
+			logger.Error().Msgf("Failed to merge pull request after %d attempts", attempts)
 			return
 		}
-	}(zerolog.Ctx(ctx).WithContext(context.Background()))
+		time.Sleep(4 * time.Second)
+	}
 
-	return nil
+	if merged {
+		if mergeConfig.DeleteAfterMerge {
+			attemptDelete(ctx, pullCtx, head, merger)
+		} else {
+			logger.Debug().Msgf("Not deleting refs/heads/%s, delete after merge is not enabled", head)
+		}
+	}
+}
+
+// attempMerge attempts to merge a pull request, logging any errors and
+// returing flags to show if the merge suceeded and if a retry is needed.
+func attemptMerge(ctx context.Context, pullCtx pull.Context, merger Merger, method MergeMethod, msg CommitMessage) (merged, retry bool) {
+	logger := zerolog.Ctx(ctx)
+
+	mergeState, err := pullCtx.MergeState(ctx)
+	if err != nil {
+		logger.Error().Err(err).Msgf("Failed to get merge state for %q", pullCtx.Locator())
+		return false, false
+	}
+
+	if mergeState.Closed {
+		logger.Debug().Msg("Pull request already closed")
+		return false, false
+	}
+
+	if mergeState.Mergeable == nil {
+		logger.Debug().Msg("Pull request mergeability not yet known")
+		return false, true
+	}
+
+	if !*mergeState.Mergeable {
+		logger.Debug().Msg("Pull request is not mergeable")
+		return false, false
+	}
+
+	logger.Info().Msgf("Attempting to merge pull request with method %s", method)
+	sha, err := merger.Merge(ctx, pullCtx, method, msg)
+	if err != nil {
+		gerr, ok := errors.Cause(err).(*github.ErrorResponse)
+		if !ok {
+			logger.Error().Err(err).Msg("Failed to merge pull request")
+			return false, true
+		}
+
+		switch gerr.Response.StatusCode {
+		case http.StatusMethodNotAllowed:
+			logger.Info().Msgf("Merge rejected due to unsatisfied condition: %q", gerr.Message)
+			return false, false
+		case http.StatusConflict:
+			logger.Info().Msgf("Merge rejected due to being invalid: %q", gerr.Message)
+			return false, false
+		default:
+			logger.Error().Msgf("Merge failed with unexpected status: %d: %q", gerr.Response.StatusCode, gerr.Message)
+			return false, true
+		}
+	}
+
+	logger.Info().Msgf("Successfully merged pull request as SHA %s", sha)
+	return true, false
+}
+
+// attemptDelete attempts to delete a pull request branch, logging any errors
+// and returning true if successful.
+func attemptDelete(ctx context.Context, pullCtx pull.Context, head string, merger Merger) bool {
+	logger := zerolog.Ctx(ctx)
+
+	if strings.ContainsRune(head, ':') {
+		// skip forks because the app doesn't have permission to do the delete
+		logger.Debug().Msg("Pull Request is from a fork, not deleting")
+		return false
+	}
+
+	ref := fmt.Sprintf("refs/heads/%s", head)
+
+	// check other open PRs to make sure that nothing is trying to merge into the ref we're about to delete
+	isTargeted, err := pullCtx.IsTargeted(ctx)
+	if err != nil {
+		logger.Error().Err(err).Msgf("Unabled to determine if %s is targeted by other pull requests", ref)
+		return false
+	}
+	if isTargeted {
+		logger.Info().Msgf("Unable to delete %s after merging %q because there are open PRs against it", ref, pullCtx.Locator())
+		return false
+	}
+
+	logger.Info().Msgf("Attempting to delete ref %s", ref)
+	if err := merger.DeleteHead(ctx, pullCtx); err != nil {
+		logger.Error().Err(err).Msgf("Failed to delete %s", ref)
+		return false
+	}
+
+	logger.Info().Msgf("Successfully deleted %s after merging %q", ref, pullCtx.Locator())
+	return true
 }
 
 func isValidMergeMethod(input MergeMethod) bool {
