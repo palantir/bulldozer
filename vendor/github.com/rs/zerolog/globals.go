@@ -2,9 +2,23 @@ package zerolog
 
 import (
 	"strconv"
+	"sync/atomic"
 	"time"
 )
-import "sync/atomic"
+
+const (
+	// TimeFormatUnix defines a time format that makes time fields to be
+	// serialized as Unix timestamp integers.
+	TimeFormatUnix = ""
+
+	// TimeFormatUnixMs defines a time format that makes time fields to be
+	// serialized as Unix timestamp integers in milliseconds.
+	TimeFormatUnixMs = "UNIXMS"
+
+	// TimeFormatUnixMicro defines a time format that makes time fields to be
+	// serialized as Unix timestamp integers in microseconds.
+	TimeFormatUnixMicro = "UNIXMICRO"
+)
 
 var (
 	// TimestampFieldName is the field name used for the timestamp field.
@@ -46,9 +60,9 @@ var (
 		return err
 	}
 
-	// TimeFieldFormat defines the time format of the Time field type.
-	// If set to an empty string, the time is formatted as an UNIX timestamp
-	// as integer.
+	// TimeFieldFormat defines the time format of the Time field type. If set to
+	// TimeFormatUnix, TimeFormatUnixMs or TimeFormatUnixMicro, the time is formatted as an UNIX
+	// timestamp as integer.
 	TimeFieldFormat = time.RFC3339
 
 	// TimestampFunc defines the function called to generate a timestamp.
@@ -69,8 +83,8 @@ var (
 )
 
 var (
-	gLevel          = new(uint32)
-	disableSampling = new(uint32)
+	gLevel          = new(int32)
+	disableSampling = new(int32)
 )
 
 // SetGlobalLevel sets the global override for log level. If this
@@ -78,23 +92,23 @@ var (
 //
 // To globally disable logs, set GlobalLevel to Disabled.
 func SetGlobalLevel(l Level) {
-	atomic.StoreUint32(gLevel, uint32(l))
+	atomic.StoreInt32(gLevel, int32(l))
 }
 
 // GlobalLevel returns the current global log level
 func GlobalLevel() Level {
-	return Level(atomic.LoadUint32(gLevel))
+	return Level(atomic.LoadInt32(gLevel))
 }
 
 // DisableSampling will disable sampling in all Loggers if true.
 func DisableSampling(v bool) {
-	var i uint32
+	var i int32
 	if v {
 		i = 1
 	}
-	atomic.StoreUint32(disableSampling, i)
+	atomic.StoreInt32(disableSampling, i)
 }
 
 func samplingDisabled() bool {
-	return atomic.LoadUint32(disableSampling) == 1
+	return atomic.LoadInt32(disableSampling) == 1
 }

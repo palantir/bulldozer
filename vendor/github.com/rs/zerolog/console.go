@@ -295,7 +295,22 @@ func consoleDefaultFormatTimestamp(timeFormat string, noColor bool) Formatter {
 				t = ts.Format(timeFormat)
 			}
 		case json.Number:
-			t = tt.String()
+			i, err := tt.Int64()
+			if err != nil {
+				t = tt.String()
+			} else {
+				var sec, nsec int64 = i, 0
+				switch TimeFieldFormat {
+				case TimeFormatUnixMs:
+					nsec = int64(time.Duration(i) * time.Millisecond)
+					sec = 0
+				case TimeFormatUnixMicro:
+					nsec = int64(time.Duration(i) * time.Microsecond)
+					sec = 0
+				}
+				ts := time.Unix(sec, nsec).UTC()
+				t = ts.Format(timeFormat)
+			}
 		}
 		return colorize(t, colorDarkGray, noColor)
 	}
@@ -306,6 +321,8 @@ func consoleDefaultFormatLevel(noColor bool) Formatter {
 		var l string
 		if ll, ok := i.(string); ok {
 			switch ll {
+			case "trace":
+				l = colorize("TRC", colorMagenta, noColor)
 			case "debug":
 				l = colorize("DBG", colorYellow, noColor)
 			case "info":
@@ -322,7 +339,11 @@ func consoleDefaultFormatLevel(noColor bool) Formatter {
 				l = colorize("???", colorBold, noColor)
 			}
 		} else {
-			l = strings.ToUpper(fmt.Sprintf("%s", i))[0:3]
+			if i == nil {
+				l = colorize("???", colorBold, noColor)
+			} else {
+				l = strings.ToUpper(fmt.Sprintf("%s", i))[0:3]
+			}
 		}
 		return l
 	}
@@ -347,6 +368,9 @@ func consoleDefaultFormatCaller(noColor bool) Formatter {
 }
 
 func consoleDefaultFormatMessage(i interface{}) string {
+	if i == nil {
+		return ""
+	}
 	return fmt.Sprintf("%s", i)
 }
 
