@@ -150,9 +150,8 @@ func (m *PushRestrictionMerger) DeleteHead(ctx context.Context, pullCtx pull.Con
 	return m.Normal.DeleteHead(ctx, pullCtx)
 }
 
-// MergePR spawns a goroutine that attempts to merge a pull request. It returns
-// an error if an error occurs while preparing for the merge before starting
-// the goroutine.
+// MergePR merges a pull request if all conditions are met. It logs any errors
+// that it encounters.
 func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConfig MergeConfig) {
 	logger := zerolog.Ctx(ctx)
 
@@ -221,7 +220,7 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 	}
 }
 
-// attempMerge attempts to merge a pull request, logging any errors and
+// attemptMerge attempts to merge a pull request, logging any errors and
 // returing flags to show if the merge suceeded and if a retry is needed.
 func attemptMerge(ctx context.Context, pullCtx pull.Context, merger Merger, method MergeMethod, msg CommitMessage) (merged, retry bool) {
 	logger := zerolog.Ctx(ctx)
