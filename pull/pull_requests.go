@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/go-github/v30/github"
+	"github.com/google/go-github/v31/github"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 )

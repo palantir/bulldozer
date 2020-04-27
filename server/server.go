@@ -77,13 +77,29 @@ func New(c *Config) (*Server, error) {
 		PushRestrictionUserToken: c.Options.PushRestrictionUserToken,
 	}
 
-	webhookHandler := githubapp.NewDefaultEventDispatcher(c.Github,
-		&handler.CheckRun{Base: baseHandler},
-		&handler.IssueComment{Base: baseHandler},
-		&handler.PullRequest{Base: baseHandler},
-		&handler.PullRequestReview{Base: baseHandler},
-		&handler.Push{Base: baseHandler},
-		&handler.Status{Base: baseHandler},
+	queueSize := c.Workers.QueueSize
+	if queueSize < 1 {
+		queueSize = 100
+	}
+
+	workers := c.Workers.Workers
+	if workers < 1 {
+		workers = 10
+	}
+
+	webhookHandler := githubapp.NewEventDispatcher(
+		[]githubapp.EventHandler{
+			&handler.CheckRun{Base: baseHandler},
+			&handler.IssueComment{Base: baseHandler},
+			&handler.PullRequest{Base: baseHandler},
+			&handler.PullRequestReview{Base: baseHandler},
+			&handler.Push{Base: baseHandler},
+			&handler.Status{Base: baseHandler},
+		},
+		c.Github.App.WebhookSecret,
+		githubapp.WithScheduler(
+			githubapp.QueueAsyncScheduler(queueSize, workers, githubapp.WithSchedulingMetrics(base.Registry())),
+		),
 	)
 
 	mux := base.Mux()

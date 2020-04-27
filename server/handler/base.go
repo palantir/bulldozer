@@ -17,7 +17,7 @@ package handler
 import (
 	"context"
 
-	"github.com/google/go-github/v30/github"
+	"github.com/google/go-github/v31/github"
 	"github.com/palantir/go-githubapp/githubapp"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
@@ -64,9 +64,7 @@ func (b *Base) ProcessPullRequest(ctx context.Context, pullCtx pull.Context, cli
 			return errors.Wrap(err, "unable to determine merge status")
 		}
 		if shouldMerge {
-			if err := bulldozer.MergePR(ctx, pullCtx, merger, config.Merge); err != nil {
-				return errors.Wrap(err, "failed to merge pull request")
-			}
+			bulldozer.MergePR(ctx, pullCtx, merger, config.Merge)
 		}
 	}
 
@@ -94,11 +92,8 @@ func (b *Base) UpdatePullRequest(ctx context.Context, pullCtx pull.Context, clie
 		if err != nil {
 			return errors.Wrap(err, "unable to determine update status")
 		}
-
 		if shouldUpdate {
-			if err := bulldozer.UpdatePR(ctx, pullCtx, client, config.Update, baseRef); err != nil {
-				return errors.Wrap(err, "failed to update pull request")
-			}
+			bulldozer.UpdatePR(ctx, pullCtx, client, config.Update, baseRef)
 		}
 	}
 
