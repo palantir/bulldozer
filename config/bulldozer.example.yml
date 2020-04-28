@@ -19,10 +19,19 @@ logging:
   # Choose from: debug, info, warn, error
   level: debug
 
-# Options for the HTTP Cache
-cache:
-  # The maximum size of the cache (specified in human readable units)
-  max_size: 50 MB
+# Options for the GitHub response cache. When the cache reaches max_size, the
+# oldest entries are evicted. Size properties can use any format supported by
+# https://github.com/c2h5oh/datasize
+#
+# cache:
+#   max_size: "50MB"
+
+# Options for webhook processing workers. Events are dropped if the queue is
+# full. The defaults are shown below.
+#
+# workers:
+#   workers: 10
+#   queue_size: 100
 
 # Options for connecting to GitHub
 github:
@@ -52,19 +61,30 @@ github:
 options:
   # The path within repositories to find the bulldozer.yml config file
   configuration_path: .bulldozer.yml
+
   # The name of the application. This will affect the User-Agent header
   # when making requests to Github.
   app_name: bulldozer
-  # An optional personal access token associated with a normal GitHub user that
-  # is used to merge pull requests into protected branches with push
+
+  # Deprecated: An optional personal access token associated with a GitHub user
+  # that is used to merge pull requests into protected branches with push
   # restrictions. Can also be set by the BULLDOZER_PUSH_RESTRICTION_USER_TOKEN
   # environment variable.
-  push_restriction_user_token: token
-  # Default repository config, the same as the config file described in README
-  default_repository_config:
-    merge:
-      blacklist:
-        labels: ["do not merge"]
+  #
+  # This is not necessary on GitHub.com and GitHub Enterprise 2.20+, which
+  # allow applications in the push restriction list.
+  #
+  # push_restriction_user_token: token
+
+  # A default repository configuration to use if a repository does not define a
+  # configuration. The format is the same as the bulldozer.yml file. If unset
+  # (the default), Bulldozer ignores repositories that are missing a
+  # configuration file.
+  #
+  # default_repository_config:
+  #   merge:
+  #     blacklist:
+  #       labels: ["do not merge"]
 
 # Optional configuration to emit metrics to datadog
 datadog:
