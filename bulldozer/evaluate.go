@@ -35,7 +35,7 @@ func IsPRBlocklisted(ctx context.Context, pullCtx pull.Context, config Signals) 
 	return matches, reason, err
 }
 
-// IsPRWAllowlisted returns true if the PR is identified as allowlisted,
+// IsPRAllowlisted returns true if the PR is identified as allowlisted,
 // false otherwise. Additionally, a description of the reason will be returned.
 func IsPRAllowlisted(ctx context.Context, pullCtx pull.Context, config Signals) (bool, string, error) {
 	matches, reason, err := config.Matches(ctx, pullCtx, "allowlist")
