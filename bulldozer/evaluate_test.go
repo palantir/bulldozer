@@ -55,34 +55,34 @@ func TestSimpleXListed(t *testing.T) {
 		assert.True(t, actualBlocklist)
 	})
 
-	t.Run("errCommentFailsClosedWhitelist", func(t *testing.T) {
+	t.Run("errCommentFailsClosedAllowlist", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			CommentErrValue: errors.New("failure"),
 		}
 
-		actualWhitelist, _, err := IsPRAllowlisted(ctx, pc, mergeConfig.Allowlist)
+		actualAllowlist, _, err := IsPRAllowlisted(ctx, pc, mergeConfig.Allowlist)
 		require.NotNil(t, err)
-		assert.False(t, actualWhitelist)
+		assert.False(t, actualAllowlist)
 	})
 
-	t.Run("errLabelFailsClosedWhitelist", func(t *testing.T) {
+	t.Run("errLabelFailsClosedAllowlist", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			LabelErrValue: errors.New("failure"),
 		}
 
-		actualWhitelist, _, err := IsPRAllowlisted(ctx, pc, mergeConfig.Allowlist)
+		actualAllowlist, _, err := IsPRAllowlisted(ctx, pc, mergeConfig.Allowlist)
 		require.NotNil(t, err)
-		assert.False(t, actualWhitelist)
+		assert.False(t, actualAllowlist)
 	})
 
-	t.Run("errCommentsFailsClosedWhitelist", func(t *testing.T) {
+	t.Run("errCommentsFailsClosedAllowlist", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			CommentErrValue: errors.New("failure"),
 		}
 
-		actualWhitelist, _, err := IsPRAllowlisted(ctx, pc, mergeConfig.Allowlist)
+		actualAllowlist, _, err := IsPRAllowlisted(ctx, pc, mergeConfig.Allowlist)
 		require.NotNil(t, err)
-		assert.False(t, actualWhitelist)
+		assert.False(t, actualAllowlist)
 	})
 }
 
@@ -167,7 +167,7 @@ func TestShouldMerge(t *testing.T) {
 		assert.False(t, actualShouldMerge)
 	})
 
-	t.Run("blocklistOverridesWhitelist", func(t *testing.T) {
+	t.Run("blocklistOverridesAllowlist", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			LabelValue:   []string{"LABEL2_MERGE"},
 			CommentValue: []string{"NO_WAY"},

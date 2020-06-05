@@ -53,11 +53,11 @@ func TestShouldUpdatePR(t *testing.T) {
 	}
 
 	for ndx, testCase := range testMatrix {
-		pullCtx, updateConfig := generateUpdateTestCase(testCase.blocklistEnabled, testCase.blocklisted, testCase.whitelistEnabled, testCase.whitelisted)
+		pullCtx, updateConfig := generateUpdateTestCase(testCase.blocklistEnabled, testCase.blocklisted, testCase.allowlistEnabled, testCase.allowlisted)
 		updating, err := ShouldUpdatePR(ctx, pullCtx, updateConfig)
 		require.NoError(t, err)
 		msg := fmt.Sprintf("case %d - blocklistEnabled=%t blocklisted=%t allowlistEnabled=%t allowlisted=%t -> doUpdate=%t",
-			ndx, testCase.blocklistEnabled, testCase.blocklisted, testCase.whitelistEnabled, testCase.whitelisted, testCase.expectingUpdate)
+			ndx, testCase.blocklistEnabled, testCase.blocklisted, testCase.allowlistEnabled, testCase.allowlisted, testCase.expectingUpdate)
 		require.Equal(t, testCase.expectingUpdate, updating, msg)
 	}
 }
