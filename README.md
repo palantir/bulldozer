@@ -8,9 +8,9 @@ status checks are successful and required reviews are provided.
 
 Additionally, `bulldozer` can:
 
-- Only merge pull requests that match a whitelist condition, like having a
+- Only merge pull requests that match an allowlist condition, like having a
   specific label or comment
-- Ignore pull requests that match a blacklist condition, like having a specific
+- Ignore pull requests that match a blocklist condition, like having a specific
   label or comment
 - Automatically keep pull request branches up-to-date by merging in the target
   branch
@@ -47,8 +47,8 @@ including required status checks and required reviews, are respected. It also
 means that you _must_ enable branch protection to prevent `bulldozer` from
 immediately merging every pull request.
 
-Only pull requests matching the whitelist conditions (or _not_ matching the
-blacklist conditions) are considered for merging. `bulldozer` is event-driven,
+Only pull requests matching the allowlist conditions (or _not_ matching the
+blocklist conditions) are considered for merging. `bulldozer` is event-driven,
 which means it will usually merge a pull request within a few seconds of the
 pull request satisfying all preconditions.
 
@@ -74,33 +74,33 @@ version: 1
 # "merge" defines how and when pull requests are merged. If the section is
 # missing, bulldozer will consider all pull requests and use default settings.
 merge:
-  # "whitelist" defines the set of pull requests considered by bulldozer. If
+  # "allowlist" defines the set of pull requests considered by bulldozer. If
   # the section is missing, bulldozer considers all pull requests not excluded
-  # by the blacklist.
-  whitelist:
+  # by the blocklist.
+  allowlist:
     # Pull requests with any of these labels (case-insensitive) are added to
-    # the whitelist.
+    # the allowlist.
     labels: ["merge when ready"]
 
     # Pull requests where the body or any comment contains any of these
-    # substrings are added to the whitelist.
+    # substrings are added to the allowlist.
     comment_substrings: ["==MERGE_WHEN_READY=="]
 
     # Pull requests where any comment matches one of these exact strings are
-    # added to the whitelist.
+    # added to the allowlist.
     comments: ["Please merge this pull request!"]
 
     # Pull requests where the body contains any of these substrings are added
-    # to the whitelist.
+    # to the allowlist.
     pr_body_substrings: ["==MERGE_WHEN_READY=="]
 
-    # Pull requests targeting any of these branches are added to the whitelist.
+    # Pull requests targeting any of these branches are added to the allowlist.
     branches: ["develop"]
 
-  # "blacklist" defines the set of pull request ignored by bulldozer. If the
+  # "blocklist" defines the set of pull request ignored by bulldozer. If the
   # section is missing, bulldozer considers all pull requests. It takes the
-  # same keys as the "whitelist" section.
-  blacklist:
+  # same keys as the "allowlist" section.
+  blocklist:
     labels: ["do not merge"]
     comment_substrings: ["==DO_NOT_MERGE=="]
 
@@ -148,23 +148,23 @@ merge:
 # "update" defines how and when to update pull request branches. Unlike with
 # merges, if this section is missing, bulldozer will not update any pull requests.
 update:
-  # "whitelist" defines the set of pull requests that should be updated by
-  # bulldozer. It accepts the same keys as the whitelist in the "merge" block.
-  whitelist:
+  # "allowlist" defines the set of pull requests that should be updated by
+  # bulldozer. It accepts the same keys as the allowlist in the "merge" block.
+  allowlist:
     labels: ["WIP", "Update Me"]
 
-  # "blacklist" defines the set of pull requests that should not be updated by
-  # bulldozer. It accepts the same keys as the blacklist in the "merge" block.
-  blacklist:
+  # "blocklist" defines the set of pull requests that should not be updated by
+  # bulldozer. It accepts the same keys as the blocklist in the "merge" block.
+  blocklist:
     labels: ["Do Not Update"]
 ```
 
 ## FAQ
 
-#### Can I specify both a `blacklist` and `whitelist`?
+#### Can I specify both a `blocklist` and `allowlist`?
 
-Yes. If both `blacklist` and `whitelist` are specified, bulldozer will attempt to match
-on both. In cases where both match, `blacklist` will take precedence.
+Yes. If both `blocklist` and `allowlist` are specified, bulldozer will attempt to match
+on both. In cases where both match, `blocklist` will take precedence.
 
 #### Can I specify the body of the commit when using the `squash` strategy?
 
@@ -203,13 +203,13 @@ It will be used only when your repo config file does not exist.
 ```yaml
 options:
   default_repository_config:
-    blacklist:
+    blocklist:
       labels: ["do not merge"] # or any other available config.
 ```
 
 #### Bulldozer isn't merging my commit when it should, what could be happening?
 
-Bulldozer will attempt to merge a branch whenever it passes the whitelist/blacklist
+Bulldozer will attempt to merge a branch whenever it passes the allowlist/blocklist
 criteria. GitHub may prevent it from merging a branch in certain conditions, some of
 which are to be expected, and others that may be caused by mis-configuring Bulldozer.
 
@@ -219,7 +219,7 @@ which are to be expected, and others that may be caused by mis-configuring Bulld
   repository settings
 * Branch protection rules are preventing `bulldozer[bot]` from [pushing to the
   branch][push restrictions]. Github apps can be added to the list of restricted
-  push users, so you can whitelist bulldozer specifically for your repo.
+  push users, so you can allowlist bulldozer specifically for your repo.
 
 [push restrictions]: https://help.github.com/articles/about-branch-restrictions/
 [a workaround]: #can-bulldozer-work-with-push-restrictions-on-branches

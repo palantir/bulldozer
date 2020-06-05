@@ -14,26 +14,7 @@
 
 package bulldozer
 
-type MessageStrategy string
-type TitleStrategy string
-type MergeMethod string
-
-const (
-	PullRequestBody  MessageStrategy = "pull_request_body"
-	SummarizeCommits MessageStrategy = "summarize_commits"
-	EmptyBody        MessageStrategy = "empty_body"
-
-	PullRequestTitle   TitleStrategy = "pull_request_title"
-	FirstCommitTitle   TitleStrategy = "first_commit_title"
-	GithubDefaultTitle TitleStrategy = "github_default"
-
-	MergeCommit     MergeMethod = "merge"
-	SquashAndMerge  MergeMethod = "squash"
-	RebaseAndMerge  MergeMethod = "rebase"
-	FastForwardOnly MergeMethod = "ff-only"
-)
-
-type MergeConfig struct {
+type MergeConfigV1 struct {
 	Whitelist Signals `yaml:"whitelist"`
 	Blacklist Signals `yaml:"blacklist"`
 
@@ -49,24 +30,14 @@ type MergeConfig struct {
 	RequiredStatuses []string `yaml:"required_statuses"`
 }
 
-type MergeOptions struct {
-	Squash *SquashOptions `yaml:"squash"`
-}
-
-type SquashOptions struct {
-	Title            TitleStrategy   `yaml:"title"`
-	Body             MessageStrategy `yaml:"body"`
-	MessageDelimiter string          `yaml:"message_delimiter"`
-}
-
-type UpdateConfig struct {
+type UpdateConfigV1 struct {
 	Whitelist Signals `yaml:"whitelist"`
 	Blacklist Signals `yaml:"blacklist"`
 }
 
-type Config struct {
+type ConfigV1 struct {
 	Version int `yaml:"version"`
 
-	Merge  MergeConfig  `yaml:"merge"`
-	Update UpdateConfig `yaml:"update"`
+	Merge  MergeConfigV1  `yaml:"merge"`
+	Update UpdateConfigV1 `yaml:"update"`
 }

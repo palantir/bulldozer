@@ -76,9 +76,19 @@ func (cf *ConfigFetcher) ConfigForPR(ctx context.Context, client *github.Client,
 
 	logger := zerolog.Ctx(ctx)
 
-	bytes, err := cf.fetchConfigContents(ctx, client, fc.Owner, fc.Repo, fc.Ref, cf.configurationV1Path)
+	bytes, err := cf.fetchConfigContents(ctx, client, fc.Owner, fc.Repo, fc.Ref, cf.configurationV2Path)
 	if err == nil && bytes != nil {
 		if config, err := cf.unmarshalConfig(bytes); err == nil {
+			logger.Debug().Msgf("Found v2 configuration at %s", cf.configurationV1Path)
+			fc.Config = config
+			return fc, nil
+		}
+	}
+	logger.Debug().Msgf("v2 configuration was missing or invalid, falling back to v1, v0 or server configuration")
+
+	bytes, err := cf.fetchConfigContents(ctx, client, fc.Owner, fc.Repo, fc.Ref, cf.configurationV1Path)
+	if err == nil && bytes != nil {
+		if config, err := cf.unmarshalConfigV1(bytes); err == nil {
 			logger.Debug().Msgf("Found v1 configuration at %s", cf.configurationV1Path)
 			fc.Config = config
 			return fc, nil
@@ -148,11 +158,40 @@ func (cf *ConfigFetcher) unmarshalConfig(bytes []byte) (*Config, error) {
 		return nil, errors.Wrapf(err, "failed to unmarshal configuration")
 	}
 
-	if config.Version != 1 {
-		return nil, errors.Errorf("unexpected version '%d', expected 1", config.Version)
+	if config.Version != 2 {
+		return nil, errors.Errorf("unexpected version '%d', expected 2", config.Version)
 	}
 
 	return &config, nil
+}
+
+func (cf *ConfigFetcher) unmarshalConfigV1(bytes []byte) (*Config, error) {
+	var configv1 ConfigV1
+	if err := yaml.UnmarshalStrict(bytes, &configv1); err != nil {
+		return nil, errors.Wrapf(err, "failed to unmarshal configuration")
+	}
+
+	if configv1.Version != 1 {
+		return nil, errors.Errorf("unexpected version '%d', expected 1", configv1.Version)
+	}
+
+	var config config = Config{
+		Version: 2,
+		Update: UpdateConfig{
+			Allowlist: configv1.Update.Whitelist,
+			Blocklist: configV1.Update.Blacklist,
+		},
+		Merge: MergeConfig{
+			Allowlist: configv1.Merge.Whitelist,
+			Blocklist: configV1.Merge.Blacklist,
+			DeleteAfterMerge: configv1.Merge.DeleteAfterMerge,
+			Method:           configv1.Merge.Strategy,
+			Options: configv1.Merge.Options,
+			BranchMethod: configv1.Merge.BranchMethod,
+			RequiredStatuses: configv1.Merge.RequiredStatuses,,
+		}
+	}
+	return config, nil
 }
 
 func (cf *ConfigFetcher) unmarshalConfigV0(bytes []byte) (*Config, error) {

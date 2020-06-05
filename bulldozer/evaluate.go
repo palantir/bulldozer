@@ -24,23 +24,23 @@ import (
 	"github.com/palantir/bulldozer/pull"
 )
 
-// IsPRBlacklisted returns true if the PR is identified as blacklisted,
+// IsPRBlocklisted returns true if the PR is identified as blocklisted,
 // false otherwise. Additionally, a description of the reason will be returned.
-func IsPRBlacklisted(ctx context.Context, pullCtx pull.Context, config Signals) (bool, string, error) {
-	matches, reason, err := config.Matches(ctx, pullCtx, "blacklist")
+func IsPRBlocklisted(ctx context.Context, pullCtx pull.Context, config Signals) (bool, string, error) {
+	matches, reason, err := config.Matches(ctx, pullCtx, "blocklist")
 	if err != nil {
-		// blacklist must always fail closed (matches on error)
+		// blocklist must always fail closed (matches on error)
 		matches = true
 	}
 	return matches, reason, err
 }
 
-// IsPRWhitelisted returns true if the PR is identified as whitelisted,
+// IsPRWAllowlisted returns true if the PR is identified as allowlisted,
 // false otherwise. Additionally, a description of the reason will be returned.
-func IsPRWhitelisted(ctx context.Context, pullCtx pull.Context, config Signals) (bool, string, error) {
-	matches, reason, err := config.Matches(ctx, pullCtx, "whitelist")
+func IsPRAllowlisted(ctx context.Context, pullCtx pull.Context, config Signals) (bool, string, error) {
+	matches, reason, err := config.Matches(ctx, pullCtx, "allowlist")
 	if err != nil {
-		// whitelist must always fail closed (no match on error)
+		// allowlist must always fail closed (no match on error)
 		return false, reason, err
 	}
 	return matches, reason, err
@@ -71,32 +71,32 @@ func setDifference(set1, set2 []string) []string {
 func ShouldMergePR(ctx context.Context, pullCtx pull.Context, mergeConfig MergeConfig) (bool, error) {
 	logger := zerolog.Ctx(ctx)
 
-	if mergeConfig.Blacklist.Enabled() {
-		blacklisted, reason, err := IsPRBlacklisted(ctx, pullCtx, mergeConfig.Blacklist)
+	if mergeConfig.Blocklist.Enabled() {
+		blocklisted, reason, err := IsPRBlocklisted(ctx, pullCtx, mergeConfig.Blocklist)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to determine if pull request is blacklisted")
+			return false, errors.Wrap(err, "failed to determine if pull request is blocklisted")
 		}
-		if blacklisted {
-			logger.Debug().Msgf("%s is deemed not mergeable because blacklisting is enabled and %s", pullCtx.Locator(), reason)
+		if blocklisted {
+			logger.Debug().Msgf("%s is deemed not mergeable because blocklisting is enabled and %s", pullCtx.Locator(), reason)
 			return false, nil
 		}
 	} else {
-		logger.Debug().Msg("blacklisting is not enabled")
+		logger.Debug().Msg("blocklisting is not enabled")
 	}
 
-	if mergeConfig.Whitelist.Enabled() {
-		whitelisted, reason, err := IsPRWhitelisted(ctx, pullCtx, mergeConfig.Whitelist)
+	if mergeConfig.Allowlist.Enabled() {
+		allowlisted, reason, err := IsPRAllowlisted(ctx, pullCtx, mergeConfig.Allowlist)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to determine if pull request is whitelisted")
+			return false, errors.Wrap(err, "failed to determine if pull request is allowlisted")
 		}
-		if !whitelisted {
-			logger.Debug().Msgf("%s is deemed not mergeable because whitelisting is enabled and no whitelist signal detected", pullCtx.Locator())
+		if !allowlisted {
+			logger.Debug().Msgf("%s is deemed not mergeable because allowlisting is enabled and no allowlist signal detected", pullCtx.Locator())
 			return false, nil
 		}
 
-		logger.Debug().Msgf("%s is whitelisted because whitelisting is enabled and %s", pullCtx.Locator(), reason)
+		logger.Debug().Msgf("%s is allowlisted because allowlisting is enabled and %s", pullCtx.Locator(), reason)
 	} else {
-		logger.Debug().Msg("whitelisting is not enabled")
+		logger.Debug().Msg("allowlisting is not enabled")
 	}
 
 	requiredStatuses, err := pullCtx.RequiredStatuses(ctx)

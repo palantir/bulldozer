@@ -27,32 +27,32 @@ import (
 func ShouldUpdatePR(ctx context.Context, pullCtx pull.Context, updateConfig UpdateConfig) (bool, error) {
 	logger := zerolog.Ctx(ctx)
 
-	if !updateConfig.Blacklist.Enabled() && !updateConfig.Whitelist.Enabled() {
+	if !updateConfig.Blocklist.Enabled() && !updateConfig.Allowlist.Enabled() {
 		return false, nil
 	}
 
-	if updateConfig.Blacklist.Enabled() {
-		blacklisted, reason, err := IsPRBlacklisted(ctx, pullCtx, updateConfig.Blacklist)
+	if updateConfig.Blocklist.Enabled() {
+		Blocklisted, reason, err := IsPRBlocklisted(ctx, pullCtx, updateConfig.Blocklist)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to determine if pull request is blacklisted")
+			return false, errors.Wrap(err, "failed to determine if pull request is blocklisted")
 		}
-		if blacklisted {
-			logger.Debug().Msgf("%s is deemed not updateable because blacklisting is enabled and %s", pullCtx.Locator(), reason)
+		if Blocklisted {
+			logger.Debug().Msgf("%s is deemed not updateable because blocklisting is enabled and %s", pullCtx.Locator(), reason)
 			return false, nil
 		}
 	}
 
-	if updateConfig.Whitelist.Enabled() {
-		whitelisted, reason, err := IsPRWhitelisted(ctx, pullCtx, updateConfig.Whitelist)
+	if updateConfig.Allowlist.Enabled() {
+		Allowlisted, reason, err := IsPRAllowlisted(ctx, pullCtx, updateConfig.Allowlist)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to determine if pull request is whitelisted")
+			return false, errors.Wrap(err, "failed to determine if pull request is Allowlisted")
 		}
-		if !whitelisted {
-			logger.Debug().Msgf("%s is deemed not updateable because whitelisting is enabled and no whitelist signal detected", pullCtx.Locator())
+		if !Allowlisted {
+			logger.Debug().Msgf("%s is deemed not updateable because allowlisting is enabled and no allowlist signal detected", pullCtx.Locator())
 			return false, nil
 		}
 
-		logger.Debug().Msgf("%s is whitelisted because whitelisting is enabled and %s", pullCtx.Locator(), reason)
+		logger.Debug().Msgf("%s is Allowlisted because allowlisting is enabled and %s", pullCtx.Locator(), reason)
 	}
 
 	return true, nil
