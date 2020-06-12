@@ -52,7 +52,6 @@ jobs:
       - image: circleci/golang:1.13.4-stretch
     steps:
       - checkout
-      - run: cp -r config docker/
       - setup_remote_docker
       - attach_workspace:
           at: .
