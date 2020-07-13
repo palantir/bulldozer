@@ -311,7 +311,16 @@ func isValidMergeMethod(input MergeMethod) bool {
 }
 
 func calculateCommitMessage(ctx context.Context, pullCtx pull.Context, option SquashOptions) (string, error) {
-	commitMessage := ""
+	// As of go-github v30, using the empty string as the commit message
+	// selects the default GitHub behavior for the merge mode. To actually
+	// clear the message, we use a non-empty string that GitHub will still
+	// interpret as empty.
+	const (
+		defaultMessage = ""
+		emptyMessage   = " "
+	)
+
+	commitMessage := defaultMessage
 	switch option.Body {
 	case PullRequestBody:
 		if option.MessageDelimiter != "" {
@@ -322,19 +331,19 @@ func calculateCommitMessage(ctx context.Context, pullCtx pull.Context, option Sq
 				return "", errors.Wrap(err, "failed to compile message delimiter regex")
 			}
 
-			if m := matcher.FindStringSubmatch(pullCtx.Body()); len(m) == 4 {
+			if m := matcher.FindStringSubmatch(pullCtx.Body()); len(m) == 4 && m[2] != "" {
 				commitMessage = m[2]
+			} else {
+				commitMessage = emptyMessage
 			}
 		} else {
 			commitMessage = pullCtx.Body()
 		}
-	case SummarizeCommits:
-		summarizedMessages, err := summarizeCommitMessages(ctx, pullCtx)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to summarize pull request commit messages")
-		}
-		commitMessage = summarizedMessages
 	case EmptyBody:
+		commitMessage = emptyMessage
+	case SummarizeCommits:
+		// Summarizing commits is the default behavior for squash merges
+		commitMessage = defaultMessage
 	}
 
 	return commitMessage, nil
@@ -359,17 +368,4 @@ func calculateCommitTitle(ctx context.Context, pullCtx pull.Context, option Squa
 		title = fmt.Sprintf("%s (#%d)", title, pullCtx.Number())
 	}
 	return title, nil
-}
-
-func summarizeCommitMessages(ctx context.Context, pullCtx pull.Context) (string, error) {
-	commits, err := pullCtx.Commits(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	var builder strings.Builder
-	for _, c := range commits {
-		fmt.Fprintf(&builder, "* %s\n", c.Message)
-	}
-	return builder.String(), nil
 }

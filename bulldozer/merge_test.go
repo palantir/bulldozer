@@ -117,12 +117,12 @@ func TestCalculateCommitMessage(t *testing.T) {
 		"emptyBody": {
 			PullContext: defaultPullContext,
 			Strategy:    EmptyBody,
-			Output:      "",
+			Output:      " ",
 		},
 		"summarizeCommits": {
 			PullContext: defaultPullContext,
 			Strategy:    SummarizeCommits,
-			Output:      "* The first commit message!\n* The second commit message!\n* The third commit message!\n",
+			Output:      "",
 		},
 		"pullRequestBody": {
 			PullContext: defaultPullContext,
@@ -141,7 +141,7 @@ func TestCalculateCommitMessage(t *testing.T) {
 			PullContext: defaultPullContext,
 			Strategy:    PullRequestBody,
 			Delimiter:   "~~",
-			Output:      "",
+			Output:      " ",
 		},
 	}
 
