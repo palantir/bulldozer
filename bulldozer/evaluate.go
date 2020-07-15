@@ -46,21 +46,39 @@ func IsPRWhitelisted(ctx context.Context, pullCtx pull.Context, config Signals) 
 	return matches, reason, err
 }
 
-// setDifference returns all elements in set1 that
-// are not in set2.
-func setDifference(set1, set2 []string) []string {
-	m2 := make(map[string]struct{})
-	for _, s2 := range set2 {
-		m2[s2] = struct{}{}
+// statusSetDifference returns all statuses in required that are not in actual,
+// accouting for special behavior in GitHub.
+func statusSetDifference(required, actual []string) []string {
+	// GitHub apparently implements special behavior with required statuses for
+	// Travis CI for what I assume are legacy reasons. If travisStatusBase is
+	// required, both travisStatusPush and travisStatusPR inherit the required
+	// flag. Futher, travisStatusBase is the _only_ status of the three that
+	// can be selected as required in the UI; the other two are hidden from
+	// users. See issue #190 for more details.
+	//
+	// To account for this, pretend that travisStatusBase appears as a status
+	// if either of the others appear in the actual list.
+	const (
+		travisStatusBase = "continuous-integration/travis-ci"
+		travisStatusPush = "continuous-integration/travis-ci/push"
+		travisStatusPR   = "continuous-integration/travis-ci/pr"
+	)
+
+	actualSet := make(map[string]struct{})
+	for _, s := range actual {
+		if s == travisStatusPush || s == travisStatusPR {
+			actualSet[travisStatusBase] = struct{}{}
+		}
+		actualSet[s] = struct{}{}
 	}
 
 	seen := make(map[string]struct{})
 	var result []string
-	for _, s1 := range set1 {
-		if _, ok := m2[s1]; !ok {
-			if _, alreadySeen := seen[s1]; !alreadySeen {
-				result = append(result, s1)
-				seen[s1] = struct{}{}
+	for _, s := range required {
+		if _, ok := actualSet[s]; !ok {
+			if _, alreadySeen := seen[s]; !alreadySeen {
+				result = append(result, s)
+				seen[s] = struct{}{}
 			}
 		}
 	}
@@ -110,7 +128,7 @@ func ShouldMergePR(ctx context.Context, pullCtx pull.Context, mergeConfig MergeC
 		return false, errors.Wrap(err, "failed to determine currently successful status checks")
 	}
 
-	unsatisfiedStatuses := setDifference(requiredStatuses, successStatuses)
+	unsatisfiedStatuses := statusSetDifference(requiredStatuses, successStatuses)
 	if len(unsatisfiedStatuses) > 0 {
 		logger.Debug().Msgf("%s is deemed not mergeable because of unfulfilled status checks: [%s]", pullCtx.Locator(), strings.Join(unsatisfiedStatuses, ","))
 		return false, nil
