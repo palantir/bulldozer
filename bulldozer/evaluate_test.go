@@ -299,4 +299,30 @@ func TestShouldMerge(t *testing.T) {
 		require.Nil(t, err)
 		assert.False(t, actualShouldMerge)
 	})
+
+	t.Run("travisCiPushCheckMet", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			LabelValue:            []string{"LABEL_MERGE"},
+			SuccessStatusesValue:  []string{"continuous-integration/travis-ci/push", "StatusCheckA"},
+			RequiredStatusesValue: []string{"continuous-integration/travis-ci"},
+		}
+
+		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+
+		require.Nil(t, err)
+		assert.True(t, actualShouldMerge)
+	})
+
+	t.Run("travisCiPrCheckMet", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			LabelValue:            []string{"LABEL_MERGE"},
+			SuccessStatusesValue:  []string{"continuous-integration/travis-ci/pr", "StatusCheckA"},
+			RequiredStatusesValue: []string{"continuous-integration/travis-ci"},
+		}
+
+		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+
+		require.Nil(t, err)
+		assert.True(t, actualShouldMerge)
+	})
 }
