@@ -34,8 +34,10 @@ const (
 )
 
 type MergeConfig struct {
-	Whitelist Signals `yaml:"whitelist"`
-	Blacklist Signals `yaml:"blacklist"`
+	Allowlist Signals  `yaml:"allowlist"`
+	Denylist  Signals  `yaml:"denylist"`
+	Blacklist *Signals `yaml:"blacklist,omitempty"`
+	Whitelist *Signals `yaml:"whitelist,omitempty"`
 
 	DeleteAfterMerge bool `yaml:"delete_after_merge"`
 
@@ -60,8 +62,10 @@ type SquashOptions struct {
 }
 
 type UpdateConfig struct {
-	Whitelist Signals `yaml:"whitelist"`
-	Blacklist Signals `yaml:"blacklist"`
+	Allowlist Signals  `yaml:"allowlist"`
+	Denylist  Signals  `yaml:"denylist"`
+	Blacklist *Signals `yaml:"blacklist,omitempty"`
+	Whitelist *Signals `yaml:"whitelist,omitempty"`
 }
 
 type Config struct {

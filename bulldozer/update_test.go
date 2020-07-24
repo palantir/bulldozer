@@ -66,7 +66,7 @@ func generateUpdateTestCase(blacklistable bool, blacklisted bool, whitelistable 
 	pullCtx := pulltest.MockPullContext{}
 
 	if blacklistable {
-		updateConfig.Blacklist.Labels = append(updateConfig.Blacklist.Labels, "blacklist")
+		updateConfig.Denylist.Labels = append(updateConfig.Denylist.Labels, "blacklist")
 	}
 
 	if blacklisted {
@@ -74,7 +74,7 @@ func generateUpdateTestCase(blacklistable bool, blacklisted bool, whitelistable 
 	}
 
 	if whitelistable {
-		updateConfig.Whitelist.Labels = append(updateConfig.Whitelist.Labels, "whitelist")
+		updateConfig.Allowlist.Labels = append(updateConfig.Allowlist.Labels, "whitelist")
 	}
 
 	if whitelisted {

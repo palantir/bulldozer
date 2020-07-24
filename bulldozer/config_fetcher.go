@@ -148,6 +148,20 @@ func (cf *ConfigFetcher) unmarshalConfig(bytes []byte) (*Config, error) {
 		return nil, errors.Wrapf(err, "failed to unmarshal configuration")
 	}
 
+	// Merge old signals configurations if they exist
+	if config.Merge.Blacklist != nil {
+		config.Merge.Denylist = *config.Merge.Blacklist
+	}
+	if config.Merge.Whitelist != nil {
+		config.Merge.Allowlist = *config.Merge.Whitelist
+	}
+	if config.Update.Blacklist != nil {
+		config.Update.Denylist = *config.Update.Blacklist
+	}
+	if config.Update.Whitelist != nil {
+		config.Update.Allowlist = *config.Update.Whitelist
+	}
+
 	if config.Version != 1 {
 		return nil, errors.Errorf("unexpected version '%d', expected 1", config.Version)
 	}
@@ -167,12 +181,12 @@ func (cf *ConfigFetcher) unmarshalConfigV0(bytes []byte) (*Config, error) {
 		config = Config{
 			Version: 1,
 			Update: UpdateConfig{
-				Whitelist: Signals{
+				Allowlist: Signals{
 					Labels: []string{"update me", "update-me", "update_me"},
 				},
 			},
 			Merge: MergeConfig{
-				Whitelist: Signals{
+				Allowlist: Signals{
 					Labels: []string{"merge when ready", "merge-when-ready", "merge_when_ready"},
 				},
 				DeleteAfterMerge: configv0.DeleteAfterMerge,
@@ -188,12 +202,12 @@ func (cf *ConfigFetcher) unmarshalConfigV0(bytes []byte) (*Config, error) {
 		config = Config{
 			Version: 1,
 			Update: UpdateConfig{
-				Whitelist: Signals{
+				Allowlist: Signals{
 					Labels: []string{"update me", "update-me", "update_me"},
 				},
 			},
 			Merge: MergeConfig{
-				Blacklist: Signals{
+				Denylist: Signals{
 					Labels: []string{"wip", "do not merge", "do-not-merge", "do_not_merge"},
 				},
 				DeleteAfterMerge: configv0.DeleteAfterMerge,
@@ -209,12 +223,12 @@ func (cf *ConfigFetcher) unmarshalConfigV0(bytes []byte) (*Config, error) {
 		config = Config{
 			Version: 1,
 			Update: UpdateConfig{
-				Whitelist: Signals{
+				Allowlist: Signals{
 					Labels: []string{"update me", "update-me", "update_me"},
 				},
 			},
 			Merge: MergeConfig{
-				Whitelist: Signals{
+				Allowlist: Signals{
 					CommentSubstrings: []string{"==MERGE_WHEN_READY=="},
 				},
 				DeleteAfterMerge: configv0.DeleteAfterMerge,
