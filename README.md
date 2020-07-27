@@ -8,9 +8,9 @@ status checks are successful and required reviews are provided.
 
 Additionally, `bulldozer` can:
 
-- Only merge pull requests that match a allowlist condition, like having a
+- Only merge pull requests that match certain conditions, like having a
   specific label or comment
-- Ignore pull requests that match a denylist condition, like having a specific
+- Ignore pull requests that match certain conditions, like having a specific
   label or comment
 - Automatically keep pull request branches up-to-date by merging in the target
   branch
@@ -219,7 +219,7 @@ which are to be expected, and others that may be caused by mis-configuring Bulld
   repository settings
 * Branch protection rules are preventing `bulldozer[bot]` from [pushing to the
   branch][push restrictions]. Github apps can be added to the list of restricted
-  push users, so you can allowlist bulldozer specifically for your repo.
+  push users, so you can allow Bulldozer specifically for your repo.
 
 [push restrictions]: https://help.github.com/articles/about-branch-restrictions/
 [a workaround]: #can-bulldozer-work-with-push-restrictions-on-branches

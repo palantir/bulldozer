@@ -28,10 +28,10 @@ import (
 func TestShouldUpdatePR(t *testing.T) {
 	ctx := context.Background()
 	testMatrix := []struct {
-		blacklistEnabled bool
-		blacklisted      bool
-		whitelistEnabled bool
-		whitelisted      bool
+		denylistEnabled  bool
+		denied           bool
+		allowlistEnabled bool
+		allowed          bool
 		expectingUpdate  bool
 	}{
 		{false, false, false, false, false},
@@ -53,32 +53,32 @@ func TestShouldUpdatePR(t *testing.T) {
 	}
 
 	for ndx, testCase := range testMatrix {
-		pullCtx, updateConfig := generateUpdateTestCase(testCase.blacklistEnabled, testCase.blacklisted, testCase.whitelistEnabled, testCase.whitelisted)
+		pullCtx, updateConfig := generateUpdateTestCase(testCase.denylistEnabled, testCase.denied, testCase.allowlistEnabled, testCase.allowed)
 		updating, err := ShouldUpdatePR(ctx, pullCtx, updateConfig)
 		require.NoError(t, err)
-		msg := fmt.Sprintf("case %d - blacklistEnabled=%t blacklisted=%t whitelistEnabled=%t whitelisted=%t -> doUpdate=%t",
-			ndx, testCase.blacklistEnabled, testCase.blacklisted, testCase.whitelistEnabled, testCase.whitelisted, testCase.expectingUpdate)
+		msg := fmt.Sprintf("case %d - denylistEnabled=%t denied=%t allowlistEnabled=%t allowed=%t -> doUpdate=%t",
+			ndx, testCase.denylistEnabled, testCase.denied, testCase.allowlistEnabled, testCase.allowed, testCase.expectingUpdate)
 		require.Equal(t, testCase.expectingUpdate, updating, msg)
 	}
 }
-func generateUpdateTestCase(blacklistable bool, blacklisted bool, whitelistable bool, whitelisted bool) (pull.Context, UpdateConfig) {
+func generateUpdateTestCase(deniable bool, denied bool, allowable bool, allowed bool) (pull.Context, UpdateConfig) {
 	updateConfig := UpdateConfig{}
 	pullCtx := pulltest.MockPullContext{}
 
-	if blacklistable {
-		updateConfig.Denylist.Labels = append(updateConfig.Denylist.Labels, "blacklist")
+	if deniable {
+		updateConfig.Denylist.Labels = append(updateConfig.Denylist.Labels, "denylist")
 	}
 
-	if blacklisted {
-		pullCtx.LabelValue = append(pullCtx.LabelValue, "blacklist")
+	if denied {
+		pullCtx.LabelValue = append(pullCtx.LabelValue, "denylist")
 	}
 
-	if whitelistable {
-		updateConfig.Allowlist.Labels = append(updateConfig.Allowlist.Labels, "whitelist")
+	if allowable {
+		updateConfig.Allowlist.Labels = append(updateConfig.Allowlist.Labels, "allowlist")
 	}
 
-	if whitelisted {
-		pullCtx.LabelValue = append(pullCtx.LabelValue, "whitelist")
+	if allowed {
+		pullCtx.LabelValue = append(pullCtx.LabelValue, "allowlist")
 	}
 
 	return &pullCtx, updateConfig

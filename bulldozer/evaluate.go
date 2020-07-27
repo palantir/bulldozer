@@ -24,7 +24,7 @@ import (
 	"github.com/palantir/bulldozer/pull"
 )
 
-// IsPRDenied returns true if the PR is identified as denylisted,
+// IsPRDenied returns true if the PR is identified as denied,
 // false otherwise. Additionally, a description of the reason will be returned.
 func IsPRDenied(ctx context.Context, pullCtx pull.Context, config Signals) (bool, string, error) {
 	matches, reason, err := config.Matches(ctx, pullCtx, "denied")
