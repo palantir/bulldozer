@@ -149,17 +149,17 @@ func (cf *ConfigFetcher) unmarshalConfig(bytes []byte) (*Config, error) {
 	}
 
 	// Merge old signals configurations if they exist when the new values aren't present
-	if config.Merge.Blacklist.Enabled() && !config.Merge.Denylist.Enabled() {
-		config.Merge.Denylist = config.Merge.Blacklist
+	if config.Merge.Blacklist.Enabled() && !config.Merge.Ignore.Enabled() {
+		config.Merge.Ignore = config.Merge.Blacklist
 	}
-	if config.Merge.Whitelist.Enabled() && !config.Merge.Allowlist.Enabled() {
-		config.Merge.Allowlist = config.Merge.Whitelist
+	if config.Merge.Whitelist.Enabled() && !config.Merge.Trigger.Enabled() {
+		config.Merge.Trigger = config.Merge.Whitelist
 	}
-	if config.Update.Blacklist.Enabled() && !config.Update.Denylist.Enabled() {
-		config.Update.Denylist = config.Update.Blacklist
+	if config.Update.Blacklist.Enabled() && !config.Update.Ignore.Enabled() {
+		config.Update.Ignore = config.Update.Blacklist
 	}
-	if config.Update.Whitelist.Enabled() && !config.Update.Allowlist.Enabled() {
-		config.Update.Allowlist = config.Update.Whitelist
+	if config.Update.Whitelist.Enabled() && !config.Update.Trigger.Enabled() {
+		config.Update.Trigger = config.Update.Whitelist
 	}
 
 	if config.Version != 1 {
@@ -181,12 +181,12 @@ func (cf *ConfigFetcher) unmarshalConfigV0(bytes []byte) (*Config, error) {
 		config = Config{
 			Version: 1,
 			Update: UpdateConfig{
-				Allowlist: Signals{
+				Trigger: Signals{
 					Labels: []string{"update me", "update-me", "update_me"},
 				},
 			},
 			Merge: MergeConfig{
-				Allowlist: Signals{
+				Trigger: Signals{
 					Labels: []string{"merge when ready", "merge-when-ready", "merge_when_ready"},
 				},
 				DeleteAfterMerge: configv0.DeleteAfterMerge,
@@ -202,12 +202,12 @@ func (cf *ConfigFetcher) unmarshalConfigV0(bytes []byte) (*Config, error) {
 		config = Config{
 			Version: 1,
 			Update: UpdateConfig{
-				Allowlist: Signals{
+				Trigger: Signals{
 					Labels: []string{"update me", "update-me", "update_me"},
 				},
 			},
 			Merge: MergeConfig{
-				Denylist: Signals{
+				Ignore: Signals{
 					Labels: []string{"wip", "do not merge", "do-not-merge", "do_not_merge"},
 				},
 				DeleteAfterMerge: configv0.DeleteAfterMerge,
@@ -223,12 +223,12 @@ func (cf *ConfigFetcher) unmarshalConfigV0(bytes []byte) (*Config, error) {
 		config = Config{
 			Version: 1,
 			Update: UpdateConfig{
-				Allowlist: Signals{
+				Trigger: Signals{
 					Labels: []string{"update me", "update-me", "update_me"},
 				},
 			},
 			Merge: MergeConfig{
-				Allowlist: Signals{
+				Trigger: Signals{
 					CommentSubstrings: []string{"==MERGE_WHEN_READY=="},
 				},
 				DeleteAfterMerge: configv0.DeleteAfterMerge,

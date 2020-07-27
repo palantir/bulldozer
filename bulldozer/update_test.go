@@ -28,11 +28,11 @@ import (
 func TestShouldUpdatePR(t *testing.T) {
 	ctx := context.Background()
 	testMatrix := []struct {
-		denylistEnabled  bool
-		denied           bool
-		allowlistEnabled bool
-		allowed          bool
-		expectingUpdate  bool
+		ignoreEnabled   bool
+		ignored         bool
+		triggerEnabled  bool
+		triggered       bool
+		expectingUpdate bool
 	}{
 		{false, false, false, false, false},
 		{false, false, false, true, false},
@@ -53,32 +53,32 @@ func TestShouldUpdatePR(t *testing.T) {
 	}
 
 	for ndx, testCase := range testMatrix {
-		pullCtx, updateConfig := generateUpdateTestCase(testCase.denylistEnabled, testCase.denied, testCase.allowlistEnabled, testCase.allowed)
+		pullCtx, updateConfig := generateUpdateTestCase(testCase.ignoreEnabled, testCase.ignored, testCase.triggerEnabled, testCase.triggered)
 		updating, err := ShouldUpdatePR(ctx, pullCtx, updateConfig)
 		require.NoError(t, err)
-		msg := fmt.Sprintf("case %d - denylistEnabled=%t denied=%t allowlistEnabled=%t allowed=%t -> doUpdate=%t",
-			ndx, testCase.denylistEnabled, testCase.denied, testCase.allowlistEnabled, testCase.allowed, testCase.expectingUpdate)
+		msg := fmt.Sprintf("case %d - ignoreEnabled=%t ignored=%t triggerEnabled=%t triggered=%t -> doUpdate=%t",
+			ndx, testCase.ignoreEnabled, testCase.ignored, testCase.triggerEnabled, testCase.triggered, testCase.expectingUpdate)
 		require.Equal(t, testCase.expectingUpdate, updating, msg)
 	}
 }
-func generateUpdateTestCase(deniable bool, denied bool, allowable bool, allowed bool) (pull.Context, UpdateConfig) {
+func generateUpdateTestCase(ignorable bool, ignored bool, triggerable bool, triggered bool) (pull.Context, UpdateConfig) {
 	updateConfig := UpdateConfig{}
 	pullCtx := pulltest.MockPullContext{}
 
-	if deniable {
-		updateConfig.Denylist.Labels = append(updateConfig.Denylist.Labels, "denylist")
+	if ignorable {
+		updateConfig.Ignore.Labels = append(updateConfig.Ignore.Labels, "ignore")
 	}
 
-	if denied {
-		pullCtx.LabelValue = append(pullCtx.LabelValue, "denylist")
+	if ignored {
+		pullCtx.LabelValue = append(pullCtx.LabelValue, "ignore")
 	}
 
-	if allowable {
-		updateConfig.Allowlist.Labels = append(updateConfig.Allowlist.Labels, "allowlist")
+	if triggerable {
+		updateConfig.Trigger.Labels = append(updateConfig.Trigger.Labels, "trigger")
 	}
 
-	if allowed {
-		pullCtx.LabelValue = append(pullCtx.LabelValue, "allowlist")
+	if triggered {
+		pullCtx.LabelValue = append(pullCtx.LabelValue, "trigger")
 	}
 
 	return &pullCtx, updateConfig

@@ -44,7 +44,7 @@ func (s *Signals) Enabled() bool {
 
 // Matches returns true if the pull request meets one or more signals. It also
 // returns a description of the signal that was met. The tag argument appears
-// in this description and indicates the behavior (allowlist, denylist) this
+// in this description and indicates the behavior (trigger, ignore) this
 // set of signals is associated with.
 func (s *Signals) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
 	logger := zerolog.Ctx(ctx)

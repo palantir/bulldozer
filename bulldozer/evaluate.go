@@ -24,23 +24,23 @@ import (
 	"github.com/palantir/bulldozer/pull"
 )
 
-// IsPRDenied returns true if the PR is identified as denied,
+// IsPRIgnored returns true if the PR is identified as ignored,
 // false otherwise. Additionally, a description of the reason will be returned.
-func IsPRDenied(ctx context.Context, pullCtx pull.Context, config Signals) (bool, string, error) {
-	matches, reason, err := config.Matches(ctx, pullCtx, "denied")
+func IsPRIgnored(ctx context.Context, pullCtx pull.Context, config Signals) (bool, string, error) {
+	matches, reason, err := config.Matches(ctx, pullCtx, "ignored")
 	if err != nil {
-		// deny must always fail closed (matches on error)
+		// ignore must always fail closed (matches on error)
 		matches = true
 	}
 	return matches, reason, err
 }
 
-// IsPRAllowed returns true if the PR is identified as allowed,
+// IsPRTriggered returns true if the PR is identified as triggered,
 // false otherwise. Additionally, a description of the reason will be returned.
-func IsPRAllowed(ctx context.Context, pullCtx pull.Context, config Signals) (bool, string, error) {
-	matches, reason, err := config.Matches(ctx, pullCtx, "allowed")
+func IsPRTriggered(ctx context.Context, pullCtx pull.Context, config Signals) (bool, string, error) {
+	matches, reason, err := config.Matches(ctx, pullCtx, "triggered")
 	if err != nil {
-		// allowed must always fail closed (no match on error)
+		// trigger must always fail closed (no match on error)
 		return false, reason, err
 	}
 	return matches, reason, err
@@ -89,32 +89,32 @@ func statusSetDifference(required, actual []string) []string {
 func ShouldMergePR(ctx context.Context, pullCtx pull.Context, mergeConfig MergeConfig) (bool, error) {
 	logger := zerolog.Ctx(ctx)
 
-	if mergeConfig.Denylist.Enabled() {
-		denied, reason, err := IsPRDenied(ctx, pullCtx, mergeConfig.Denylist)
+	if mergeConfig.Ignore.Enabled() {
+		ignored, reason, err := IsPRIgnored(ctx, pullCtx, mergeConfig.Ignore)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to determine if pull request is denied")
+			return false, errors.Wrap(err, "failed to determine if pull request is ignored")
 		}
-		if denied {
-			logger.Debug().Msgf("%s is deemed not mergeable because denylisting is enabled and %s", pullCtx.Locator(), reason)
+		if ignored {
+			logger.Debug().Msgf("%s is deemed not mergeable because ignoring is enabled and %s", pullCtx.Locator(), reason)
 			return false, nil
 		}
 	} else {
-		logger.Debug().Msg("denylisting is not enabled")
+		logger.Debug().Msg("ignoring is not enabled")
 	}
 
-	if mergeConfig.Allowlist.Enabled() {
-		allowed, reason, err := IsPRAllowed(ctx, pullCtx, mergeConfig.Allowlist)
+	if mergeConfig.Trigger.Enabled() {
+		triggered, reason, err := IsPRTriggered(ctx, pullCtx, mergeConfig.Trigger)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to determine if pull request is allowed")
+			return false, errors.Wrap(err, "failed to determine if pull request is triggered")
 		}
-		if !allowed {
-			logger.Debug().Msgf("%s is deemed not mergeable because allowlisting is enabled and no allowlist signal detected", pullCtx.Locator())
+		if !triggered {
+			logger.Debug().Msgf("%s is deemed not mergeable because triggering is enabled and no trigger signal detected", pullCtx.Locator())
 			return false, nil
 		}
 
-		logger.Debug().Msgf("%s is allowed because allowlisting is enabled and %s", pullCtx.Locator(), reason)
+		logger.Debug().Msgf("%s is triggered because triggering is enabled and %s", pullCtx.Locator(), reason)
 	} else {
-		logger.Debug().Msg("allowlisting is not enabled")
+		logger.Debug().Msg("triggering is not enabled")
 	}
 
 	requiredStatuses, err := pullCtx.RequiredStatuses(ctx)
@@ -135,6 +135,5 @@ func ShouldMergePR(ctx context.Context, pullCtx pull.Context, mergeConfig MergeC
 	}
 
 	// Ignore required reviews and try a merge (which may fail with a 4XX).
-
 	return true, nil
 }

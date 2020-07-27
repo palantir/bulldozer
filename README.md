@@ -47,8 +47,8 @@ including required status checks and required reviews, are respected. It also
 means that you _must_ enable branch protection to prevent `bulldozer` from
 immediately merging every pull request.
 
-Only pull requests matching the allowlist conditions (or _not_ matching the
-denylist conditions) are considered for merging. `bulldozer` is event-driven,
+Only pull requests matching the trigger conditions (or _not_ matching
+ignore conditions) are considered for merging. `bulldozer` is event-driven,
 which means it will usually merge a pull request within a few seconds of the
 pull request satisfying all preconditions.
 
@@ -74,33 +74,33 @@ version: 1
 # "merge" defines how and when pull requests are merged. If the section is
 # missing, bulldozer will consider all pull requests and use default settings.
 merge:
-  # "allowlist" defines the set of pull requests considered by bulldozer. If
+  # "trigger" defines the set of pull requests considered by bulldozer. If
   # the section is missing, bulldozer considers all pull requests not excluded
-  # by the denylist.
-  allowlist:
+  # by the ignore conditions.
+  trigger:
     # Pull requests with any of these labels (case-insensitive) are added to
-    # the allowlist.
+    # the trigger.
     labels: ["merge when ready"]
 
     # Pull requests where the body or any comment contains any of these
-    # substrings are added to the allowlist.
+    # substrings are added to the trigger.
     comment_substrings: ["==MERGE_WHEN_READY=="]
 
     # Pull requests where any comment matches one of these exact strings are
-    # added to the allowlist.
+    # added to the trigger.
     comments: ["Please merge this pull request!"]
 
     # Pull requests where the body contains any of these substrings are added
-    # to the allowlist.
+    # to the trigger.
     pr_body_substrings: ["==MERGE_WHEN_READY=="]
 
-    # Pull requests targeting any of these branches are added to the allowlist.
+    # Pull requests targeting any of these branches are added to the trigger.
     branches: ["develop"]
 
-  # "denylist" defines the set of pull request ignored by bulldozer. If the
+  # "ignore" defines the set of pull request ignored by bulldozer. If the
   # section is missing, bulldozer considers all pull requests. It takes the
-  # same keys as the "allowlist" section.
-  denylist:
+  # same keys as the "trigger" section.
+  ignore:
     labels: ["do not merge"]
     comment_substrings: ["==DO_NOT_MERGE=="]
 
@@ -148,23 +148,23 @@ merge:
 # "update" defines how and when to update pull request branches. Unlike with
 # merges, if this section is missing, bulldozer will not update any pull requests.
 update:
-  # "allowlist" defines the set of pull requests that should be updated by
-  # bulldozer. It accepts the same keys as the allowlist in the "merge" block.
-  allowlist:
+  # "trigger" defines the set of pull requests that should be updated by
+  # bulldozer. It accepts the same keys as the trigger in the "merge" block.
+  trigger:
     labels: ["WIP", "Update Me"]
 
-  # "denylist" defines the set of pull requests that should not be updated by
-  # bulldozer. It accepts the same keys as the denylist in the "merge" block.
-  denylist:
+  # "ignore" defines the set of pull requests that should not be updated by
+  # bulldozer. It accepts the same keys as the ignore in the "merge" block.
+  ignore:
     labels: ["Do Not Update"]
 ```
 
 ## FAQ
 
-#### Can I specify both a `denylist` and `allowlist`?
+#### Can I specify both `ignore` and `trigger`?
 
-Yes. If both `denylist` and `allowlist` are specified, bulldozer will attempt to match
-on both. In cases where both match, `denylist` will take precedence.
+Yes. If both `ignore` and `trigger` are specified, bulldozer will attempt to match
+on both. In cases where both match, `ignore` will take precedence.
 
 #### Can I specify the body of the commit when using the `squash` strategy?
 
@@ -203,13 +203,13 @@ It will be used only when your repo config file does not exist.
 ```yaml
 options:
   default_repository_config:
-    denylist:
+    ignore:
       labels: ["do not merge"] # or any other available config.
 ```
 
 #### Bulldozer isn't merging my commit when it should, what could be happening?
 
-Bulldozer will attempt to merge a branch whenever it passes the allowlist/denylist
+Bulldozer will attempt to merge a branch whenever it passes the trigger/ignore
 criteria. GitHub may prevent it from merging a branch in certain conditions, some of
 which are to be expected, and others that may be caused by mis-configuring Bulldozer.
 

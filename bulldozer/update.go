@@ -27,32 +27,32 @@ import (
 func ShouldUpdatePR(ctx context.Context, pullCtx pull.Context, updateConfig UpdateConfig) (bool, error) {
 	logger := zerolog.Ctx(ctx)
 
-	if !updateConfig.Denylist.Enabled() && !updateConfig.Allowlist.Enabled() {
+	if !updateConfig.Ignore.Enabled() && !updateConfig.Trigger.Enabled() {
 		return false, nil
 	}
 
-	if updateConfig.Denylist.Enabled() {
-		denied, reason, err := IsPRDenied(ctx, pullCtx, updateConfig.Denylist)
+	if updateConfig.Ignore.Enabled() {
+		ignored, reason, err := IsPRIgnored(ctx, pullCtx, updateConfig.Ignore)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to determine if pull request is denied")
+			return false, errors.Wrap(err, "failed to determine if pull request is ignored")
 		}
-		if denied {
-			logger.Debug().Msgf("%s is deemed not updateable because denylisting is enabled and %s", pullCtx.Locator(), reason)
+		if ignored {
+			logger.Debug().Msgf("%s is deemed not updateable because ignoring is enabled and %s", pullCtx.Locator(), reason)
 			return false, nil
 		}
 	}
 
-	if updateConfig.Allowlist.Enabled() {
-		allowed, reason, err := IsPRAllowed(ctx, pullCtx, updateConfig.Allowlist)
+	if updateConfig.Trigger.Enabled() {
+		triggered, reason, err := IsPRTriggered(ctx, pullCtx, updateConfig.Trigger)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to determine if pull request is allowed")
+			return false, errors.Wrap(err, "failed to determine if pull request is triggered")
 		}
-		if !allowed {
-			logger.Debug().Msgf("%s is deemed not updateable because allowlisting is enabled and no allowlist signal detected", pullCtx.Locator())
+		if !triggered {
+			logger.Debug().Msgf("%s is deemed not updateable because triggering is enabled and no trigger signal detected", pullCtx.Locator())
 			return false, nil
 		}
 
-		logger.Debug().Msgf("%s is allowed because allowlisting is enabled and %s", pullCtx.Locator(), reason)
+		logger.Debug().Msgf("%s is triggered because triggering is enabled and %s", pullCtx.Locator(), reason)
 	}
 
 	return true, nil

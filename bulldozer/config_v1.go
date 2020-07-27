@@ -34,8 +34,8 @@ const (
 )
 
 type MergeConfig struct {
-	Allowlist Signals `yaml:"allowlist"`
-	Denylist  Signals `yaml:"denylist"`
+	Trigger Signals `yaml:"trigger"`
+	Ignore  Signals `yaml:"ignore"`
 
 	// Blacklist and Whitelist are legacy options that will be disabled in a future v2 format
 	Blacklist Signals `yaml:"blacklist"`
@@ -64,8 +64,8 @@ type SquashOptions struct {
 }
 
 type UpdateConfig struct {
-	Allowlist Signals `yaml:"allowlist"`
-	Denylist  Signals `yaml:"denylist"`
+	Trigger Signals `yaml:"trigger"`
+	Ignore  Signals `yaml:"ignore"`
 
 	// Blacklist and Whitelist are legacy options that will be disabled in a future v2 format
 	Blacklist Signals `yaml:"blacklist"`

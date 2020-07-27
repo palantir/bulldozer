@@ -27,14 +27,14 @@ import (
 
 func TestSimpleXListed(t *testing.T) {
 	mergeConfig := MergeConfig{
-		Allowlist: Signals{
+		Trigger: Signals{
 			Labels:            []string{"LABEL_MERGE"},
 			Comments:          []string{"FULL_COMMENT_PLZ_MERGE"},
 			CommentSubstrings: []string{":+1:"},
 			PRBodySubstrings:  []string{"BODY_MERGE_PLZ"},
 			Branches:          []string{"develop"},
 		},
-		Denylist: Signals{
+		Ignore: Signals{
 			Labels:            []string{"LABEL_NOMERGE"},
 			Comments:          []string{"NO_WAY"},
 			CommentSubstrings: []string{":-1:"},
@@ -50,7 +50,7 @@ func TestSimpleXListed(t *testing.T) {
 			CommentErrValue: errors.New("failure"),
 		}
 
-		actual, _, err := IsPRDenied(ctx, pc, mergeConfig.Denylist)
+		actual, _, err := IsPRIgnored(ctx, pc, mergeConfig.Ignore)
 		require.NotNil(t, err)
 		assert.True(t, actual)
 	})
@@ -60,7 +60,7 @@ func TestSimpleXListed(t *testing.T) {
 			CommentErrValue: errors.New("failure"),
 		}
 
-		actual, _, err := IsPRAllowed(ctx, pc, mergeConfig.Allowlist)
+		actual, _, err := IsPRTriggered(ctx, pc, mergeConfig.Trigger)
 		require.NotNil(t, err)
 		assert.False(t, actual)
 	})
@@ -70,7 +70,7 @@ func TestSimpleXListed(t *testing.T) {
 			LabelErrValue: errors.New("failure"),
 		}
 
-		actual, _, err := IsPRAllowed(ctx, pc, mergeConfig.Allowlist)
+		actual, _, err := IsPRTriggered(ctx, pc, mergeConfig.Trigger)
 		require.NotNil(t, err)
 		assert.False(t, actual)
 	})
@@ -80,7 +80,7 @@ func TestSimpleXListed(t *testing.T) {
 			CommentErrValue: errors.New("failure"),
 		}
 
-		actual, _, err := IsPRAllowed(ctx, pc, mergeConfig.Allowlist)
+		actual, _, err := IsPRTriggered(ctx, pc, mergeConfig.Trigger)
 		require.NotNil(t, err)
 		assert.False(t, actual)
 	})
@@ -88,12 +88,12 @@ func TestSimpleXListed(t *testing.T) {
 
 func TestShouldMerge(t *testing.T) {
 	mergeConfig := MergeConfig{
-		Allowlist: Signals{
+		Trigger: Signals{
 			Labels:            []string{"LABEL_MERGE", "LABEL2_MERGE"},
 			Comments:          []string{"FULL_COMMENT_PLZ_MERGE"},
 			CommentSubstrings: []string{":+1:", ":y:"},
 		},
-		Denylist: Signals{
+		Ignore: Signals{
 			Labels:            []string{"LABEL_NOMERGE"},
 			Comments:          []string{"NO_WAY"},
 			CommentSubstrings: []string{":-1:"},
@@ -167,7 +167,7 @@ func TestShouldMerge(t *testing.T) {
 		assert.False(t, actualShouldMerge)
 	})
 
-	t.Run("denylistOverridesAllowlist", func(t *testing.T) {
+	t.Run("ignoreOverridesAllowlist", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			LabelValue:   []string{"LABEL2_MERGE"},
 			CommentValue: []string{"NO_WAY"},

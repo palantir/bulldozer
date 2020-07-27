@@ -29,10 +29,10 @@ func TestMarshalling(t *testing.T) {
 version: 1
 
 merge:
-  allowlist:
+  trigger:
     labels: ["merge when ready"]
     comment_substrings: ["==MERGE_WHEN_READY=="]
-  denylist:
+  ignore:
     labels: ["do not merge"]
     comment_substrings: ["==DO_NOT_MERGE=="]
   method: squash
@@ -42,9 +42,9 @@ merge:
   delete_after_merge: true
 
 update:
-  allowlist:
+  trigger:
     labels: ["wip", "update me"]
-  denylist:
+  ignore:
     labels: ["do not update"]
 `
 
@@ -53,11 +53,11 @@ update:
 		assert.Equal(t, Signals{
 			Labels:            []string{"merge when ready"},
 			CommentSubstrings: []string{"==MERGE_WHEN_READY=="},
-		}, actual.Merge.Allowlist)
+		}, actual.Merge.Trigger)
 		assert.Equal(t, Signals{
 			Labels:            []string{"do not merge"},
 			CommentSubstrings: []string{"==DO_NOT_MERGE=="},
-		}, actual.Merge.Denylist)
+		}, actual.Merge.Ignore)
 	})
 
 	t.Run("parseExisting", func(t *testing.T) {
@@ -92,18 +92,18 @@ update:
 		assert.Equal(t, Signals{
 			Labels:            []string{"merge when ready"},
 			CommentSubstrings: []string{"==OLD_MERGE_WHEN_READY=="},
-		}, actual.Merge.Allowlist)
+		}, actual.Merge.Trigger)
 		assert.Equal(t, Signals{
 			Labels:            []string{"do not merge"},
 			CommentSubstrings: []string{"==OLD_DO_NOT_MERGE=="},
-		}, actual.Merge.Denylist)
+		}, actual.Merge.Ignore)
 
 		assert.Equal(t, Signals{
 			Labels: []string{"wip", "update me"},
-		}, actual.Update.Allowlist)
+		}, actual.Update.Trigger)
 		assert.Equal(t, Signals{
 			Labels: []string{"do not update"},
-		}, actual.Update.Denylist)
+		}, actual.Update.Ignore)
 	})
 
 	t.Run("ignoresOldConfig", func(t *testing.T) {
@@ -113,9 +113,9 @@ update:
 version: 1
 
 merge:
-  allowlist:
+  trigger:
     labels: ["mwr"]
-  denylist:
+  ignore:
     labels: ["new dnm"]
   whitelist:
     labels: ["merge when ready"]
@@ -130,9 +130,9 @@ merge:
   delete_after_merge: true
 
 update:
-  allowlist:
+  trigger:
     labels: ["new wip"]
-  denylist:
+  ignore:
     labels: ["new dnu"]
   whitelist:
     labels: ["wip", "update me"]
@@ -145,16 +145,16 @@ update:
 
 		assert.Equal(t, Signals{
 			Labels: []string{"mwr"},
-		}, actual.Merge.Allowlist)
+		}, actual.Merge.Trigger)
 		assert.Equal(t, Signals{
 			Labels: []string{"new dnm"},
-		}, actual.Merge.Denylist)
+		}, actual.Merge.Ignore)
 
 		assert.Equal(t, Signals{
 			Labels: []string{"new wip"},
-		}, actual.Update.Allowlist)
+		}, actual.Update.Trigger)
 		assert.Equal(t, Signals{
 			Labels: []string{"new dnu"},
-		}, actual.Update.Denylist)
+		}, actual.Update.Ignore)
 	})
 }
