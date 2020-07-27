@@ -148,18 +148,18 @@ func (cf *ConfigFetcher) unmarshalConfig(bytes []byte) (*Config, error) {
 		return nil, errors.Wrapf(err, "failed to unmarshal configuration")
 	}
 
-	// Merge old signals configurations if they exist
-	if config.Merge.Blacklist != nil {
-		config.Merge.Denylist = *config.Merge.Blacklist
+	// Merge old signals configurations if they exist when the new values aren't present
+	if config.Merge.Blacklist.Enabled() && !config.Merge.Denylist.Enabled() {
+		config.Merge.Denylist = config.Merge.Blacklist
 	}
-	if config.Merge.Whitelist != nil {
-		config.Merge.Allowlist = *config.Merge.Whitelist
+	if config.Merge.Whitelist.Enabled() && !config.Merge.Allowlist.Enabled() {
+		config.Merge.Allowlist = config.Merge.Whitelist
 	}
-	if config.Update.Blacklist != nil {
-		config.Update.Denylist = *config.Update.Blacklist
+	if config.Update.Blacklist.Enabled() && !config.Update.Denylist.Enabled() {
+		config.Update.Denylist = config.Update.Blacklist
 	}
-	if config.Update.Whitelist != nil {
-		config.Update.Allowlist = *config.Update.Whitelist
+	if config.Update.Whitelist.Enabled() && !config.Update.Allowlist.Enabled() {
+		config.Update.Allowlist = config.Update.Whitelist
 	}
 
 	if config.Version != 1 {

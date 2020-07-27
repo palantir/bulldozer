@@ -22,7 +22,10 @@ import (
 )
 
 func TestMarshalling(t *testing.T) {
-	newConfigTerms := `
+	t.Run("parseNewConfig", func(t *testing.T) {
+		cf := NewConfigFetcher("", []string{""}, nil)
+
+		config := `
 version: 1
 
 merge:
@@ -45,7 +48,22 @@ update:
     labels: ["do not update"]
 `
 
-	oldConfigTerms := `
+		actual, err := cf.unmarshalConfig([]byte(config))
+		require.Nil(t, err)
+		assert.Equal(t, Signals{
+			Labels:            []string{"merge when ready"},
+			CommentSubstrings: []string{"==MERGE_WHEN_READY=="},
+		}, actual.Merge.Allowlist)
+		assert.Equal(t, Signals{
+			Labels:            []string{"do not merge"},
+			CommentSubstrings: []string{"==DO_NOT_MERGE=="},
+		}, actual.Merge.Denylist)
+	})
+
+	t.Run("parseExisting", func(t *testing.T) {
+		cf := NewConfigFetcher("", []string{""}, nil)
+
+		config := `
 version: 1
 
 merge:
@@ -68,25 +86,7 @@ update:
     labels: ["do not update"]
 `
 
-	t.Run("parseNewConfig", func(t *testing.T) {
-		cf := NewConfigFetcher("", []string{""}, nil)
-
-		actual, err := cf.unmarshalConfig([]byte(newConfigTerms))
-		require.Nil(t, err)
-		assert.Equal(t, Signals{
-			Labels:            []string{"merge when ready"},
-			CommentSubstrings: []string{"==MERGE_WHEN_READY=="},
-		}, actual.Merge.Allowlist)
-		assert.Equal(t, Signals{
-			Labels:            []string{"do not merge"},
-			CommentSubstrings: []string{"==DO_NOT_MERGE=="},
-		}, actual.Merge.Denylist)
-	})
-
-	t.Run("parseExisting", func(t *testing.T) {
-		cf := NewConfigFetcher("", []string{""}, nil)
-
-		actual, err := cf.unmarshalConfig([]byte(oldConfigTerms))
+		actual, err := cf.unmarshalConfig([]byte(config))
 		require.Nil(t, err)
 
 		assert.Equal(t, Signals{
@@ -103,6 +103,58 @@ update:
 		}, actual.Update.Allowlist)
 		assert.Equal(t, Signals{
 			Labels: []string{"do not update"},
+		}, actual.Update.Denylist)
+	})
+
+	t.Run("ignoresOldConfig", func(t *testing.T) {
+		cf := NewConfigFetcher("", []string{""}, nil)
+
+		config := `
+version: 1
+
+merge:
+  allowlist:
+    labels: ["mwr"]
+  denylist:
+    labels: ["new dnm"]
+  whitelist:
+    labels: ["merge when ready"]
+    comment_substrings: ["==OLD_MERGE_WHEN_READY=="]
+  blacklist:
+    labels: ["do not merge"]
+    comment_substrings: ["==OLD_DO_NOT_MERGE=="]
+  method: squash
+  options:
+    squash:
+      body: summarize_commits
+  delete_after_merge: true
+
+update:
+  allowlist:
+    labels: ["new wip"]
+  denylist:
+    labels: ["new dnu"]
+  whitelist:
+    labels: ["wip", "update me"]
+  blacklist:
+    labels: ["do not update"]
+`
+
+		actual, err := cf.unmarshalConfig([]byte(config))
+		require.Nil(t, err)
+
+		assert.Equal(t, Signals{
+			Labels: []string{"mwr"},
+		}, actual.Merge.Allowlist)
+		assert.Equal(t, Signals{
+			Labels: []string{"new dnm"},
+		}, actual.Merge.Denylist)
+
+		assert.Equal(t, Signals{
+			Labels: []string{"new wip"},
+		}, actual.Update.Allowlist)
+		assert.Equal(t, Signals{
+			Labels: []string{"new dnu"},
 		}, actual.Update.Denylist)
 	})
 }
