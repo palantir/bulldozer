@@ -1,10 +1,10 @@
 version: 1
 
 merge:
-  whitelist:
+  trigger:
     labels: ["merge when ready"]
     comment_substrings: ["==MERGE_WHEN_READY=="]
-  blacklist:
+  ignore:
     labels: ["do not merge"]
     comment_substrings: ["==DO_NOT_MERGE=="]
   method: squash
@@ -14,5 +14,5 @@ merge:
   delete_after_merge: true
 
 update:
-  whitelist:
+  trigger:
     labels: ["wip", "update me"]

@@ -83,7 +83,7 @@ options:
   #
   # default_repository_config:
   #   merge:
-  #     blacklist:
+  #     ignore:
   #       labels: ["do not merge"]
 
 # Optional configuration to emit metrics to datadog

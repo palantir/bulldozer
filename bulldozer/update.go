@@ -27,32 +27,32 @@ import (
 func ShouldUpdatePR(ctx context.Context, pullCtx pull.Context, updateConfig UpdateConfig) (bool, error) {
 	logger := zerolog.Ctx(ctx)
 
-	if !updateConfig.Blacklist.Enabled() && !updateConfig.Whitelist.Enabled() {
+	if !updateConfig.Ignore.Enabled() && !updateConfig.Trigger.Enabled() {
 		return false, nil
 	}
 
-	if updateConfig.Blacklist.Enabled() {
-		blacklisted, reason, err := IsPRBlacklisted(ctx, pullCtx, updateConfig.Blacklist)
+	if updateConfig.Ignore.Enabled() {
+		ignored, reason, err := IsPRIgnored(ctx, pullCtx, updateConfig.Ignore)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to determine if pull request is blacklisted")
+			return false, errors.Wrap(err, "failed to determine if pull request is ignored")
 		}
-		if blacklisted {
-			logger.Debug().Msgf("%s is deemed not updateable because blacklisting is enabled and %s", pullCtx.Locator(), reason)
+		if ignored {
+			logger.Debug().Msgf("%s is deemed not updateable because ignoring is enabled and %s", pullCtx.Locator(), reason)
 			return false, nil
 		}
 	}
 
-	if updateConfig.Whitelist.Enabled() {
-		whitelisted, reason, err := IsPRWhitelisted(ctx, pullCtx, updateConfig.Whitelist)
+	if updateConfig.Trigger.Enabled() {
+		triggered, reason, err := IsPRTriggered(ctx, pullCtx, updateConfig.Trigger)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to determine if pull request is whitelisted")
+			return false, errors.Wrap(err, "failed to determine if pull request is triggered")
 		}
-		if !whitelisted {
-			logger.Debug().Msgf("%s is deemed not updateable because whitelisting is enabled and no whitelist signal detected", pullCtx.Locator())
+		if !triggered {
+			logger.Debug().Msgf("%s is deemed not updateable because triggering is enabled and no trigger signal detected", pullCtx.Locator())
 			return false, nil
 		}
 
-		logger.Debug().Msgf("%s is whitelisted because whitelisting is enabled and %s", pullCtx.Locator(), reason)
+		logger.Debug().Msgf("%s is triggered because triggering is enabled and %s", pullCtx.Locator(), reason)
 	}
 
 	return true, nil

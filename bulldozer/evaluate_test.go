@@ -27,14 +27,14 @@ import (
 
 func TestSimpleXListed(t *testing.T) {
 	mergeConfig := MergeConfig{
-		Whitelist: Signals{
+		Trigger: Signals{
 			Labels:            []string{"LABEL_MERGE"},
 			Comments:          []string{"FULL_COMMENT_PLZ_MERGE"},
 			CommentSubstrings: []string{":+1:"},
 			PRBodySubstrings:  []string{"BODY_MERGE_PLZ"},
 			Branches:          []string{"develop"},
 		},
-		Blacklist: Signals{
+		Ignore: Signals{
 			Labels:            []string{"LABEL_NOMERGE"},
 			Comments:          []string{"NO_WAY"},
 			CommentSubstrings: []string{":-1:"},
@@ -45,55 +45,55 @@ func TestSimpleXListed(t *testing.T) {
 
 	ctx := context.Background()
 
-	t.Run("errCommentFailsClosedBlacklist", func(t *testing.T) {
+	t.Run("errCommentFailsClosedDenylist", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			CommentErrValue: errors.New("failure"),
 		}
 
-		actualBlacklist, _, err := IsPRBlacklisted(ctx, pc, mergeConfig.Blacklist)
+		actual, _, err := IsPRIgnored(ctx, pc, mergeConfig.Ignore)
 		require.NotNil(t, err)
-		assert.True(t, actualBlacklist)
+		assert.True(t, actual)
 	})
 
-	t.Run("errCommentFailsClosedWhitelist", func(t *testing.T) {
+	t.Run("errCommentFailsClosedAllowlist", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			CommentErrValue: errors.New("failure"),
 		}
 
-		actualWhitelist, _, err := IsPRWhitelisted(ctx, pc, mergeConfig.Whitelist)
+		actual, _, err := IsPRTriggered(ctx, pc, mergeConfig.Trigger)
 		require.NotNil(t, err)
-		assert.False(t, actualWhitelist)
+		assert.False(t, actual)
 	})
 
-	t.Run("errLabelFailsClosedWhitelist", func(t *testing.T) {
+	t.Run("errLabelFailsClosedAllowlist", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			LabelErrValue: errors.New("failure"),
 		}
 
-		actualWhitelist, _, err := IsPRWhitelisted(ctx, pc, mergeConfig.Whitelist)
+		actual, _, err := IsPRTriggered(ctx, pc, mergeConfig.Trigger)
 		require.NotNil(t, err)
-		assert.False(t, actualWhitelist)
+		assert.False(t, actual)
 	})
 
-	t.Run("errCommentsFailsClosedWhitelist", func(t *testing.T) {
+	t.Run("errCommentsFailsClosedAllowlist", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			CommentErrValue: errors.New("failure"),
 		}
 
-		actualWhitelist, _, err := IsPRWhitelisted(ctx, pc, mergeConfig.Whitelist)
+		actual, _, err := IsPRTriggered(ctx, pc, mergeConfig.Trigger)
 		require.NotNil(t, err)
-		assert.False(t, actualWhitelist)
+		assert.False(t, actual)
 	})
 }
 
 func TestShouldMerge(t *testing.T) {
 	mergeConfig := MergeConfig{
-		Whitelist: Signals{
+		Trigger: Signals{
 			Labels:            []string{"LABEL_MERGE", "LABEL2_MERGE"},
 			Comments:          []string{"FULL_COMMENT_PLZ_MERGE"},
 			CommentSubstrings: []string{":+1:", ":y:"},
 		},
-		Blacklist: Signals{
+		Ignore: Signals{
 			Labels:            []string{"LABEL_NOMERGE"},
 			Comments:          []string{"NO_WAY"},
 			CommentSubstrings: []string{":-1:"},
@@ -167,7 +167,7 @@ func TestShouldMerge(t *testing.T) {
 		assert.False(t, actualShouldMerge)
 	})
 
-	t.Run("blacklistOverridesWhitelist", func(t *testing.T) {
+	t.Run("ignoreOverridesAllowlist", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			LabelValue:   []string{"LABEL2_MERGE"},
 			CommentValue: []string{"NO_WAY"},
@@ -179,7 +179,7 @@ func TestShouldMerge(t *testing.T) {
 		assert.False(t, actualShouldMerge)
 	})
 
-	t.Run("labelCausesBlacklist", func(t *testing.T) {
+	t.Run("labelCausesDenylist", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			LabelValue: []string{"LABEL_NOMERGE"},
 		}
@@ -190,7 +190,7 @@ func TestShouldMerge(t *testing.T) {
 		assert.False(t, actualShouldMerge)
 	})
 
-	t.Run("labelCausesBlacklistCaseInsensitive", func(t *testing.T) {
+	t.Run("labelCausesDenylistCaseInsensitive", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			LabelValue: []string{"LABEL_nomERGE"},
 		}
@@ -201,7 +201,7 @@ func TestShouldMerge(t *testing.T) {
 		assert.False(t, actualShouldMerge)
 	})
 
-	t.Run("substringCausesWhitelist", func(t *testing.T) {
+	t.Run("substringCausesAllowlist", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			LabelValue:   []string{"NOT_A_LABEL"},
 			CommentValue: []string{"a comment", "another comment", "this is good :+1: yep"},
@@ -213,7 +213,7 @@ func TestShouldMerge(t *testing.T) {
 		assert.True(t, actualShouldMerge)
 	})
 
-	t.Run("substringCausesBlacklist", func(t *testing.T) {
+	t.Run("substringCausesDenylist", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			LabelValue:   []string{"LABEL_NOMERGE"},
 			CommentValue: []string{"a comment", "another comment", "this is no good nope\n\r:-1:"},

@@ -28,11 +28,11 @@ import (
 func TestShouldUpdatePR(t *testing.T) {
 	ctx := context.Background()
 	testMatrix := []struct {
-		blacklistEnabled bool
-		blacklisted      bool
-		whitelistEnabled bool
-		whitelisted      bool
-		expectingUpdate  bool
+		ignoreEnabled   bool
+		ignored         bool
+		triggerEnabled  bool
+		triggered       bool
+		expectingUpdate bool
 	}{
 		{false, false, false, false, false},
 		{false, false, false, true, false},
@@ -53,32 +53,32 @@ func TestShouldUpdatePR(t *testing.T) {
 	}
 
 	for ndx, testCase := range testMatrix {
-		pullCtx, updateConfig := generateUpdateTestCase(testCase.blacklistEnabled, testCase.blacklisted, testCase.whitelistEnabled, testCase.whitelisted)
+		pullCtx, updateConfig := generateUpdateTestCase(testCase.ignoreEnabled, testCase.ignored, testCase.triggerEnabled, testCase.triggered)
 		updating, err := ShouldUpdatePR(ctx, pullCtx, updateConfig)
 		require.NoError(t, err)
-		msg := fmt.Sprintf("case %d - blacklistEnabled=%t blacklisted=%t whitelistEnabled=%t whitelisted=%t -> doUpdate=%t",
-			ndx, testCase.blacklistEnabled, testCase.blacklisted, testCase.whitelistEnabled, testCase.whitelisted, testCase.expectingUpdate)
+		msg := fmt.Sprintf("case %d - ignoreEnabled=%t ignored=%t triggerEnabled=%t triggered=%t -> doUpdate=%t",
+			ndx, testCase.ignoreEnabled, testCase.ignored, testCase.triggerEnabled, testCase.triggered, testCase.expectingUpdate)
 		require.Equal(t, testCase.expectingUpdate, updating, msg)
 	}
 }
-func generateUpdateTestCase(blacklistable bool, blacklisted bool, whitelistable bool, whitelisted bool) (pull.Context, UpdateConfig) {
+func generateUpdateTestCase(ignorable bool, ignored bool, triggerable bool, triggered bool) (pull.Context, UpdateConfig) {
 	updateConfig := UpdateConfig{}
 	pullCtx := pulltest.MockPullContext{}
 
-	if blacklistable {
-		updateConfig.Blacklist.Labels = append(updateConfig.Blacklist.Labels, "blacklist")
+	if ignorable {
+		updateConfig.Ignore.Labels = append(updateConfig.Ignore.Labels, "ignore")
 	}
 
-	if blacklisted {
-		pullCtx.LabelValue = append(pullCtx.LabelValue, "blacklist")
+	if ignored {
+		pullCtx.LabelValue = append(pullCtx.LabelValue, "ignore")
 	}
 
-	if whitelistable {
-		updateConfig.Whitelist.Labels = append(updateConfig.Whitelist.Labels, "whitelist")
+	if triggerable {
+		updateConfig.Trigger.Labels = append(updateConfig.Trigger.Labels, "trigger")
 	}
 
-	if whitelisted {
-		pullCtx.LabelValue = append(pullCtx.LabelValue, "whitelist")
+	if triggered {
+		pullCtx.LabelValue = append(pullCtx.LabelValue, "trigger")
 	}
 
 	return &pullCtx, updateConfig
