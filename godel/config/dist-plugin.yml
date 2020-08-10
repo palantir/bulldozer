@@ -30,8 +30,8 @@ products:
             cp -R docker/* ${CONTEXT_DIR}
             cp -R config ${CONTEXT_DIR}
           tag-templates:
-            version: "{{Repository}}palantirtechnologies/bulldozer:{{Version}}"
-            latest: "{{Repository}}palantirtechnologies/bulldozer:latest"
-            snapshot: "{{Repository}}palantirtechnologies/bulldozer:snapshot"
+            version: "{{Repository}}brianoh1979/bulldozer:{{Version}}"
+            latest: "{{Repository}}brianoh1979/bulldozer:latest"
+            snapshot: "{{Repository}}brianoh1979/bulldozer:snapshot"
     publish:
       group-id: com.palantir.bulldozer
