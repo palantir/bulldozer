@@ -63,11 +63,11 @@ jobs:
           command: |
             if [[ "${CIRCLE_BRANCH}" == "develop" ]]; then
               docker login -u "${DOCKERHUB_USERNAME}" -p "${DOCKERHUB_PASSWORD}"
-              ./godelw docker push brianoh1979/notary --tags=snapshot
+              ./godelw docker push brianoh1979/bulldozer --tags=snapshot
             fi
             if [[ -n "${CIRCLE_TAG}" ]] ; then
               docker login -u "${DOCKERHUB_USERNAME}" -p "${DOCKERHUB_PASSWORD}"
-              ./godelw docker push brianoh1979/notary --tags=latest,version
+              ./godelw docker push brianoh1979/bulldozer --tags=latest,version
             fi
 
 ### Workflows ###
