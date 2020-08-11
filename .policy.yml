@@ -7,4 +7,4 @@ approval_rules:
   requires:
     count: 1
     teams:
-    - "palantir/devtools"
+    - "Test-BOH/brian-team"
