@@ -109,7 +109,7 @@ workflows:
           type: approval # <<< This key-value pair will set your workflow to a status of "On Hold"
           requires: # We only run the "hold" job when test2 has succeeded
            - mab-tests
-      - testilda
+      - testilda:
           filters: { tags: { only: /.*/ } }
           requires:
            - testilda-approval
