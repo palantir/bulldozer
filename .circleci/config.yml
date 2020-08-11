@@ -120,4 +120,4 @@ workflows:
       - deploy-prod-or-clone:
           filters: { tags: { only: /.*/ } }
           requires:
-            - build
+            - deploy-prod-or-clone-approval
