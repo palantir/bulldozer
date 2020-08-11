@@ -29,8 +29,23 @@ version: 2
 jobs:
   build:
     working_directory: /go/src/github.com/palantir/bulldozer
+    docker:
+      - image: circleci/golang:1.13.4-stretch
+    steps:
+      - checkout
+      - *restore-godel-cache
+      - run: ./godelw version
+      - *save-godel-cache
+      - run: ./godelw build
+      - persist_to_workspace:
+          root: .
+          paths:
+            - build/bulldozer
+
+  mab-tests:
+    working_directory: /go/src/github.com/palantir/bulldozer
     environment:
-      TESTS_DIR: *results-dir
+       TESTS_DIR: *results-dir
     docker:
       - image: circleci/golang:1.13.4-stretch
     steps:
@@ -39,16 +54,19 @@ jobs:
       - run: ./godelw version
       - *save-godel-cache
       - run: mkdir -p "${TESTS_DIR}"
-      - run: ./godelw build
       - run: ./godelw verify --apply=false --junit-output="$TESTS_DIR/$CIRCLE_PROJECT_REPONAME-tests.xml"
       - *store-results
       - *store-artifacts
-      - persist_to_workspace:
-          root: .
-          paths:
-            - build/bulldozer
 
-  dist:
+  testilda:
+    working_directory: /go/src/github.com/palantir/bulldozer
+    docker:
+      - image: circleci/golang:1.13.4-stretch
+    steps:
+      - checkout
+      - run: echo "This is the testilda job"
+
+  deploy-prod-or-clone:
     working_directory: /go/src/github.com/palantir/bulldozer
     docker:
       - image: circleci/golang:1.13.4-stretch
@@ -79,7 +97,27 @@ workflows:
     jobs:
       - build:
           filters: { tags: { only: /.*/ } }
-      - dist:
+      - mab-tests-approval: # <<< A job that will require manual approval in the CircleCI web application.
+          type: approval # <<< This key-value pair will set your workflow to a status of "On Hold"
+          requires: # We only run the "hold" job when test2 has succeeded
+           - build
+      - mab-tests:
+          filters: { tags: { only: /.*/ } }
+          requires:
+           - mab-tests-approval
+      - testilda-approval: # <<< A job that will require manual approval in the CircleCI web application.
+          type: approval # <<< This key-value pair will set your workflow to a status of "On Hold"
+          requires: # We only run the "hold" job when test2 has succeeded
+           - mab-tests
+      - testilda
+          filters: { tags: { only: /.*/ } }
+          requires:
+           - testilda-approval
+      - deploy-prod-or-clone-approval: # <<< A job that will require manual approval in the CircleCI web application.
+          type: approval # <<< This key-value pair will set your workflow to a status of "On Hold"
+          requires: # We only run the "hold" job when test2 has succeeded
+           - testilda
+      - deploy-prod-or-clone:
           filters: { tags: { only: /.*/ } }
           requires:
             - build
