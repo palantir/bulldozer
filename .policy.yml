@@ -5,6 +5,6 @@ policy:
 approval_rules:
 - name: the devtools team has approved
   requires:
-    count: 0
+    count: 1
     teams:
     - "Test-BOH/brian-team"

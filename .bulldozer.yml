@@ -7,22 +7,22 @@ merge:
   # "trigger" defines the set of pull requests considered by bulldozer. If
   # the section is missing, bulldozer considers all pull requests not excluded
   # by the ignore conditions.
-  trigger:
+#  trigger:
     # Pull requests with any of these labels (case-insensitive) are added to
     # the trigger.
-    labels: ["merge when ready"]
+#    labels: ["merge when ready"]
 
     # Pull requests where the body or any comment contains any of these
     # substrings are added to the trigger.
-    comment_substrings: ["==MERGE_WHEN_READY=="]
+#    comment_substrings: ["==MERGE_WHEN_READY=="]
 
     # Pull requests where any comment matches one of these exact strings are
     # added to the trigger.
-    comments: ["Please merge this pull request!"]
+#    comments: ["Please merge this pull request!"]
 
     # Pull requests where the body contains any of these substrings are added
     # to the trigger.
-    pr_body_substrings: ["==MERGE_WHEN_READY=="]
+#    pr_body_substrings: ["==MERGE_WHEN_READY=="]
 
     # Pull requests targeting any of these branches are added to the trigger.
     branches: ["develop"]
@@ -36,7 +36,7 @@ merge:
 
   # "method" defines the merge method. The available options are "merge",
   # "rebase", "squash", and "ff-only".
-  method: squash
+  method: merge
 
   # Allows the merge method that is used when auto-merging a PR to be different based on the
   # target branch. The keys of the hash are the target branch name, and the values are the merge method that
@@ -69,8 +69,8 @@ merge:
   # "required_statuses" is a list of additional status contexts that must pass
   # before bulldozer can merge a pull request. This is useful if you want to
   # require extra testing for automated merges, but not for manual merges.
-  required_statuses:
-    - "ci/circleci: ete-tests"
+ # required_statuses:
+ #   - "ci/circleci: ete-tests"
 
   # If true, bulldozer will delete branches after their pull requests merge.
   delete_after_merge: true
