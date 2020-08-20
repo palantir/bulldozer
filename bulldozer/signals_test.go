@@ -31,7 +31,7 @@ func TestSignalsMatches(t *testing.T) {
 		Comments:          []string{"FULL_COMMENT_PLZ_MERGE"},
 		CommentSubstrings: []string{":+1:"},
 		PRBodySubstrings:  []string{"BODY_MERGE_PLZ"},
-		Branches:          []string{"develop"},
+		Branches:          []string{"develop", "test/*"},
 	}
 
 	ctx := context.Background()
@@ -104,6 +104,13 @@ func TestSignalsMatches(t *testing.T) {
 			},
 			Matches: true,
 			Reason:  `pull request target is a testlist branch: "develop"`,
+		},
+		"targetBranchMatchesBranchWildcard": {
+			PullContext: &pulltest.MockPullContext{
+				BranchBase: "test/test",
+			},
+			Matches: true,
+			Reason:  `pull request target is a testlist branch: "test/*"`,
 		},
 	}
 

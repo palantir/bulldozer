@@ -17,6 +17,7 @@ package bulldozer
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/rs/zerolog"
@@ -113,7 +114,7 @@ func (s *Signals) Matches(ctx context.Context, pullCtx pull.Context, tag string)
 		logger.Debug().Msgf("No branches found to match against")
 	}
 	for _, signalBranch := range s.Branches {
-		if targetBranch == signalBranch {
+		if matched, _ := regexp.MatchString(signalBranch, targetBranch); matched {
 			return true, fmt.Sprintf("pull request target is a %s branch: %q", tag, signalBranch), nil
 		}
 	}
