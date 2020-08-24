@@ -32,6 +32,7 @@ func TestSignalsMatches(t *testing.T) {
 		CommentSubstrings: []string{":+1:"},
 		PRBodySubstrings:  []string{"BODY_MERGE_PLZ"},
 		Branches:          []string{"develop"},
+		BranchPatterns:    []string{"test/.*", "^feature/.*$"},
 	}
 
 	ctx := context.Background()
@@ -104,6 +105,34 @@ func TestSignalsMatches(t *testing.T) {
 			},
 			Matches: true,
 			Reason:  `pull request target is a testlist branch: "develop"`,
+		},
+		"targetBranchMatchesBranchWildcard": {
+			PullContext: &pulltest.MockPullContext{
+				BranchBase: "test/v9.9.9",
+			},
+			Matches: true,
+			Reason:  `pull request target branch ("test/v9.9.9") matches pattern: "test/.*"`,
+		},
+		"targetBranchLikeSignalWithSpecialChars": {
+			PullContext: &pulltest.MockPullContext{
+				BranchBase: "testlist/v9.9.9",
+			},
+			Matches: false,
+			Reason:  `pull request does not match the testlist`,
+		},
+		"wildcardNoMatch": {
+			PullContext: &pulltest.MockPullContext{
+				BranchBase: "pretest/pretest",
+			},
+			Matches: false,
+			Reason:  `pull request does not match the testlist`,
+		},
+		"signalBranchContainsBoundaryMarkers": {
+			PullContext: &pulltest.MockPullContext{
+				BranchBase: "feature/awesomeFeature",
+			},
+			Matches: true,
+			Reason:  `pull request target branch ("feature/awesomeFeature") matches pattern: "^feature/.*$"`,
 		},
 	}
 
