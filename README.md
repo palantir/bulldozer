@@ -97,6 +97,9 @@ merge:
     # Pull requests targeting any of these branches are added to the trigger.
     branches: ["develop"]
 
+    # Pull requests targeting branches matching any of these regular expressions are added to the trigger.
+    branch_patterns: ["feature/.*"]
+
   # "ignore" defines the set of pull request ignored by bulldozer. If the
   # section is missing, bulldozer considers all pull requests. It takes the
   # same keys as the "trigger" section.
