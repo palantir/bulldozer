@@ -32,7 +32,7 @@ func TestSignalsMatches(t *testing.T) {
 		CommentSubstrings: []string{":+1:"},
 		PRBodySubstrings:  []string{"BODY_MERGE_PLZ"},
 		Branches:          []string{"develop"},
-		BranchPatterns:    []string{"test/.*"},
+		BranchPatterns:    []string{"test/.*", "^feature/.*$"},
 	}
 
 	ctx := context.Background()
@@ -126,6 +126,13 @@ func TestSignalsMatches(t *testing.T) {
 			},
 			Matches: false,
 			Reason:  `pull request does not match the testlist`,
+		},
+		"signalBranchContainsBoundaryMarkers": {
+			PullContext: &pulltest.MockPullContext{
+				BranchBase: "feature/awesomeFeature",
+			},
+			Matches: true,
+			Reason:  `pull request target branch ("feature/awesomeFeature") matches pattern: "^feature/.*$"`,
 		},
 	}
 
