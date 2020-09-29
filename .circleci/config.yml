@@ -25,7 +25,7 @@ common:
 
 version: 2
 jobs:
-  build:
+  verify:
     working_directory: /go/src/github.com/palantir/bulldozer
     environment:
       TESTS_DIR: *results-dir
@@ -80,9 +80,9 @@ workflows:
   version: 2
   build:
     jobs:
-      - build:
+      - verify:
           filters: { tags: { only: /.*/ } }
       - dist:
           filters: { tags: { only: /.*/ } }
           requires:
-            - build
+            - verify 
