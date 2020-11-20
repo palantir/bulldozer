@@ -107,7 +107,7 @@ func TestShouldMerge(t *testing.T) {
 			CommentValue: []string{"FULL_COMMENT_PLZ_MERGE"},
 		}
 
-		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+		actualShouldMerge, _, err := ShouldMergePR(ctx, pc, mergeConfig)
 
 		require.Nil(t, err)
 		assert.True(t, actualShouldMerge)
@@ -118,10 +118,11 @@ func TestShouldMerge(t *testing.T) {
 			CommentValue: []string{"This is not a FULL_COMMENT_PLZ_MERGE"},
 		}
 
-		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+		actualShouldMerge, reason, err := ShouldMergePR(ctx, pc, mergeConfig)
 
 		require.Nil(t, err)
 		assert.False(t, actualShouldMerge)
+		assert.Contains(t, reason, "is deemed not mergeable because triggering is enabled and no trigger signal detected")
 	})
 
 	t.Run("labelShouldMerge", func(t *testing.T) {
@@ -129,7 +130,7 @@ func TestShouldMerge(t *testing.T) {
 			LabelValue: []string{"LABEL_MERGE"},
 		}
 
-		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+		actualShouldMerge, _, err := ShouldMergePR(ctx, pc, mergeConfig)
 
 		require.Nil(t, err)
 		assert.True(t, actualShouldMerge)
@@ -140,7 +141,7 @@ func TestShouldMerge(t *testing.T) {
 			LabelValue: []string{"LABEL_merGE"},
 		}
 
-		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+		actualShouldMerge, _, err := ShouldMergePR(ctx, pc, mergeConfig)
 
 		require.Nil(t, err)
 		assert.True(t, actualShouldMerge)
@@ -152,19 +153,21 @@ func TestShouldMerge(t *testing.T) {
 			CommentValue: []string{"commenta", "foo", "bar", "baz\n\rbaz"},
 		}
 
-		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+		actualShouldMerge, reason, err := ShouldMergePR(ctx, pc, mergeConfig)
 
 		require.Nil(t, err)
 		assert.False(t, actualShouldMerge)
+		assert.Contains(t, reason, "is deemed not mergeable because triggering is enabled and no trigger signal detected")
 	})
 
 	t.Run("noMatchingShouldntMerge", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{}
 
-		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+		actualShouldMerge, reason, err := ShouldMergePR(ctx, pc, mergeConfig)
 
 		require.Nil(t, err)
 		assert.False(t, actualShouldMerge)
+		assert.Contains(t, reason, "is deemed not mergeable because triggering is enabled and no trigger signal detected")
 	})
 
 	t.Run("ignoreOverridesAllowlist", func(t *testing.T) {
@@ -173,10 +176,11 @@ func TestShouldMerge(t *testing.T) {
 			CommentValue: []string{"NO_WAY"},
 		}
 
-		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+		actualShouldMerge, reason, err := ShouldMergePR(ctx, pc, mergeConfig)
 
 		require.Nil(t, err)
 		assert.False(t, actualShouldMerge)
+		assert.Contains(t, reason, "is deemed not mergeable because ignoring is enabled and pull request has a ignored comment")
 	})
 
 	t.Run("labelCausesDenylist", func(t *testing.T) {
@@ -184,10 +188,11 @@ func TestShouldMerge(t *testing.T) {
 			LabelValue: []string{"LABEL_NOMERGE"},
 		}
 
-		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+		actualShouldMerge, reason, err := ShouldMergePR(ctx, pc, mergeConfig)
 
 		require.Nil(t, err)
 		assert.False(t, actualShouldMerge)
+		assert.Contains(t, reason, "is deemed not mergeable because ignoring is enabled and pull request has a ignored label")
 	})
 
 	t.Run("labelCausesDenylistCaseInsensitive", func(t *testing.T) {
@@ -195,10 +200,11 @@ func TestShouldMerge(t *testing.T) {
 			LabelValue: []string{"LABEL_nomERGE"},
 		}
 
-		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+		actualShouldMerge, reason, err := ShouldMergePR(ctx, pc, mergeConfig)
 
 		require.Nil(t, err)
 		assert.False(t, actualShouldMerge)
+		assert.Contains(t, reason, "is deemed not mergeable because ignoring is enabled and pull request has a ignored label")
 	})
 
 	t.Run("substringCausesAllowlist", func(t *testing.T) {
@@ -207,7 +213,7 @@ func TestShouldMerge(t *testing.T) {
 			CommentValue: []string{"a comment", "another comment", "this is good :+1: yep"},
 		}
 
-		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+		actualShouldMerge, _, err := ShouldMergePR(ctx, pc, mergeConfig)
 
 		require.Nil(t, err)
 		assert.True(t, actualShouldMerge)
@@ -219,10 +225,11 @@ func TestShouldMerge(t *testing.T) {
 			CommentValue: []string{"a comment", "another comment", "this is no good nope\n\r:-1:"},
 		}
 
-		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+		actualShouldMerge, reason, err := ShouldMergePR(ctx, pc, mergeConfig)
 
 		require.Nil(t, err)
 		assert.False(t, actualShouldMerge)
+		assert.Contains(t, reason, "is deemed not mergeable because ignoring is enabled and pull request has a ignored label")
 	})
 
 	t.Run("failClosedOnLabelErr", func(t *testing.T) {
@@ -232,7 +239,7 @@ func TestShouldMerge(t *testing.T) {
 			LabelErrValue: errors.New("failure"),
 		}
 
-		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+		actualShouldMerge, _, err := ShouldMergePR(ctx, pc, mergeConfig)
 
 		require.NotNil(t, err)
 		assert.False(t, actualShouldMerge)
@@ -244,7 +251,7 @@ func TestShouldMerge(t *testing.T) {
 			CommentErrValue: errors.New("failure"),
 		}
 
-		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+		actualShouldMerge, _, err := ShouldMergePR(ctx, pc, mergeConfig)
 
 		require.NotNil(t, err)
 		assert.False(t, actualShouldMerge)
@@ -256,7 +263,7 @@ func TestShouldMerge(t *testing.T) {
 			RequiredStatusesErrValue: errors.New("failure"),
 		}
 
-		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+		actualShouldMerge, _, err := ShouldMergePR(ctx, pc, mergeConfig)
 
 		require.NotNil(t, err)
 		assert.False(t, actualShouldMerge)
@@ -268,7 +275,7 @@ func TestShouldMerge(t *testing.T) {
 			SuccessStatusesErrValue: errors.New("failure"),
 		}
 
-		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+		actualShouldMerge, _, err := ShouldMergePR(ctx, pc, mergeConfig)
 
 		require.NotNil(t, err)
 		assert.False(t, actualShouldMerge)
@@ -281,7 +288,7 @@ func TestShouldMerge(t *testing.T) {
 			RequiredStatusesValue: []string{"StatusCheckB", "StatusCheckA"},
 		}
 
-		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+		actualShouldMerge, _, err := ShouldMergePR(ctx, pc, mergeConfig)
 
 		require.Nil(t, err)
 		assert.True(t, actualShouldMerge)
@@ -294,10 +301,11 @@ func TestShouldMerge(t *testing.T) {
 			RequiredStatusesValue: []string{"StatusCheckA", "StatusCheckB"},
 		}
 
-		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+		actualShouldMerge, reason, err := ShouldMergePR(ctx, pc, mergeConfig)
 
 		require.Nil(t, err)
 		assert.False(t, actualShouldMerge)
+		assert.Contains(t, reason, "is deemed not mergeable because of unfulfilled status checks")
 	})
 
 	t.Run("travisCiPushCheckMet", func(t *testing.T) {
@@ -307,7 +315,7 @@ func TestShouldMerge(t *testing.T) {
 			RequiredStatusesValue: []string{"continuous-integration/travis-ci"},
 		}
 
-		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+		actualShouldMerge, _, err := ShouldMergePR(ctx, pc, mergeConfig)
 
 		require.Nil(t, err)
 		assert.True(t, actualShouldMerge)
@@ -320,7 +328,7 @@ func TestShouldMerge(t *testing.T) {
 			RequiredStatusesValue: []string{"continuous-integration/travis-ci"},
 		}
 
-		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+		actualShouldMerge, _, err := ShouldMergePR(ctx, pc, mergeConfig)
 
 		require.Nil(t, err)
 		assert.True(t, actualShouldMerge)

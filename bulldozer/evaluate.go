@@ -16,6 +16,7 @@ package bulldozer
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -85,18 +86,19 @@ func statusSetDifference(required, actual []string) []string {
 	return result
 }
 
-// ShouldMergePR TODO: may want to return a richer type than bool
-func ShouldMergePR(ctx context.Context, pullCtx pull.Context, mergeConfig MergeConfig) (bool, error) {
+// ShouldMergePR determines if a given PullRequest should be merged, given the mergeConfig
+func ShouldMergePR(ctx context.Context, pullCtx pull.Context, mergeConfig MergeConfig) (bool, string, error) {
 	logger := zerolog.Ctx(ctx)
 
 	if mergeConfig.Ignore.Enabled() {
 		ignored, reason, err := IsPRIgnored(ctx, pullCtx, mergeConfig.Ignore)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to determine if pull request is ignored")
+			return false, "", errors.Wrap(err, "failed to determine if pull request is ignored")
 		}
 		if ignored {
-			logger.Debug().Msgf("%s is deemed not mergeable because ignoring is enabled and %s", pullCtx.Locator(), reason)
-			return false, nil
+			msg := fmt.Sprintf("%s is deemed not mergeable because ignoring is enabled and %s", pullCtx.Locator(), reason)
+			logger.Debug().Msg(msg)
+			return false, msg, nil
 		}
 	} else {
 		logger.Debug().Msg("ignoring is not enabled")
@@ -105,11 +107,12 @@ func ShouldMergePR(ctx context.Context, pullCtx pull.Context, mergeConfig MergeC
 	if mergeConfig.Trigger.Enabled() {
 		triggered, reason, err := IsPRTriggered(ctx, pullCtx, mergeConfig.Trigger)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to determine if pull request is triggered")
+			return false, "", errors.Wrap(err, "failed to determine if pull request is triggered")
 		}
 		if !triggered {
-			logger.Debug().Msgf("%s is deemed not mergeable because triggering is enabled and no trigger signal detected", pullCtx.Locator())
-			return false, nil
+			msg := fmt.Sprintf("%s is deemed not mergeable because triggering is enabled and no trigger signal detected", pullCtx.Locator())
+			logger.Debug().Msg(msg)
+			return false, msg, nil
 		}
 
 		logger.Debug().Msgf("%s is triggered because triggering is enabled and %s", pullCtx.Locator(), reason)
@@ -119,21 +122,22 @@ func ShouldMergePR(ctx context.Context, pullCtx pull.Context, mergeConfig MergeC
 
 	requiredStatuses, err := pullCtx.RequiredStatuses(ctx)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to determine required Github status checks")
+		return false, "", errors.Wrap(err, "failed to determine required Github status checks")
 	}
 	requiredStatuses = append(requiredStatuses, mergeConfig.RequiredStatuses...)
 
 	successStatuses, err := pullCtx.CurrentSuccessStatuses(ctx)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to determine currently successful status checks")
+		return false, "", errors.Wrap(err, "failed to determine currently successful status checks")
 	}
 
 	unsatisfiedStatuses := statusSetDifference(requiredStatuses, successStatuses)
 	if len(unsatisfiedStatuses) > 0 {
-		logger.Debug().Msgf("%s is deemed not mergeable because of unfulfilled status checks: [%s]", pullCtx.Locator(), strings.Join(unsatisfiedStatuses, ","))
-		return false, nil
+		msg := fmt.Sprintf("%s is deemed not mergeable because of unfulfilled status checks: [%s]", pullCtx.Locator(), strings.Join(unsatisfiedStatuses, ","))
+		logger.Debug().Msgf(msg)
+		return false, msg, nil
 	}
 
 	// Ignore required reviews and try a merge (which may fail with a 4XX).
-	return true, nil
+	return true, "", nil
 }

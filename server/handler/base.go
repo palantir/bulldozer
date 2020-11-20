@@ -59,12 +59,22 @@ func (b *Base) ProcessPullRequest(ctx context.Context, pullCtx pull.Context, cli
 		logger.Debug().Msgf("Found valid configuration for %s", bulldozerConfig)
 		config := *bulldozerConfig.Config
 
-		shouldMerge, err := bulldozer.ShouldMergePR(ctx, pullCtx, config.Merge)
+		shouldMerge, reason, err := bulldozer.ShouldMergePR(ctx, pullCtx, config.Merge)
 		if err != nil {
 			return errors.Wrap(err, "unable to determine merge status")
 		}
 		if shouldMerge {
 			bulldozer.MergePR(ctx, pullCtx, merger, config.Merge)
+		} else {
+			if reason != "" {
+				comment := github.IssueComment{
+					Body: github.String(reason),
+				}
+				_, _, err = client.Issues.CreateComment(ctx, pullCtx.Owner(), pullCtx.Repo(), pullCtx.Number(), &comment)
+				if err != nil {
+					logger.Error().Err(err).Msg("failed to post mergability comment")
+				}
+			}
 		}
 	}
 
