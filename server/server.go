@@ -15,6 +15,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/c2h5oh/datasize"
@@ -70,9 +71,20 @@ func New(c *Config) (*Server, error) {
 		return nil, errors.Wrap(err, "failed to initialize Github client creator")
 	}
 
+	client, err := clientCreator.NewAppClient()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get app client")
+	}
+
+	app, _, err := client.Apps.Get(context.Background(), "")
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get app context")
+	}
+
 	baseHandler := handler.Base{
 		ClientCreator: clientCreator,
 		ConfigFetcher: bulldozer.NewConfigFetcher(c.Options.ConfigurationPath, c.Options.ConfigurationV0Paths, c.Options.DefaultRepositoryConfig),
+		AppName:       app.GetName(),
 
 		PushRestrictionUserToken: c.Options.PushRestrictionUserToken,
 	}

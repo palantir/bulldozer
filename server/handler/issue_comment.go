@@ -17,6 +17,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/google/go-github/v32/github"
 	"github.com/palantir/go-githubapp/githubapp"
@@ -45,6 +46,12 @@ func (h *IssueComment) Handle(ctx context.Context, eventType, deliveryID string,
 	number := event.GetIssue().GetNumber()
 	installationID := githubapp.GetInstallationIDFromEvent(&event)
 	ctx, logger := githubapp.PreparePRContext(ctx, installationID, repo, number)
+
+	// Debouncing debug comments from bot to prevent an infinite loop
+	if event.GetComment().GetUser().GetLogin() == fmt.Sprintf("%s[bot]", h.AppName) {
+		logger.Debug().Msg("Ignoring comment from self")
+		return nil
+	}
 
 	client, err := h.ClientCreator.NewInstallationClient(installationID)
 	if err != nil {

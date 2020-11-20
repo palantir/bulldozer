@@ -30,6 +30,7 @@ type Base struct {
 	githubapp.ClientCreator
 	bulldozer.ConfigFetcher
 
+	AppName                  string
 	PushRestrictionUserToken string
 }
 
