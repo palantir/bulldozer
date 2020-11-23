@@ -16,6 +16,7 @@ package handler
 
 import (
 	"context"
+	"strings"
 
 	"github.com/google/go-github/v32/github"
 	"github.com/palantir/go-githubapp/githubapp"
@@ -67,13 +68,27 @@ func (b *Base) ProcessPullRequest(ctx context.Context, pullCtx pull.Context, cli
 		if shouldMerge {
 			failureReason := bulldozer.MergePR(ctx, pullCtx, merger, config.Merge)
 			if failureReason != "" {
-				comment := github.IssueComment{
-					Body: github.String(failureReason),
+				comments, err := pullCtx.Comments(ctx)
+				if err != nil {
+					logger.Error().Err(err).Msg("failed to list pull request comments")
 				}
 
-				_, _, err := client.Issues.CreateComment(ctx, pullCtx.Owner(), pullCtx.Repo(), pullCtx.Number(), &comment)
-				if err != nil {
-					logger.Error().Err(err).Msg("failed to post merge failure comment")
+				// Only leave a comment if we're presenting new information to the user
+				// Otherwise we're just spamming folks instead of diligently merging PRs
+				shouldComment := true
+				for _, comment := range comments {
+					if strings.EqualFold(comment, failureReason) {
+						shouldComment = false
+					}
+				}
+
+				if shouldComment {
+					_, _, err := client.Issues.CreateComment(ctx, pullCtx.Owner(), pullCtx.Repo(), pullCtx.Number(), &github.IssueComment{
+						Body: github.String(failureReason),
+					})
+					if err != nil {
+						logger.Error().Err(err).Msg("unable to post failure comment")
+					}
 				}
 			}
 		}
