@@ -152,7 +152,7 @@ func (m *PushRestrictionMerger) DeleteHead(ctx context.Context, pullCtx pull.Con
 
 // MergePR merges a pull request if all conditions are met. It logs any errors
 // that it encounters.
-func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConfig MergeConfig) {
+func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConfig MergeConfig) string {
 	logger := zerolog.Ctx(ctx)
 
 	base, head := pullCtx.Branches()
@@ -183,22 +183,23 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 		message, err := calculateCommitMessage(ctx, pullCtx, *opt)
 		if err != nil {
 			logger.Error().Err(err).Msg("Failed to calculate commit message")
-			return
+			return ""
 		}
 		commitMsg.Message = message
 
 		title, err := calculateCommitTitle(ctx, pullCtx, *opt)
 		if err != nil {
 			logger.Error().Err(err).Msg("Failed to calculate commit title")
-			return
+			return ""
 		}
 		commitMsg.Title = title
 	}
 
 	var attempts int
+	var reason string
 	var merged, retry bool
 	for {
-		merged, retry = attemptMerge(ctx, pullCtx, merger, mergeMethod, commitMsg)
+		reason, merged, retry = attemptMerge(ctx, pullCtx, merger, mergeMethod, commitMsg)
 		if merged || !retry {
 			break
 		}
@@ -206,7 +207,7 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 		attempts++
 		if attempts >= MaxPullRequestPollCount {
 			logger.Error().Msgf("Failed to merge pull request after %d attempts", attempts)
-			return
+			return reason
 		}
 		time.Sleep(4 * time.Second)
 	}
@@ -218,32 +219,34 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 			logger.Debug().Msgf("Not deleting refs/heads/%s, delete after merge is not enabled", head)
 		}
 	}
+
+	return reason
 }
 
 // attemptMerge attempts to merge a pull request, logging any errors and
 // returing flags to show if the merge suceeded and if a retry is needed.
-func attemptMerge(ctx context.Context, pullCtx pull.Context, merger Merger, method MergeMethod, msg CommitMessage) (merged, retry bool) {
+func attemptMerge(ctx context.Context, pullCtx pull.Context, merger Merger, method MergeMethod, msg CommitMessage) (reason string, merged bool, retry bool) {
 	logger := zerolog.Ctx(ctx)
 
 	mergeState, err := pullCtx.MergeState(ctx)
 	if err != nil {
 		logger.Error().Err(err).Msgf("Failed to get merge state for %q", pullCtx.Locator())
-		return false, false
+		return "", false, false
 	}
 
 	if mergeState.Closed {
 		logger.Debug().Msg("Pull request already closed")
-		return false, false
+		return "", false, false
 	}
 
 	if mergeState.Mergeable == nil {
 		logger.Debug().Msg("Pull request mergeability not yet known")
-		return false, true
+		return "", false, true
 	}
 
 	if !*mergeState.Mergeable {
 		logger.Debug().Msg("Pull request is not mergeable")
-		return false, false
+		return "", false, false
 	}
 
 	logger.Info().Msgf("Attempting to merge pull request with method %s", method)
@@ -252,24 +255,27 @@ func attemptMerge(ctx context.Context, pullCtx pull.Context, merger Merger, meth
 		gerr, ok := errors.Cause(err).(*github.ErrorResponse)
 		if !ok {
 			logger.Error().Err(err).Msg("Failed to merge pull request")
-			return false, true
+			return "", false, true
 		}
 
 		switch gerr.Response.StatusCode {
 		case http.StatusMethodNotAllowed:
-			logger.Info().Msgf("Merge rejected due to unsatisfied condition: %q", gerr.Message)
-			return false, false
+			reason = fmt.Sprintf("Merge rejected due to unsatisfied condition: %q", gerr.Message)
+			logger.Error().Msg(reason)
+			return reason, false, false
 		case http.StatusConflict:
-			logger.Info().Msgf("Merge rejected due to being invalid: %q", gerr.Message)
-			return false, false
+			reason = fmt.Sprintf("Merge rejected due to being invalid: %q", gerr.Message)
+			logger.Error().Msg(reason)
+			return reason, false, false
 		default:
-			logger.Error().Msgf("Merge failed with unexpected status: %d: %q", gerr.Response.StatusCode, gerr.Message)
-			return false, true
+			reason = fmt.Sprintf("Merge failed with unexpected status: %d: %q", gerr.Response.StatusCode, gerr.Message)
+			logger.Error().Msg(reason)
+			return reason, false, true
 		}
 	}
 
 	logger.Info().Msgf("Successfully merged pull request as SHA %s", sha)
-	return true, false
+	return "", true, false
 }
 
 // attemptDelete attempts to delete a pull request branch, logging any errors

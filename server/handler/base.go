@@ -64,7 +64,17 @@ func (b *Base) ProcessPullRequest(ctx context.Context, pullCtx pull.Context, cli
 			return errors.Wrap(err, "unable to determine merge status")
 		}
 		if shouldMerge {
-			bulldozer.MergePR(ctx, pullCtx, merger, config.Merge)
+			failureReason := bulldozer.MergePR(ctx, pullCtx, merger, config.Merge)
+			if failureReason != "" {
+				comment := github.IssueComment{
+					Body: github.String(failureReason),
+				}
+
+				_, _, err := client.Issues.CreateComment(ctx, pullCtx.Owner(), pullCtx.Repo(), pullCtx.Number(), &comment)
+				if err != nil {
+					logger.Error().Err(err).Msg("failed to post merge failure comment")
+				}
+			}
 		}
 	}
 
