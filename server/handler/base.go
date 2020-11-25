@@ -67,8 +67,11 @@ func (b *Base) ProcessPullRequest(ctx context.Context, pullCtx pull.Context, cli
 		}
 		if shouldMerge {
 			if err := bulldozer.MergePR(ctx, pullCtx, merger, config.Merge); err != nil {
-				if err := addUniqueComment(ctx, pullCtx, client, err.Error()); err != nil {
-					logger.Error().Err(err).Msg("fail to post unique comment")
+				logger.Error().Err(err).Msg("failed to merge pull request")
+				if _, ok := err.(*bulldozer.ErrComment); ok {
+					if err := addUniqueComment(ctx, pullCtx, client, err.Error()); err != nil {
+						logger.Error().Err(err).Msg("fail to post unique comment")
+					}
 				}
 			}
 		}
