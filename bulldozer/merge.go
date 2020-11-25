@@ -152,7 +152,7 @@ func (m *PushRestrictionMerger) DeleteHead(ctx context.Context, pullCtx pull.Con
 
 // MergePR merges a pull request if all conditions are met. It logs any errors
 // that it encounters.
-func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConfig MergeConfig) string {
+func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConfig MergeConfig) error {
 	logger := zerolog.Ctx(ctx)
 
 	base, head := pullCtx.Branches()
@@ -183,14 +183,14 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 		message, err := calculateCommitMessage(ctx, pullCtx, *opt)
 		if err != nil {
 			logger.Error().Err(err).Msg("Failed to calculate commit message")
-			return ""
+			return nil
 		}
 		commitMsg.Message = message
 
 		title, err := calculateCommitTitle(ctx, pullCtx, *opt)
 		if err != nil {
 			logger.Error().Err(err).Msg("Failed to calculate commit title")
-			return ""
+			return nil
 		}
 		commitMsg.Title = title
 	}
@@ -207,7 +207,7 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 		attempts++
 		if attempts >= MaxPullRequestPollCount {
 			logger.Error().Msgf("Failed to merge pull request after %d attempts", attempts)
-			return reason
+			return errors.New(reason)
 		}
 		time.Sleep(4 * time.Second)
 	}
@@ -220,7 +220,7 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 		}
 	}
 
-	return reason
+	return errors.New(reason)
 }
 
 // attemptMerge attempts to merge a pull request, logging any errors and
