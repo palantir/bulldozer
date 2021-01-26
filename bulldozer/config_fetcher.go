@@ -189,8 +189,9 @@ func (cf *ConfigFetcher) unmarshalConfigV0(bytes []byte) (*Config, error) {
 				Trigger: Signals{
 					Labels: []string{"merge when ready", "merge-when-ready", "merge_when_ready"},
 				},
-				DeleteAfterMerge: configv0.DeleteAfterMerge,
-				Method:           configv0.Strategy,
+				DeleteAfterMerge:       configv0.DeleteAfterMerge,
+				AllowMergeWithNoChecks: configv0.AllowMergeWithNoChecks,
+				Method:                 configv0.Strategy,
 			},
 		}
 		if config.Merge.Method == SquashAndMerge {
@@ -210,8 +211,9 @@ func (cf *ConfigFetcher) unmarshalConfigV0(bytes []byte) (*Config, error) {
 				Ignore: Signals{
 					Labels: []string{"wip", "do not merge", "do-not-merge", "do_not_merge"},
 				},
-				DeleteAfterMerge: configv0.DeleteAfterMerge,
-				Method:           configv0.Strategy,
+				DeleteAfterMerge:       configv0.DeleteAfterMerge,
+				AllowMergeWithNoChecks: configv0.AllowMergeWithNoChecks,
+				Method:                 configv0.Strategy,
 			},
 		}
 		if config.Merge.Method == SquashAndMerge {
@@ -231,8 +233,9 @@ func (cf *ConfigFetcher) unmarshalConfigV0(bytes []byte) (*Config, error) {
 				Trigger: Signals{
 					CommentSubstrings: []string{"==MERGE_WHEN_READY=="},
 				},
-				DeleteAfterMerge: configv0.DeleteAfterMerge,
-				Method:           configv0.Strategy,
+				DeleteAfterMerge:       configv0.DeleteAfterMerge,
+				AllowMergeWithNoChecks: configv0.AllowMergeWithNoChecks,
+				Method:                 configv0.Strategy,
 			},
 		}
 		if config.Merge.Method == SquashAndMerge {
