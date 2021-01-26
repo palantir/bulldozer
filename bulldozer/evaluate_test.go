@@ -98,6 +98,7 @@ func TestShouldMerge(t *testing.T) {
 			Comments:          []string{"NO_WAY"},
 			CommentSubstrings: []string{":-1:"},
 		},
+		AllowMergeWithNoChecks: true,
 	}
 
 	ctx := context.Background()
