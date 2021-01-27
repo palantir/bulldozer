@@ -123,6 +123,11 @@ func ShouldMergePR(ctx context.Context, pullCtx pull.Context, mergeConfig MergeC
 	}
 	requiredStatuses = append(requiredStatuses, mergeConfig.RequiredStatuses...)
 
+	if len(requiredStatuses) == 0 && !mergeConfig.AllowMergeWithNoChecks {
+		logger.Debug().Msgf("%s has 0 required status checks, but is deemed not mergeable because AllowMergeWithNoChecks is false", pullCtx.Locator())
+		return false, nil
+	}
+
 	successStatuses, err := pullCtx.CurrentSuccessStatuses(ctx)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to determine currently successful status checks")
