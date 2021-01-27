@@ -190,7 +190,7 @@ func (cf *ConfigFetcher) unmarshalConfigV0(bytes []byte) (*Config, error) {
 					Labels: []string{"merge when ready", "merge-when-ready", "merge_when_ready"},
 				},
 				DeleteAfterMerge:       configv0.DeleteAfterMerge,
-				AllowMergeWithNoChecks: configv0.AllowMergeWithNoChecks,
+				AllowMergeWithNoChecks: false,
 				Method:                 configv0.Strategy,
 			},
 		}
@@ -212,7 +212,7 @@ func (cf *ConfigFetcher) unmarshalConfigV0(bytes []byte) (*Config, error) {
 					Labels: []string{"wip", "do not merge", "do-not-merge", "do_not_merge"},
 				},
 				DeleteAfterMerge:       configv0.DeleteAfterMerge,
-				AllowMergeWithNoChecks: configv0.AllowMergeWithNoChecks,
+				AllowMergeWithNoChecks: false,
 				Method:                 configv0.Strategy,
 			},
 		}
@@ -234,7 +234,7 @@ func (cf *ConfigFetcher) unmarshalConfigV0(bytes []byte) (*Config, error) {
 					CommentSubstrings: []string{"==MERGE_WHEN_READY=="},
 				},
 				DeleteAfterMerge:       configv0.DeleteAfterMerge,
-				AllowMergeWithNoChecks: configv0.AllowMergeWithNoChecks,
+				AllowMergeWithNoChecks: false,
 				Method:                 configv0.Strategy,
 			},
 		}

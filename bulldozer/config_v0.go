@@ -26,7 +26,6 @@ type ConfigV0 struct {
 	Mode                   ModeV0      `yaml:"mode"`
 	Strategy               MergeMethod `yaml:"strategy"`
 	DeleteAfterMerge       bool        `yaml:"deleteAfterMerge"`
-	AllowMergeWithNoChecks bool        `yaml:"allow_merge_with_no_checks"`
 
 	// this setting is unused, but needs to be present for valid v0 configuration
 	IgnoreSquashedMessages bool `yaml:"ignoreSquashedMessages"`
