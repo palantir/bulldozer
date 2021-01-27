@@ -148,6 +148,11 @@ merge:
   # If true, bulldozer will delete branches after their pull requests merge.
   delete_after_merge: true
 
+  # If true, bulldozer will merge pull requests with no required checks. This
+  # helps to protect against merging branches which inadvertently do not have
+  # required status checks.
+  allow_merge_with_no_checks: false
+
 # "update" defines how and when to update pull request branches. Unlike with
 # merges, if this section is missing, bulldozer will not update any pull requests.
 update:
@@ -223,6 +228,8 @@ which are to be expected, and others that may be caused by mis-configuring Bulld
 * Branch protection rules are preventing `bulldozer[bot]` from [pushing to the
   branch][push restrictions]. Github apps can be added to the list of restricted
   push users, so you can allow Bulldozer specifically for your repo.
+* The branch has no required checks and `allow_merge_with_no_checks` is set to
+  the default value (`false`).
 
 [push restrictions]: https://help.github.com/articles/about-branch-restrictions/
 [a workaround]: #can-bulldozer-work-with-push-restrictions-on-branches
