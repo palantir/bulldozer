@@ -209,6 +209,11 @@ func (ghc *GithubContext) CurrentSuccessStatuses(ctx context.Context) ([]string,
 	if ghc.successStatuses == nil {
 		opts := &github.ListOptions{PerPage: 100}
 		var successStatuses []string
+		allowedCheckConclusions := map[string]bool{
+			"success": true,
+			"neutral": true,
+			"skipped": true,
+		}
 
 		for {
 			combinedStatus, res, err := ghc.client.Repositories.GetCombinedStatus(ctx, ghc.owner, ghc.repo, ghc.pr.GetHead().GetSHA(), opts)
@@ -236,7 +241,7 @@ func (ghc *GithubContext) CurrentSuccessStatuses(ctx context.Context) ([]string,
 			}
 
 			for _, s := range checkRuns.CheckRuns {
-				if s.GetConclusion() == "success" {
+				if allowedCheckConclusions[s.GetConclusion()] {
 					successStatuses = append(successStatuses, s.GetName())
 				}
 			}
