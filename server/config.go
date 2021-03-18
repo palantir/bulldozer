@@ -67,6 +67,7 @@ func ParseConfig(bytes []byte) (*Config, error) {
 	}
 
 	c.Github.SetValuesFromEnv("")
+	c.Server.SetValuesFromEnv("BULLDOZER_")
 	if v, ok := os.LookupEnv("BULLDOZER_PUSH_RESTRICTION_USER_TOKEN"); ok {
 		c.Options.PushRestrictionUserToken = v
 	}

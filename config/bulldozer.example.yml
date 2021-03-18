@@ -1,10 +1,15 @@
 # Options for the http server
 server:
-  # The listen address and port
+  # The listen address. Can also be set by the BULLDOZER_ADDRESS environment
+  # variable.
   address: "0.0.0.0"
+  # The listen port. Can also be set by the BULLDOZER_PORT environment
+  # variable.
   port: 8080
   # Uncomment the "tls_config" block to enable HTTPS support in the server.
   # The cert and key files must be usable by net/http.ListenAndServeTLS().
+  # Cert and Key file can also be set by the BULLDOZER_TLS_CERT_FILE and
+  # BULLDOZER_TLS_KEY_FILE environment variables, respectively.
   # tls_config:
   #   cert_file: /path/to/server.pem
   #   key_file: /path/to/server.key
