@@ -58,10 +58,17 @@ func (s *Signals) Matches(ctx context.Context, pullCtx pull.Context, tag string)
 	}
 
 	if len(labels) == 0 {
-		logger.Debug().Msgf("No labels found to match against")
+		logger.Debug().Msgf("No PR labels found to match against")
 	}
+
+	if len(s.Labels) == 0 {
+		logger.Debug().Msgf("No config labels found to match against")
+	}
+
 	for _, signalLabel := range s.Labels {
+		logger.Debug().Msgf("Looking for config label %s", signalLabel)
 		for _, label := range labels {
+			logger.Debug().Msgf("Checking PR label %s", label)
 			if strings.EqualFold(signalLabel, label) {
 				return true, fmt.Sprintf("pull request has a %s label: %q", tag, signalLabel), nil
 			}
