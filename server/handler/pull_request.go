@@ -68,15 +68,16 @@ func (h *PullRequest) Handle(ctx context.Context, eventType, deliveryID string, 
 	if err != nil {
 		return err
 	}
-	if err := h.ProcessPullRequest(ctx, pullCtx, client, config, pr); err != nil {
-		logger.Error().Err(errors.WithStack(err)).Msg("Error processing pull request")
-	}
 
 	if event.GetAction() == "labeled" || event.GetAction() == "opened" {
 		base, _ := pullCtx.Branches()
 		if err := h.UpdatePullRequest(logger.WithContext(ctx), pullCtx, client, config, pr, base); err != nil {
 			logger.Error().Err(errors.WithStack(err)).Msg("Error updating pull request")
 		}
+	}
+
+	if err := h.ProcessPullRequest(ctx, pullCtx, client, config, pr); err != nil {
+		logger.Error().Err(errors.WithStack(err)).Msg("Error processing pull request")
 	}
 
 	return nil
