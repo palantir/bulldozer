@@ -288,7 +288,10 @@ We provide both a Docker container and a binary distribution of the server:
 
 A sample configuration file is provided at `config/bulldozer.example.yml`.
 Certain values may also be set by environment variables; these are noted in the
-comments in the sample configuration file.
+comments in the sample configuration file. By default, the environment
+variables for server values are prefixed with `BULLDOZER_` (e.g.
+`BULLDOZER_PORT`). This prefix can be overridden by setting the
+`BULLDOZER_ENV_PREFIX` environment variable.
 
 ### GitHub App Configuration
 

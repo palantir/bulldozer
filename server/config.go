@@ -27,6 +27,10 @@ import (
 	"github.com/palantir/bulldozer/bulldozer"
 )
 
+const (
+	DefaultEnvPrefix = "BULLDOZER_"
+)
+
 type Config struct {
 	Server  baseapp.HTTPConfig `yaml:"server"`
 	Github  githubapp.Config   `yaml:"github"`
@@ -67,8 +71,14 @@ func ParseConfig(bytes []byte) (*Config, error) {
 	}
 
 	c.Github.SetValuesFromEnv("")
-	c.Server.SetValuesFromEnv("BULLDOZER_")
-	if v, ok := os.LookupEnv("BULLDOZER_PUSH_RESTRICTION_USER_TOKEN"); ok {
+
+	envPrefix := DefaultEnvPrefix
+	if v, ok := os.LookupEnv("BULLDOZER_ENV_PREFIX"); ok {
+		envPrefix = v
+	}
+	c.Server.SetValuesFromEnv(envPrefix)
+
+	if v, ok := os.LookupEnv(envPrefix + "PUSH_RESTRICTION_USER_TOKEN"); ok {
 		c.Options.PushRestrictionUserToken = v
 	}
 
