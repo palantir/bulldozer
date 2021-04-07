@@ -33,12 +33,33 @@ type Base struct {
 	PushRestrictionUserToken string
 }
 
-func (b *Base) ProcessPullRequest(ctx context.Context, pullCtx pull.Context, client *github.Client, pr *github.PullRequest) error {
+func (b *Base) FetchConfig(ctx context.Context, client *github.Client, pr *github.PullRequest) (*bulldozer.Config, error) {
 	logger := zerolog.Ctx(ctx)
 
 	bulldozerConfig, err := b.ConfigForPR(ctx, client, pr)
 	if err != nil {
-		return errors.Wrap(err, "failed to fetch configuration")
+		return nil, errors.Wrap(err, "failed to fetch configuration")
+	}
+
+	switch {
+	case bulldozerConfig.Missing():
+		logger.Debug().Msgf("No configuration found for %s", bulldozerConfig)
+		return nil, nil
+	case bulldozerConfig.Invalid():
+		logger.Warn().Msgf("Configuration is invalid for %s", bulldozerConfig)
+		return nil, nil
+	}
+
+	logger.Debug().Msgf("Found valid configuration for %s", bulldozerConfig)
+	return bulldozerConfig.Config, nil
+}
+
+func (b *Base) ProcessPullRequest(ctx context.Context, pullCtx pull.Context, client *github.Client, config *bulldozer.Config, pr *github.PullRequest) error {
+	logger := zerolog.Ctx(ctx)
+
+	if config == nil {
+		logger.Debug().Msg("ProcessPullRequest: returning immediately due to nil config")
+		return nil
 	}
 
 	merger := bulldozer.NewGitHubMerger(client)
@@ -50,51 +71,31 @@ func (b *Base) ProcessPullRequest(ctx context.Context, pullCtx pull.Context, cli
 		merger = bulldozer.NewPushRestrictionMerger(merger, bulldozer.NewGitHubMerger(tokenClient))
 	}
 
-	switch {
-	case bulldozerConfig.Missing():
-		logger.Debug().Msgf("No configuration found for %s", bulldozerConfig)
-	case bulldozerConfig.Invalid():
-		logger.Warn().Msgf("Configuration is invalid for %s", bulldozerConfig)
-	default:
-		logger.Debug().Msgf("Found valid configuration for %s", bulldozerConfig)
-		config := *bulldozerConfig.Config
-
-		shouldMerge, err := bulldozer.ShouldMergePR(ctx, pullCtx, config.Merge)
-		if err != nil {
-			return errors.Wrap(err, "unable to determine merge status")
-		}
-		if shouldMerge {
-			bulldozer.MergePR(ctx, pullCtx, merger, config.Merge)
-		}
+	shouldMerge, err := bulldozer.ShouldMergePR(ctx, pullCtx, config.Merge)
+	if err != nil {
+		return errors.Wrap(err, "unable to determine merge status")
+	}
+	if shouldMerge {
+		bulldozer.MergePR(ctx, pullCtx, merger, config.Merge)
 	}
 
 	return nil
 }
 
-func (b *Base) UpdatePullRequest(ctx context.Context, pullCtx pull.Context, client *github.Client, pr *github.PullRequest, baseRef string) error {
+func (b *Base) UpdatePullRequest(ctx context.Context, pullCtx pull.Context, client *github.Client, config *bulldozer.Config, pr *github.PullRequest, baseRef string) error {
 	logger := zerolog.Ctx(ctx)
 
-	bulldozerConfig, err := b.ConfigForPR(ctx, client, pr)
-	if err != nil {
-		return errors.Wrap(err, "failed to fetch configuration")
+	if config == nil {
+		logger.Debug().Msg("UpdatePullRequest: returning immediately due to nil config")
+		return nil
 	}
 
-	switch {
-	case bulldozerConfig.Missing():
-		logger.Debug().Msgf("No configuration found for %s", bulldozerConfig)
-	case bulldozerConfig.Invalid():
-		logger.Warn().Msgf("Configuration is invalid for %s", bulldozerConfig)
-	default:
-		logger.Debug().Msgf("Found valid configuration for %s", bulldozerConfig)
-		config := *bulldozerConfig.Config
-
-		shouldUpdate, err := bulldozer.ShouldUpdatePR(ctx, pullCtx, config.Update)
-		if err != nil {
-			return errors.Wrap(err, "unable to determine update status")
-		}
-		if shouldUpdate {
-			bulldozer.UpdatePR(ctx, pullCtx, client, config.Update, baseRef)
-		}
+	shouldUpdate, err := bulldozer.ShouldUpdatePR(ctx, pullCtx, config.Update)
+	if err != nil {
+		return errors.Wrap(err, "unable to determine update status")
+	}
+	if shouldUpdate {
+		bulldozer.UpdatePR(ctx, pullCtx, client, config.Update, baseRef)
 	}
 
 	return nil
