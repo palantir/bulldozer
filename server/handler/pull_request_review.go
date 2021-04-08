@@ -57,7 +57,11 @@ func (h *PullRequestReview) Handle(ctx context.Context, eventType, deliveryID st
 	}
 	pullCtx := pull.NewGithubContext(client, pr)
 
-	if err := h.ProcessPullRequest(ctx, pullCtx, client, pr); err != nil {
+	config, err := h.FetchConfig(ctx, client, pr)
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch configuration")
+	}
+	if err := h.ProcessPullRequest(ctx, pullCtx, client, config, pr); err != nil {
 		logger.Error().Err(errors.WithStack(err)).Msg("Error processing pull request")
 	}
 
