@@ -1,6 +1,6 @@
 # bulldozer
 
-[![Download](https://api.bintray.com/packages/palantir/releases/bulldozer/images/download.svg)](https://bintray.com/palantir/releases/bulldozer/_latestVersion) [![Docker Pulls](https://img.shields.io/docker/pulls/palantirtechnologies/bulldozer.svg)](https://hub.docker.com/r/palantirtechnologies/bulldozer/)
+[![Docker Pulls](https://img.shields.io/docker/pulls/palantirtechnologies/bulldozer.svg)](https://hub.docker.com/r/palantirtechnologies/bulldozer/)
 
 `bulldozer` is a [GitHub App](https://developer.github.com/apps/) that
 automatically merges pull requests (PRs) when (and only when) all required
@@ -287,7 +287,7 @@ making it a good fit for container schedulers like Nomad or Kubernetes.
 
 We provide both a Docker container and a binary distribution of the server:
 
-- Binaries: https://bintray.com/palantir/releases/bulldozer
+- Binaries: https://github.com/palantir/bulldozer/releases
 - Docker Images: https://hub.docker.com/r/palantirtechnologies/bulldozer/
 
 A sample configuration file is provided at `config/bulldozer.example.yml`.
