@@ -58,33 +58,33 @@ func ShouldUpdatePR(ctx context.Context, pullCtx pull.Context, updateConfig Upda
 	return true, nil
 }
 
-func UpdatePR(ctx context.Context, pullCtx pull.Context, client *github.Client, updateConfig UpdateConfig, baseRef string) {
+func UpdatePR(ctx context.Context, pullCtx pull.Context, client *github.Client, updateConfig UpdateConfig, baseRef string) bool {
 	logger := zerolog.Ctx(ctx)
 
 	pr, _, err := client.PullRequests.Get(ctx, pullCtx.Owner(), pullCtx.Repo(), pullCtx.Number())
 	if err != nil {
 		logger.Error().Err(errors.WithStack(err)).Msgf("Failed to retrieve pull request %q", pullCtx.Locator())
-		return
+		return false
 	}
 
 	if pr.GetState() == "closed" {
 		logger.Debug().Msg("Pull request already closed")
-		return
+		return false
 	}
 
 	if pr.Head.Repo.GetFork() {
 		logger.Debug().Msg("Pull request is from a fork, cannot keep it up to date with base ref")
-		return
+		return false
 	}
 
 	comparison, _, err := client.Repositories.CompareCommits(ctx, pullCtx.Owner(), pullCtx.Repo(), baseRef, pr.GetHead().GetSHA())
 	if err != nil {
 		logger.Error().Err(errors.WithStack(err)).Msgf("Cannot compare %s and %s for %q", baseRef, pr.GetHead().GetSHA(), pullCtx.Locator())
-		return
+		return false
 	}
 	if comparison.GetBehindBy() == 0 {
 		logger.Debug().Msg("Pull request is not out of date, not updating")
-		return
+		return false
 	}
 
 	logger.Debug().Msg("Pull request is not up to date, attempting an update")
@@ -94,7 +94,8 @@ func UpdatePR(ctx context.Context, pullCtx pull.Context, client *github.Client, 
 	})
 	if err != nil {
 		logger.Error().Err(errors.WithStack(err)).Msg("Update merge failed unexpectedly")
-		return
+		return false
 	}
 	logger.Info().Msgf("Successfully updated pull request from base ref %s as merge %s", baseRef, mergeCommit.GetSHA())
+	return true
 }
