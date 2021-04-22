@@ -82,7 +82,7 @@ func (h *Push) Handle(ctx context.Context, eventType, deliveryID string, payload
 		}
 
 		logger.Debug().Msgf("checking status for updated sha %s", baseRef)
-		if err := h.UpdatePullRequest(logger.WithContext(ctx), pullCtx, client, config, pr, baseRef); err != nil {
+		if _, err := h.UpdatePullRequest(logger.WithContext(ctx), pullCtx, client, config, pr, baseRef); err != nil {
 			logger.Error().Err(errors.WithStack(err)).Msg("Error updating pull request")
 		}
 	}

@@ -82,21 +82,24 @@ func (b *Base) ProcessPullRequest(ctx context.Context, pullCtx pull.Context, cli
 	return nil
 }
 
-func (b *Base) UpdatePullRequest(ctx context.Context, pullCtx pull.Context, client *github.Client, config *bulldozer.Config, pr *github.PullRequest, baseRef string) error {
+func (b *Base) UpdatePullRequest(ctx context.Context, pullCtx pull.Context, client *github.Client, config *bulldozer.Config, pr *github.PullRequest, baseRef string) (bool, error) {
 	logger := zerolog.Ctx(ctx)
 
 	if config == nil {
 		logger.Debug().Msg("UpdatePullRequest: returning immediately due to nil config")
-		return nil
+		return false, nil
 	}
 
 	shouldUpdate, err := bulldozer.ShouldUpdatePR(ctx, pullCtx, config.Update)
 	if err != nil {
-		return errors.Wrap(err, "unable to determine update status")
-	}
-	if shouldUpdate {
-		bulldozer.UpdatePR(ctx, pullCtx, client, config.Update, baseRef)
+		return false, errors.Wrap(err, "unable to determine update status")
 	}
 
-	return nil
+	didUpdatePR := false
+
+	if shouldUpdate {
+		didUpdatePR = bulldozer.UpdatePR(ctx, pullCtx, client, config.Update, baseRef)
+	}
+
+	return didUpdatePR, nil
 }
