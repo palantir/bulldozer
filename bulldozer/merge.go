@@ -210,14 +210,6 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 		}
 		time.Sleep(4 * time.Second)
 	}
-
-	if merged {
-		if mergeConfig.DeleteAfterMerge {
-			attemptDelete(ctx, pullCtx, head, merger)
-		} else {
-			logger.Debug().Msgf("Not deleting refs/heads/%s, delete after merge is not enabled", head)
-		}
-	}
 }
 
 // attemptMerge attempts to merge a pull request, logging any errors and
@@ -270,40 +262,6 @@ func attemptMerge(ctx context.Context, pullCtx pull.Context, merger Merger, meth
 
 	logger.Info().Msgf("Successfully merged pull request as SHA %s", sha)
 	return true, false
-}
-
-// attemptDelete attempts to delete a pull request branch, logging any errors
-// and returning true if successful.
-func attemptDelete(ctx context.Context, pullCtx pull.Context, head string, merger Merger) bool {
-	logger := zerolog.Ctx(ctx)
-
-	if strings.ContainsRune(head, ':') {
-		// skip forks because the app doesn't have permission to do the delete
-		logger.Debug().Msg("Pull Request is from a fork, not deleting")
-		return false
-	}
-
-	ref := fmt.Sprintf("refs/heads/%s", head)
-
-	// check other open PRs to make sure that nothing is trying to merge into the ref we're about to delete
-	isTargeted, err := pullCtx.IsTargeted(ctx)
-	if err != nil {
-		logger.Error().Err(err).Msgf("Unabled to determine if %s is targeted by other pull requests", ref)
-		return false
-	}
-	if isTargeted {
-		logger.Info().Msgf("Unable to delete %s after merging %q because there are open PRs against it", ref, pullCtx.Locator())
-		return false
-	}
-
-	logger.Info().Msgf("Attempting to delete ref %s", ref)
-	if err := merger.DeleteHead(ctx, pullCtx); err != nil {
-		logger.Error().Err(err).Msgf("Failed to delete %s", ref)
-		return false
-	}
-
-	logger.Info().Msgf("Successfully deleted %s after merging %q", ref, pullCtx.Locator())
-	return true
 }
 
 func isValidMergeMethod(input MergeMethod) bool {
