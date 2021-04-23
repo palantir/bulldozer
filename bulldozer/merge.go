@@ -155,7 +155,7 @@ func (m *PushRestrictionMerger) DeleteHead(ctx context.Context, pullCtx pull.Con
 func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConfig MergeConfig) {
 	logger := zerolog.Ctx(ctx)
 
-	base, head := pullCtx.Branches()
+	base, _ := pullCtx.Branches()
 	mergeMethod := mergeConfig.Method
 
 	if branchMergeMethod, ok := mergeConfig.BranchMethod[base]; ok {
