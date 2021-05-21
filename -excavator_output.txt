@@ -1,0 +1,55 @@
+go mod operation failed. This may mean that there are legitimate dependency issues with the "go.mod" definition in the repository and the updates performed by the gomod check. This branch can be cloned locally to debug the issue.
+
+Command that caused error:
+./godelw check compiles
+
+Output:
+Running compiles...
+server/handler/base.go:71:81: cannot use tokenClient (variable of type *github.Client) as *github.Client value in argument to bulldozer.NewGitHubMerger
+server/handler/check_run.go:44:57: cannot use &event (value of type *github.CheckRunEvent) as githubapp.InstallationSource value in argument to githubapp.GetInstallationIDFromEvent: wrong type for method GetInstallation (have func() *github.com/google/go-github/v32/github.Installation, want func() *github.com/google/go-github/v35/github.Installation)
+server/handler/check_run.go:46:67: cannot use repo (variable of type *github.Repository) as *github.Repository value in argument to githubapp.PrepareRepoContext
+server/handler/check_run.go:73:36: cannot use client (variable of type *github.Client) as *github.Client value in argument to pull.NewGithubContext
+server/handler/check_run.go:73:44: cannot use fullPR (variable of type *github.PullRequest) as *github.PullRequest value in argument to pull.NewGithubContext
+server/handler/check_run.go:76:37: cannot use client (variable of type *github.Client) as *github.Client value in argument to h.FetchConfig
+server/handler/check_run.go:80:68: cannot use client (variable of type *github.Client) as *github.Client value in argument to h.ProcessPullRequest
+server/handler/check_run.go:80:84: cannot use fullPR (variable of type *github.PullRequest) as *github.PullRequest value in argument to h.ProcessPullRequest
+server/handler/issue_comment.go:46:57: cannot use &event (value of type *github.IssueCommentEvent) as githubapp.InstallationSource value in argument to githubapp.GetInstallationIDFromEvent: wrong type for method GetInstallation (have func() *github.com/google/go-github/v32/github.Installation, want func() *github.com/google/go-github/v35/github.Installation)
+server/handler/issue_comment.go:47:65: cannot use repo (variable of type *github.Repository) as *github.Repository value in argument to githubapp.PreparePRContext
+server/handler/issue_comment.go:58:35: cannot use client (variable of type *github.Client) as *github.Client value in argument to pull.NewGithubContext
+server/handler/issue_comment.go:58:43: cannot use pr (variable of type *github.PullRequest) as *github.PullRequest value in argument to pull.NewGithubContext
+server/handler/issue_comment.go:60:36: cannot use client (variable of type *github.Client) as *github.Client value in argument to h.FetchConfig
+server/handler/issue_comment.go:60:44: cannot use pr (variable of type *github.PullRequest) as *github.PullRequest value in argument to h.FetchConfig
+server/handler/issue_comment.go:64:47: cannot use client (variable of type *github.Client) as *github.Client value in argument to h.ProcessPullRequest
+server/handler/issue_comment.go:64:63: cannot use pr (variable of type *github.PullRequest) as *github.PullRequest value in argument to h.ProcessPullRequest
+server/handler/pull_request.go:46:57: cannot use &event (value of type *github.PullRequestEvent) as githubapp.InstallationSource value in argument to githubapp.GetInstallationIDFromEvent: wrong type for method GetInstallation (have func() *github.com/google/go-github/v32/github.Installation, want func() *github.com/google/go-github/v35/github.Installation)
+server/handler/pull_request.go:47:65: cannot use repo (variable of type *github.Repository) as *github.Repository value in argument to githubapp.PreparePRContext
+server/handler/pull_request.go:65:35: cannot use client (variable of type *github.Client) as *github.Client value in argument to pull.NewGithubContext
+server/handler/pull_request.go:65:43: cannot use pr (variable of type *github.PullRequest) as *github.PullRequest value in argument to pull.NewGithubContext
+server/handler/pull_request.go:67:36: cannot use client (variable of type *github.Client) as *github.Client value in argument to h.FetchConfig
+server/handler/pull_request.go:67:44: cannot use pr (variable of type *github.PullRequest) as *github.PullRequest value in argument to h.FetchConfig
+server/handler/pull_request.go:74:77: cannot use client (variable of type *github.Client) as *github.Client value in argument to h.UpdatePullRequest
+server/handler/pull_request.go:74:93: cannot use pr (variable of type *github.PullRequest) as *github.PullRequest value in argument to h.UpdatePullRequest
+server/handler/pull_request.go:84:47: cannot use client (variable of type *github.Client) as *github.Client value in argument to h.ProcessPullRequest
+server/handler/pull_request.go:84:63: cannot use pr (variable of type *github.PullRequest) as *github.PullRequest value in argument to h.ProcessPullRequest
+server/handler/pull_request_review.go:46:57: cannot use &event (value of type *github.PullRequestReviewEvent) as githubapp.InstallationSource value in argument to githubapp.GetInstallationIDFromEvent: wrong type for method GetInstallation (have func() *github.com/google/go-github/v32/github.Installation, want func() *github.com/google/go-github/v35/github.Installation)
+server/handler/pull_request_review.go:47:65: cannot use repo (variable of type *github.Repository) as *github.Repository value in argument to githubapp.PreparePRContext
+server/handler/pull_request_review.go:58:35: cannot use client (variable of type *github.Client) as *github.Client value in argument to pull.NewGithubContext
+server/handler/pull_request_review.go:58:43: cannot use pr (variable of type *github.PullRequest) as *github.PullRequest value in argument to pull.NewGithubContext
+server/handler/pull_request_review.go:60:36: cannot use client (variable of type *github.Client) as *github.Client value in argument to h.FetchConfig
+server/handler/pull_request_review.go:60:44: cannot use pr (variable of type *github.PullRequest) as *github.PullRequest value in argument to h.FetchConfig
+server/handler/pull_request_review.go:64:47: cannot use client (variable of type *github.Client) as *github.Client value in argument to h.ProcessPullRequest
+server/handler/pull_request_review.go:64:63: cannot use pr (variable of type *github.PullRequest) as *github.PullRequest value in argument to h.ProcessPullRequest
+server/handler/push.go:45:57: cannot use &event (value of type *github.PushEvent) as githubapp.InstallationSource value in argument to githubapp.GetInstallationIDFromEvent: wrong type for method GetInstallation (have func() *github.com/google/go-github/v32/github.Installation, want func() *github.com/google/go-github/v35/github.Installation)
+server/handler/push.go:56:67: cannot use ghRepo (variable of type *github.Repository) as *github.Repository value in argument to githubapp.PrepareRepoContext
+server/handler/push.go:63:51: cannot use client (variable of type *github.Client) as *github.Client value in argument to pull.ListOpenPullRequestsForRef
+server/handler/push.go:76:36: cannot use client (variable of type *github.Client) as *github.Client value in argument to pull.NewGithubContext
+server/handler/push.go:79:37: cannot use client (variable of type *github.Client) as *github.Client value in argument to h.FetchConfig
+server/handler/push.go:85:70: cannot use client (variable of type *github.Client) as *github.Client value in argument to h.UpdatePullRequest
+server/handler/status.go:45:57: cannot use &event (value of type *github.StatusEvent) as githubapp.InstallationSource value in argument to githubapp.GetInstallationIDFromEvent: wrong type for method GetInstallation (have func() *github.com/google/go-github/v32/github.Installation, want func() *github.com/google/go-github/v35/github.Installation)
+server/handler/status.go:46:67: cannot use repo (variable of type *github.Repository) as *github.Repository value in argument to githubapp.PrepareRepoContext
+server/handler/status.go:58:51: cannot use client (variable of type *github.Client) as *github.Client value in argument to pull.ListOpenPullRequestsForSHA
+server/handler/status.go:69:36: cannot use client (variable of type *github.Client) as *github.Client value in argument to pull.NewGithubContext
+server/handler/status.go:71:37: cannot use client (variable of type *github.Client) as *github.Client value in argument to h.FetchConfig
+server/handler/status.go:75:68: cannot use client (variable of type *github.Client) as *github.Client value in argument to h.ProcessPullRequest
+Finished compiles
+Check(s) produced output: [compiles]
