@@ -20,16 +20,15 @@ import (
 	"github.com/c2h5oh/datasize"
 	"github.com/die-net/lrucache"
 	"github.com/gregjones/httpcache"
+	"github.com/palantir/bulldozer/bulldozer"
+	"github.com/palantir/bulldozer/server/handler"
+	"github.com/palantir/bulldozer/version"
 	"github.com/palantir/go-baseapp/baseapp"
 	"github.com/palantir/go-baseapp/baseapp/datadog"
 	"github.com/palantir/go-githubapp/githubapp"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"goji.io/pat"
-
-	"github.com/palantir/bulldozer/bulldozer"
-	"github.com/palantir/bulldozer/server/handler"
-	"github.com/palantir/bulldozer/version"
 )
 
 type Server struct {

@@ -23,10 +23,9 @@ import (
 	"time"
 
 	"github.com/google/go-github/v32/github"
+	"github.com/palantir/bulldozer/pull"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
-
-	"github.com/palantir/bulldozer/pull"
 )
 
 const MaxPullRequestPollCount = 5

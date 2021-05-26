@@ -17,9 +17,8 @@ package handler
 import (
 	"net/http"
 
-	"github.com/palantir/go-baseapp/baseapp"
-
 	"github.com/palantir/bulldozer/version"
+	"github.com/palantir/go-baseapp/baseapp"
 )
 
 type HealthCheck struct {

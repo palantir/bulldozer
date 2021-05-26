@@ -20,9 +20,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/rs/zerolog"
-
 	"github.com/palantir/bulldozer/pull"
+	"github.com/rs/zerolog"
 )
 
 type Signals struct {

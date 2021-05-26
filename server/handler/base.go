@@ -18,12 +18,11 @@ import (
 	"context"
 
 	"github.com/google/go-github/v32/github"
+	"github.com/palantir/bulldozer/bulldozer"
+	"github.com/palantir/bulldozer/pull"
 	"github.com/palantir/go-githubapp/githubapp"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
-
-	"github.com/palantir/bulldozer/bulldozer"
-	"github.com/palantir/bulldozer/pull"
 )
 
 type Base struct {

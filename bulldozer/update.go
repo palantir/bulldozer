@@ -18,10 +18,9 @@ import (
 	"context"
 
 	"github.com/google/go-github/v32/github"
+	"github.com/palantir/bulldozer/pull"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
-
-	"github.com/palantir/bulldozer/pull"
 )
 
 func ShouldUpdatePR(ctx context.Context, pullCtx pull.Context, updateConfig UpdateConfig) (bool, error) {
