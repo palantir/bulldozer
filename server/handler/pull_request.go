@@ -19,10 +19,9 @@ import (
 	"encoding/json"
 
 	"github.com/google/go-github/v32/github"
+	"github.com/palantir/bulldozer/pull"
 	"github.com/palantir/go-githubapp/githubapp"
 	"github.com/pkg/errors"
-
-	"github.com/palantir/bulldozer/pull"
 )
 
 type PullRequest struct {

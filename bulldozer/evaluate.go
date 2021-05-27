@@ -18,10 +18,9 @@ import (
 	"context"
 	"strings"
 
+	"github.com/palantir/bulldozer/pull"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
-
-	"github.com/palantir/bulldozer/pull"
 )
 
 // IsPRIgnored returns true if the PR is identified as ignored,

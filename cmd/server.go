@@ -18,10 +18,9 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/palantir/bulldozer/server"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-
-	"github.com/palantir/bulldozer/server"
 )
 
 var serverCmdConfig struct {
