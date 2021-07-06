@@ -145,9 +145,6 @@ merge:
   required_statuses:
     - "ci/circleci: ete-tests"
 
-  # If true, bulldozer will delete branches after their pull requests merge.
-  delete_after_merge: true
-
   # If true, bulldozer will merge pull requests with no required checks. This
   # helps to protect against merging branches which inadvertently do not have
   # required status checks.
