@@ -46,6 +46,7 @@ update:
     labels: ["wip", "update me"]
   ignore:
     labels: ["do not update"]
+  ignore_draft_pr: true
 `
 
 		actual, err := cf.unmarshalConfig([]byte(config))
@@ -58,6 +59,7 @@ update:
 			Labels:            []string{"do not merge"},
 			CommentSubstrings: []string{"==DO_NOT_MERGE=="},
 		}, actual.Merge.Ignore)
+		assert.Equal(t, actual.Update.IgnoreDraftPR, true)
 	})
 
 	t.Run("parseExisting", func(t *testing.T) {

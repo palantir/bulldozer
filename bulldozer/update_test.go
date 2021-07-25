@@ -31,38 +31,76 @@ func TestShouldUpdatePR(t *testing.T) {
 		ignored         bool
 		triggerEnabled  bool
 		triggered       bool
+		ignoreDraftPR   bool
+		isDraftPR       bool
 		expectingUpdate bool
 	}{
-		{false, false, false, false, false},
-		{false, false, false, true, false},
-		{false, false, true, false, false},
-		{false, false, true, true, true},
-		{false, true, false, false, false},
-		{false, true, false, true, false},
-		{false, true, true, false, false},
-		{false, true, true, true, true},
-		{true, false, false, false, true},
-		{true, false, false, true, true},
-		{true, false, true, false, false},
-		{true, false, true, true, true},
-		{true, true, false, false, false},
-		{true, true, false, true, false},
-		{true, true, true, false, false},
-		{true, true, true, true, false},
+		{false, false, false, false, false, false, false},
+		{false, false, false, true, false, false, false},
+		{false, false, true, false, false, false, false},
+		{false, false, true, true, false, false, true},
+		{false, true, false, false, false, false, false},
+		{false, true, false, true, false, false, false},
+		{false, true, true, false, false, false, false},
+		{false, true, true, true, false, false, true},
+		{true, false, false, false, false, false, true},
+		{true, false, false, true, false, false, true},
+		{true, false, true, false, false, false, false},
+		{true, false, true, true, false, false, true},
+		{true, true, false, false, false, false, false},
+		{true, true, false, true, false, false, false},
+		{true, true, true, false, false, false, false},
+		{true, true, true, true, false, false, false},
+		// Test Draft PRs are still handled correctly when ignoring them is not enabled
+		{false, false, false, false, false, true, false},
+		{false, false, false, true, false, true, false},
+		{false, false, true, false, false, true, false},
+		{false, false, true, true, false, true, true},
+		{false, true, false, false, false, true, false},
+		{false, true, false, true, false, true, false},
+		{false, true, true, false, false, true, false},
+		{false, true, true, true, false, true, true},
+		{true, false, false, false, false, true, true},
+		{true, false, false, true, false, true, true},
+		{true, false, true, false, false, true, false},
+		{true, false, true, true, false, true, true},
+		{true, true, false, false, false, true, false},
+		{true, true, false, true, false, true, false},
+		{true, true, true, false, false, true, false},
+		{true, true, true, true, false, true, false},
+		// Test Draft PRs are handled correctly when ignoring them is enabled
+		{false, false, false, false, true, true, false},
+		{true, true, false, false, true, true, false},
+		{true, false, false, false, true, true, false},
+		{false, true, false, false, true, true, false},
+		{false, false, true, true, true, true, true},
+		{false, false, true, false, true, true, false},
+		{false, false, false, true, true, true, false},
+		{true, true, true, true, true, true, false},
+		{true, false, true, true, true, true, true},
+		{false, true, true, true, true, true, true},
+		{true, true, false, true, true, true, false},
+		{true, true, true, false, true, true, false},
+		{true, false, true, false, true, true, false},
+		{false, true, false, true, true, true, false},
 	}
 
 	for ndx, testCase := range testMatrix {
-		pullCtx, updateConfig := generateUpdateTestCase(testCase.ignoreEnabled, testCase.ignored, testCase.triggerEnabled, testCase.triggered)
+		pullCtx, updateConfig := generateUpdateTestCase(testCase.ignoreEnabled, testCase.ignored, testCase.triggerEnabled, testCase.triggered, testCase.ignoreDraftPR, testCase.isDraftPR)
 		updating, err := ShouldUpdatePR(ctx, pullCtx, updateConfig)
 		require.NoError(t, err)
-		msg := fmt.Sprintf("case %d - ignoreEnabled=%t ignored=%t triggerEnabled=%t triggered=%t -> doUpdate=%t",
-			ndx, testCase.ignoreEnabled, testCase.ignored, testCase.triggerEnabled, testCase.triggered, testCase.expectingUpdate)
+		msg := fmt.Sprintf("case %d - ignoreEnabled=%t ignored=%t triggerEnabled=%t triggered=%t ignoreDraftPR=%t isDraftPR=%t -> doUpdate=%t",
+			ndx, testCase.ignoreEnabled, testCase.ignored, testCase.triggerEnabled, testCase.triggered, testCase.ignoreDraftPR, testCase.isDraftPR, testCase.expectingUpdate)
 		require.Equal(t, testCase.expectingUpdate, updating, msg)
 	}
 }
-func generateUpdateTestCase(ignorable bool, ignored bool, triggerable bool, triggered bool) (pull.Context, UpdateConfig) {
-	updateConfig := UpdateConfig{}
-	pullCtx := pulltest.MockPullContext{}
+func generateUpdateTestCase(ignorable bool, ignored bool, triggerable bool, triggered bool, ignoreDraftPR bool, isDraftPR bool) (pull.Context, UpdateConfig) {
+	updateConfig := UpdateConfig{
+		IgnoreDraftPR: ignoreDraftPR,
+	}
+	pullCtx := pulltest.MockPullContext{
+		IsDraftValue: isDraftPR,
+	}
 
 	if ignorable {
 		updateConfig.Ignore.Labels = append(updateConfig.Ignore.Labels, "ignore")

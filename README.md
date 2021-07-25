@@ -165,6 +165,10 @@ update:
   # bulldozer. It accepts the same keys as the ignore in the "merge" block.
   ignore:
     labels: ["Do Not Update"]
+
+  # If true, bulldozer will ignore updating draft pull requests, unless they
+  # explicitly match a configured trigger condition.
+  ignore_draft_pr: false
 ```
 
 ## FAQ

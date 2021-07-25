@@ -81,6 +81,9 @@ type Context interface {
 	// IsTargeted returns true if the head branch of this pull request is the
 	// target branch of other open PRs on the repository.
 	IsTargeted(ctx context.Context) (bool, error)
+
+	// IsDraft returns true if the PR is in a draft state.
+	IsDraft(ctx context.Context) bool
 }
 
 type MergeState struct {

@@ -52,6 +52,12 @@ func ShouldUpdatePR(ctx context.Context, pullCtx pull.Context, updateConfig Upda
 		}
 
 		logger.Debug().Msgf("%s is triggered because triggering is enabled and %s", pullCtx.Locator(), reason)
+		return true, nil
+	}
+
+	if updateConfig.IgnoreDraftPR && pullCtx.IsDraft(ctx) {
+		logger.Debug().Msgf("%s is deemed not updateable because PR is in a draft state", pullCtx.Locator())
+		return false, nil
 	}
 
 	return true, nil
