@@ -168,7 +168,7 @@ update:
 
   # If true, bulldozer will ignore updating draft pull requests, unless they
   # explicitly match a configured trigger condition.
-  ignore_draft_pr: false
+  ignore_drafts: false
 ```
 
 ## FAQ

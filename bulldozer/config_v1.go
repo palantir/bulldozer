@@ -68,7 +68,7 @@ type UpdateConfig struct {
 	Trigger Signals `yaml:"trigger"`
 	Ignore  Signals `yaml:"ignore"`
 
-	IgnoreDraftPR bool `yaml:"ignore_draft_pr"`
+	IgnoreDrafts bool `yaml:"ignore_drafts"`
 
 	// Blacklist and Whitelist are legacy options that will be disabled in a future v2 format
 	Blacklist Signals `yaml:"blacklist"`

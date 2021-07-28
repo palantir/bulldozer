@@ -31,8 +31,8 @@ func TestShouldUpdatePR(t *testing.T) {
 		ignored         bool
 		triggerEnabled  bool
 		triggered       bool
-		ignoreDraftPR   bool
-		isDraftPR       bool
+		ignoreDrafts    bool
+		isDraft         bool
 		expectingUpdate bool
 	}{
 		{false, false, false, false, false, false, false},
@@ -86,20 +86,20 @@ func TestShouldUpdatePR(t *testing.T) {
 	}
 
 	for ndx, testCase := range testMatrix {
-		pullCtx, updateConfig := generateUpdateTestCase(testCase.ignoreEnabled, testCase.ignored, testCase.triggerEnabled, testCase.triggered, testCase.ignoreDraftPR, testCase.isDraftPR)
+		pullCtx, updateConfig := generateUpdateTestCase(testCase.ignoreEnabled, testCase.ignored, testCase.triggerEnabled, testCase.triggered, testCase.ignoreDrafts, testCase.isDraft)
 		updating, err := ShouldUpdatePR(ctx, pullCtx, updateConfig)
 		require.NoError(t, err)
-		msg := fmt.Sprintf("case %d - ignoreEnabled=%t ignored=%t triggerEnabled=%t triggered=%t ignoreDraftPR=%t isDraftPR=%t -> doUpdate=%t",
-			ndx, testCase.ignoreEnabled, testCase.ignored, testCase.triggerEnabled, testCase.triggered, testCase.ignoreDraftPR, testCase.isDraftPR, testCase.expectingUpdate)
+		msg := fmt.Sprintf("case %d - ignoreEnabled=%t ignored=%t triggerEnabled=%t triggered=%t ignoreDrafts=%t isDraft=%t -> doUpdate=%t",
+			ndx, testCase.ignoreEnabled, testCase.ignored, testCase.triggerEnabled, testCase.triggered, testCase.ignoreDrafts, testCase.isDraft, testCase.expectingUpdate)
 		require.Equal(t, testCase.expectingUpdate, updating, msg)
 	}
 }
-func generateUpdateTestCase(ignorable bool, ignored bool, triggerable bool, triggered bool, ignoreDraftPR bool, isDraftPR bool) (pull.Context, UpdateConfig) {
+func generateUpdateTestCase(ignorable bool, ignored bool, triggerable bool, triggered bool, ignoreDrafts bool, isDraft bool) (pull.Context, UpdateConfig) {
 	updateConfig := UpdateConfig{
-		IgnoreDraftPR: ignoreDraftPR,
+		IgnoreDrafts: ignoreDrafts,
 	}
 	pullCtx := pulltest.MockPullContext{
-		IsDraftValue: isDraftPR,
+		IsDraftValue: isDraft,
 	}
 
 	if ignorable {

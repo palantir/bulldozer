@@ -55,7 +55,7 @@ func ShouldUpdatePR(ctx context.Context, pullCtx pull.Context, updateConfig Upda
 		return true, nil
 	}
 
-	if updateConfig.IgnoreDraftPR && pullCtx.IsDraft(ctx) {
+	if updateConfig.IgnoreDrafts && pullCtx.IsDraft(ctx) {
 		logger.Debug().Msgf("%s is deemed not updateable because PR is in a draft state", pullCtx.Locator())
 		return false, nil
 	}

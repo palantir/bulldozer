@@ -290,7 +290,7 @@ func (ghc *GithubContext) IsTargeted(ctx context.Context) (bool, error) {
 }
 
 func (ghc *GithubContext) IsDraft(ctx context.Context) bool {
-	return *ghc.pr.Draft
+	return ghc.pr.GetDraft()
 }
 
 // type assertion
