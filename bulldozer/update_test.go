@@ -17,6 +17,7 @@ package bulldozer
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/palantir/bulldozer/pull"
@@ -31,70 +32,91 @@ func TestShouldUpdatePR(t *testing.T) {
 		ignored         bool
 		triggerEnabled  bool
 		triggered       bool
-		ignoreDrafts    bool
+		ignoreDrafts    *bool
 		isDraft         bool
 		expectingUpdate bool
 	}{
-		{false, false, false, false, false, false, false},
-		{false, false, false, true, false, false, false},
-		{false, false, true, false, false, false, false},
-		{false, false, true, true, false, false, true},
-		{false, true, false, false, false, false, false},
-		{false, true, false, true, false, false, false},
-		{false, true, true, false, false, false, false},
-		{false, true, true, true, false, false, true},
-		{true, false, false, false, false, false, true},
-		{true, false, false, true, false, false, true},
-		{true, false, true, false, false, false, false},
-		{true, false, true, true, false, false, true},
-		{true, true, false, false, false, false, false},
-		{true, true, false, true, false, false, false},
-		{true, true, true, false, false, false, false},
-		{true, true, true, true, false, false, false},
-		// Test Draft PRs are still handled correctly when ignoring them is not enabled
-		{false, false, false, false, false, true, false},
-		{false, false, false, true, false, true, false},
-		{false, false, true, false, false, true, false},
-		{false, false, true, true, false, true, true},
-		{false, true, false, false, false, true, false},
-		{false, true, false, true, false, true, false},
-		{false, true, true, false, false, true, false},
-		{false, true, true, true, false, true, true},
-		{true, false, false, false, false, true, true},
-		{true, false, false, true, false, true, true},
-		{true, false, true, false, false, true, false},
-		{true, false, true, true, false, true, true},
-		{true, true, false, false, false, true, false},
-		{true, true, false, true, false, true, false},
-		{true, true, true, false, false, true, false},
-		{true, true, true, true, false, true, false},
+		{false, false, false, false, nil, false, false},
+		{false, false, false, true, nil, false, false},
+		{false, false, true, false, nil, false, false},
+		{false, false, true, true, nil, false, true},
+		{false, true, false, false, nil, false, false},
+		{false, true, false, true, nil, false, false},
+		{false, true, true, false, nil, false, false},
+		{false, true, true, true, nil, false, true},
+		{true, false, false, false, nil, false, true},
+		{true, false, false, true, nil, false, true},
+		{true, false, true, false, nil, false, false},
+		{true, false, true, true, nil, false, true},
+		{true, true, false, false, nil, false, false},
+		{true, true, false, true, nil, false, false},
+		{true, true, true, false, nil, false, false},
+		{true, true, true, true, nil, false, false},
+		// Test Draft PRs are still handled correctly when ignoring them is not configured
+		{false, false, false, false, nil, true, false},
+		{false, false, false, true, nil, true, false},
+		{false, false, true, false, nil, true, false},
+		{false, false, true, true, nil, true, true},
+		{false, true, false, false, nil, true, false},
+		{false, true, false, true, nil, true, false},
+		{false, true, true, false, nil, true, false},
+		{false, true, true, true, nil, true, true},
+		{true, false, false, false, nil, true, true},
+		{true, false, false, true, nil, true, true},
+		{true, false, true, false, nil, true, false},
+		{true, false, true, true, nil, true, true},
+		{true, true, false, false, nil, true, false},
+		{true, true, false, true, nil, true, false},
+		{true, true, true, false, nil, true, false},
+		{true, true, true, true, nil, true, false},
+		// Test Draft PRs are handled correctly when ignoring them is not enabled
+		{false, false, false, false, boolVal(false), true, true}, // All updates enabled
+		{false, false, false, true, boolVal(false), true, true},  // All updates enabled
+		{false, false, true, false, boolVal(false), true, false},
+		{false, false, true, true, boolVal(false), true, true},
+		{false, true, false, false, boolVal(false), true, true}, // All updates enabled
+		{false, true, false, true, boolVal(false), true, true},  // All updates enabled
+		{false, true, true, false, boolVal(false), true, false},
+		{false, true, true, true, boolVal(false), true, true},
+		{true, false, false, false, boolVal(false), true, true},
+		{true, false, false, true, boolVal(false), true, true},
+		{true, false, true, false, boolVal(false), true, false},
+		{true, false, true, true, boolVal(false), true, true},
+		{true, true, false, false, boolVal(false), true, false},
+		{true, true, false, true, boolVal(false), true, false},
+		{true, true, true, false, boolVal(false), true, false},
+		{true, true, true, true, boolVal(false), true, false},
 		// Test Draft PRs are handled correctly when ignoring them is enabled
-		{false, false, false, false, true, true, false},
-		{true, true, false, false, true, true, false},
-		{true, false, false, false, true, true, false},
-		{false, true, false, false, true, true, false},
-		{false, false, true, true, true, true, true},
-		{false, false, true, false, true, true, false},
-		{false, false, false, true, true, true, false},
-		{true, true, true, true, true, true, false},
-		{true, false, true, true, true, true, true},
-		{false, true, true, true, true, true, true},
-		{true, true, false, true, true, true, false},
-		{true, true, true, false, true, true, false},
-		{true, false, true, false, true, true, false},
-		{false, true, false, true, true, true, false},
+		{false, false, false, false, boolVal(true), true, false},
+		{true, true, false, false, boolVal(true), true, false},
+		{true, false, false, false, boolVal(true), true, false},
+		{false, true, false, false, boolVal(true), true, false},
+		{false, false, true, true, boolVal(true), true, true},
+		{false, false, true, false, boolVal(true), true, false},
+		{false, false, false, true, boolVal(true), true, false},
+		{true, true, true, true, boolVal(true), true, false},
+		{true, false, true, true, boolVal(true), true, true},
+		{false, true, true, true, boolVal(true), true, true},
+		{true, true, false, true, boolVal(true), true, false},
+		{true, true, true, false, boolVal(true), true, false},
+		{true, false, true, false, boolVal(true), true, false},
+		{false, true, false, true, boolVal(true), true, false},
 	}
 
 	for ndx, testCase := range testMatrix {
 		pullCtx, updateConfig := generateUpdateTestCase(testCase.ignoreEnabled, testCase.ignored, testCase.triggerEnabled, testCase.triggered, testCase.ignoreDrafts, testCase.isDraft)
 		updating, err := ShouldUpdatePR(ctx, pullCtx, updateConfig)
 		require.NoError(t, err)
-		msg := fmt.Sprintf("case %d - ignoreEnabled=%t ignored=%t triggerEnabled=%t triggered=%t ignoreDrafts=%t isDraft=%t -> doUpdate=%t",
-			ndx, testCase.ignoreEnabled, testCase.ignored, testCase.triggerEnabled, testCase.triggered, testCase.ignoreDrafts, testCase.isDraft, testCase.expectingUpdate)
+		ignoreDraftsPrintVal := "nil"
+		if testCase.ignoreDrafts != nil {
+			ignoreDraftsPrintVal = strconv.FormatBool(*testCase.ignoreDrafts)
+		}
+		msg := fmt.Sprintf("case %d - ignoreEnabled=%t ignored=%t triggerEnabled=%t triggered=%t ignoreDrafts=%v isDraft=%t -> doUpdate=%t",
+			ndx, testCase.ignoreEnabled, testCase.ignored, testCase.triggerEnabled, testCase.triggered, ignoreDraftsPrintVal, testCase.isDraft, testCase.expectingUpdate)
 		require.Equal(t, testCase.expectingUpdate, updating, msg)
 	}
 }
-func generateUpdateTestCase(ignorable bool, ignored bool, triggerable bool, triggered bool, ignoreDrafts bool, isDraft bool) (pull.Context, UpdateConfig) {
+func generateUpdateTestCase(ignorable bool, ignored bool, triggerable bool, triggered bool, ignoreDrafts *bool, isDraft bool) (pull.Context, UpdateConfig) {
 	updateConfig := UpdateConfig{
 		IgnoreDrafts: ignoreDrafts,
 	}
@@ -119,4 +141,8 @@ func generateUpdateTestCase(ignorable bool, ignored bool, triggerable bool, trig
 	}
 
 	return &pullCtx, updateConfig
+}
+
+func boolVal(b bool) *bool {
+	return &b
 }
