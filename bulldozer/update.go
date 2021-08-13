@@ -17,7 +17,7 @@ package bulldozer
 import (
 	"context"
 
-	"github.com/google/go-github/v32/github"
+	"github.com/google/go-github/v38/github"
 	"github.com/palantir/bulldozer/pull"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
@@ -82,7 +82,7 @@ func UpdatePR(ctx context.Context, pullCtx pull.Context, client *github.Client, 
 		return false
 	}
 
-	comparison, _, err := client.Repositories.CompareCommits(ctx, pullCtx.Owner(), pullCtx.Repo(), baseRef, pr.GetHead().GetSHA())
+	comparison, _, err := client.Repositories.CompareCommits(ctx, pullCtx.Owner(), pullCtx.Repo(), baseRef, pr.GetHead().GetSHA(), nil)
 	if err != nil {
 		logger.Error().Err(errors.WithStack(err)).Msgf("Cannot compare %s and %s for %q", baseRef, pr.GetHead().GetSHA(), pullCtx.Locator())
 		return false
