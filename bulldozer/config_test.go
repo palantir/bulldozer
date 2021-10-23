@@ -21,10 +21,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMarshalling(t *testing.T) {
+func TestParseConfig(t *testing.T) {
 	t.Run("parseNewConfig", func(t *testing.T) {
-		cf := NewConfigFetcher("", []string{""}, nil)
-
 		config := `
 version: 1
 
@@ -49,7 +47,7 @@ update:
   ignore_drafts: true
 `
 
-		actual, err := cf.unmarshalConfig([]byte(config))
+		actual, err := ParseConfig([]byte(config))
 		require.Nil(t, err)
 		assert.Equal(t, Signals{
 			Labels:            []string{"merge when ready"},
@@ -63,8 +61,6 @@ update:
 	})
 
 	t.Run("parseExisting", func(t *testing.T) {
-		cf := NewConfigFetcher("", []string{""}, nil)
-
 		config := `
 version: 1
 
@@ -88,7 +84,7 @@ update:
     labels: ["do not update"]
 `
 
-		actual, err := cf.unmarshalConfig([]byte(config))
+		actual, err := ParseConfig([]byte(config))
 		require.Nil(t, err)
 
 		assert.Equal(t, Signals{
@@ -110,8 +106,6 @@ update:
 	})
 
 	t.Run("ignoresOldConfig", func(t *testing.T) {
-		cf := NewConfigFetcher("", []string{""}, nil)
-
 		config := `
 version: 1
 
@@ -143,7 +137,7 @@ update:
     labels: ["do not update"]
 `
 
-		actual, err := cf.unmarshalConfig([]byte(config))
+		actual, err := ParseConfig([]byte(config))
 		require.Nil(t, err)
 
 		assert.Equal(t, Signals{
