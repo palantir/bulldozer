@@ -39,7 +39,6 @@ merge:
   options:
     squash:
       body: summarize_commits
-  delete_after_merge: true
 
 update:
   trigger:
@@ -79,7 +78,6 @@ merge:
   options:
     squash:
       body: summarize_commits
-  delete_after_merge: true
 
 update:
   whitelist:
@@ -130,7 +128,6 @@ merge:
   options:
     squash:
       body: summarize_commits
-  delete_after_merge: true
 
 update:
   trigger:
