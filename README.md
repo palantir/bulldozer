@@ -58,10 +58,25 @@ The behavior of the bot is configured by a `.bulldozer.yml` file at the root of
 the repository. The file name and location are configurable when running your
 own instance of the server.
 
-The `.bulldozer.yml` file is read from the most recent commit on the target
-branch of each pull request. If `bulldozer` cannot find a configuration file,
-it will take no action. This means it is safe to enable the `bulldozer` on all
-repositories in an organization.
+- The file is read from the most recent commit on the _target_ branch of each
+  pull request.
+
+- The file may contain a reference to a configuration in a different
+  repository (see [Remote Configuration](#remote-configuration).)
+
+- If the file does not exist in the repository, `bulldozer` tries to load a
+  shared `bulldozer.yml` file at the root of the `.github` repository in the
+  same organization. You can change this path and repository name when running
+  your own instance of the server.
+
+- You can also define a global default configuration when running your own
+  instance of the server. This is used if the repository or the shared
+  organization repository do not define any configuration.
+
+- If configuration does not exist in the repository or in the shared
+  organization repository and the server does not have a default configuration,
+  `bulldozer` does not act on the pull request. This means it is safe to enable
+  `bulldozer` on all repositories in an organization.
 
 ### bulldozer.yml Specification
 
@@ -170,6 +185,30 @@ update:
   # explicitly match a configured trigger condition.
   ignore_drafts: false
 ```
+
+#### Remote Configuration
+
+You can use a remote configuration by specifying a repository and an optional
+path and Git reference. Place the following in the repository's
+`.bulldozer.yml` file instead of the normal configuration:
+
+```yaml
+# The remote repository to read the configuration file from. This is required,
+# and must be in "org/repo-name" form. Must be a public repository.
+remote: org/repo-name
+
+# The path to the configuration file in the remote repository. If not set,
+# uses the default configuration path.
+path: path/to/bulldozer.yml
+
+# The branch (or tag, or commit hash) that should be used on the remote
+# repository. If not set, uses the default branch of the repository.
+ref: main
+```
+
+The remote file must contain `bulldozer` configuration and cannot be another
+remote reference. However, the organization-level default configuration may be
+a remote reference.
 
 ## FAQ
 

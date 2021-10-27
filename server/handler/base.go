@@ -27,30 +27,29 @@ import (
 
 type Base struct {
 	githubapp.ClientCreator
-	bulldozer.ConfigFetcher
 
+	ConfigFetcher            *ConfigFetcher
 	PushRestrictionUserToken string
 }
 
 func (b *Base) FetchConfig(ctx context.Context, client *github.Client, pr *github.PullRequest) (*bulldozer.Config, error) {
 	logger := zerolog.Ctx(ctx)
 
-	bulldozerConfig, err := b.ConfigForPR(ctx, client, pr)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to fetch configuration")
-	}
-
+	fc := b.ConfigFetcher.ConfigForPR(ctx, client, pr)
 	switch {
-	case bulldozerConfig.Missing():
-		logger.Debug().Msgf("No configuration found for %s", bulldozerConfig)
+	case fc.LoadError != nil:
+		return nil, errors.Wrapf(fc.LoadError, "failed to load configuration: %s: %s", fc.Source, fc.Path)
+
+	case fc.ParseError != nil:
+		logger.Warn().Msgf("Invalid configuration in %s: %s", fc.Source, fc.Path)
 		return nil, nil
-	case bulldozerConfig.Invalid():
-		logger.Warn().Msgf("Configuration is invalid for %s", bulldozerConfig)
+
+	case fc.Config == nil:
+		logger.Debug().Msg("No configuration defined for repository")
 		return nil, nil
 	}
 
-	logger.Debug().Msgf("Found valid configuration for %s", bulldozerConfig)
-	return bulldozerConfig.Config, nil
+	return fc.Config, nil
 }
 
 func (b *Base) ProcessPullRequest(ctx context.Context, pullCtx pull.Context, client *github.Client, config *bulldozer.Config, pr *github.PullRequest) error {

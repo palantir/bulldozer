@@ -20,11 +20,11 @@ import (
 	"github.com/c2h5oh/datasize"
 	"github.com/die-net/lrucache"
 	"github.com/gregjones/httpcache"
-	"github.com/palantir/bulldozer/bulldozer"
 	"github.com/palantir/bulldozer/server/handler"
 	"github.com/palantir/bulldozer/version"
 	"github.com/palantir/go-baseapp/baseapp"
 	"github.com/palantir/go-baseapp/baseapp/datadog"
+	"github.com/palantir/go-githubapp/appconfig"
 	"github.com/palantir/go-githubapp/githubapp"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
@@ -69,9 +69,24 @@ func New(c *Config) (*Server, error) {
 		return nil, errors.Wrap(err, "failed to initialize Github client creator")
 	}
 
+	configPaths := []string{c.Options.ConfigurationPath}
+	for _, p := range c.Options.ConfigurationV0Paths {
+		if p != c.Options.ConfigurationPath {
+			configPaths = append(configPaths, p)
+		}
+	}
+
 	baseHandler := handler.Base{
 		ClientCreator: clientCreator,
-		ConfigFetcher: bulldozer.NewConfigFetcher(c.Options.ConfigurationPath, c.Options.ConfigurationV0Paths, c.Options.DefaultRepositoryConfig),
+		ConfigFetcher: handler.NewConfigFetcher(
+			appconfig.NewLoader(
+				configPaths,
+				appconfig.WithOwnerDefault(c.Options.SharedRepository, []string{
+					c.Options.SharedConfigurationPath,
+				}),
+			),
+			c.Options.DefaultRepositoryConfig,
+		),
 
 		PushRestrictionUserToken: c.Options.PushRestrictionUserToken,
 	}
