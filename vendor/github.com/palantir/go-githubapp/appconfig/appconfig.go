@@ -25,7 +25,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/google/go-github/v38/github"
+	"github.com/google/go-github/v40/github"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 )
@@ -240,6 +240,18 @@ func (ld *Loader) loadDefaultConfig(ctx context.Context, client *github.Client, 
 		}
 		if !exists {
 			continue
+		}
+
+		// if remote refs are enabled, see if the file is a remote reference
+		if ld.parser != nil {
+			remote, err := ld.parser(p, content)
+			if err != nil {
+				return c, err
+			}
+			if remote != nil {
+				logger.Debug().Msgf("Found remote default configuration at %s in %s", p, c.Source)
+				return ld.loadRemoteConfig(ctx, client, *remote, c)
+			}
 		}
 
 		// non-remote content found, don't try any other paths
