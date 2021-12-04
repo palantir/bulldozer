@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/palantir/bulldozer/pull"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 )
 
