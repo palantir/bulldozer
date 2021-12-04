@@ -24,13 +24,15 @@ import (
 	"github.com/rs/zerolog"
 )
 
+type Signal []string
+
 type Signals struct {
-	Labels            []string `yaml:"labels"`
-	CommentSubstrings []string `yaml:"comment_substrings"`
-	Comments          []string `yaml:"comments"`
-	PRBodySubstrings  []string `yaml:"pr_body_substrings"`
-	Branches          []string `yaml:"branches"`
-	BranchPatterns    []string `yaml:"branch_patterns"`
+	Labels            Signal `yaml:"labels"`
+	CommentSubstrings Signal `yaml:"comment_substrings"`
+	Comments          Signal `yaml:"comments"`
+	PRBodySubstrings  Signal `yaml:"pr_body_substrings"`
+	Branches          Signal `yaml:"branches"`
+	BranchPatterns    Signal `yaml:"branch_patterns"`
 }
 
 func (s *Signals) Enabled() bool {
