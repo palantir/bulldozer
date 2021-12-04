@@ -45,6 +45,17 @@ func IsPRTriggered(ctx context.Context, pullCtx pull.Context, config Signals) (b
 	return matches, reason, err
 }
 
+// IsMergeMethod returns true if ALL signals are fully matched,
+// false otherwise. Additionally, a description of the reason will be returned.
+func IsMergeMethodTriggered(ctx context.Context, pullCtx pull.Context, config Signals) (bool, string, error) {
+	matches, reason, err := config.MatchesAll(ctx, pullCtx, "triggered")
+	if err != nil {
+		// trigger must always fail closed (no match on error)
+		return false, reason, err
+	}
+	return matches, reason, err
+}
+
 // statusSetDifference returns all statuses in required that are not in actual,
 // accouting for special behavior in GitHub.
 func statusSetDifference(required, actual []string) []string {
