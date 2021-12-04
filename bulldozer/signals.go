@@ -35,7 +35,7 @@ type Signals struct {
 	BranchPatterns    Signal `yaml:"branch_patterns"`
 }
 
-func (s *Signals) Enabled() bool {
+func (s *Signals) size() int {
 	size := 0
 	size += len(s.Labels)
 	size += len(s.CommentSubstrings)
@@ -43,7 +43,13 @@ func (s *Signals) Enabled() bool {
 	size += len(s.PRBodySubstrings)
 	size += len(s.Branches)
 	size += len(s.BranchPatterns)
-	return size > 0
+	return size
+}
+
+func (s *Signals) Enabled() bool {
+	return s.size() > 0
+}
+
 }
 
 // MatchesAny returns true if the pull request meets one or more signals. It also
