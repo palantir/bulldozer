@@ -44,7 +44,6 @@ func (s *Signals) Enabled() bool {
 	return size > 0
 }
 
-// Matches returns true if the pull request meets one or more signals. It also
 // MatchesAny returns true if the pull request meets one or more signals. It also
 // returns a description of the signal that was met. The tag argument appears
 // in this description and indicates the behavior (trigger, ignore) this
