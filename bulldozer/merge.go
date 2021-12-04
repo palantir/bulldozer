@@ -156,6 +156,21 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 
 	base, head := pullCtx.Branches()
 	mergeMethod := mergeConfig.Method
+	for i := 0; i < len(mergeConfig.Methods); i++ {
+		conditionalMethod := mergeConfig.Methods[i]
+		triggered, reason, err := IsMergeMethodTriggered(ctx, pullCtx, conditionalMethod.Trigger)
+		if err != nil {
+			logger.Error().Err(err).Msg("Failed to determine if merge method is triggered")
+			return
+		}
+
+		if triggered {
+			mergeMethod = conditionalMethod.Method
+			logger.Debug().Msgf("%s method is triggered because %s matched", mergeMethod, reason)
+			break
+		}
+	}
+
 
 	if branchMergeMethod, ok := mergeConfig.BranchMethod[base]; ok {
 		mergeMethod = branchMergeMethod
