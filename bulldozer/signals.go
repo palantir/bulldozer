@@ -36,6 +36,10 @@ type Signals struct {
 	BranchPatterns    Signal `yaml:"branch_patterns"`
 }
 
+type SignalsMatches struct {
+	Signals
+}
+
 func (s *Signals) size() int {
 	size := 0
 	size += len(s.Labels)
@@ -51,6 +55,54 @@ func (s *Signals) Enabled() bool {
 	return s.size() > 0
 }
 
+// MatchesAll returns true if the pull request matches ALL of the signals. It also
+// returns a description of the match status. The tag argument appears
+// in this description and indicates the behavior (trigger, ignore) this
+// set of signals is associated with.
+func (s *Signals) MatchesAll(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
+	matches := SignalsMatches{}
+	var err error
+
+	_, matches.Labels, err = s.labelMatches(ctx, pullCtx, tag)
+	// TODO: Collect errors as a list
+	if err != nil {
+		return false, "", err
+	}
+
+	_, matches.Comments, err = s.commentMatches(ctx, pullCtx, tag)
+	if err != nil {
+		return false, "", err
+	}
+
+	_, matches.CommentSubstrings, err = s.commentSubstringMatches(ctx, pullCtx, tag)
+	if err != nil {
+		return false, "", err
+	}
+
+	_, matches.PRBodySubstrings, err = s.prBodyMatches(ctx, pullCtx, tag)
+	if err != nil {
+		return false, "", err
+	}
+
+	_, matches.Branches, err = s.branchMatches(ctx, pullCtx, tag)
+	if err != nil {
+		return false, "", err
+	}
+
+	_, matches.BranchPatterns, err = s.branchPatternMatches(ctx, pullCtx, tag)
+	if err != nil {
+		return false, "", err
+	}
+
+	logger := zerolog.Ctx(ctx)
+	logger.Debug().Msgf("matches count: %d", matches.size())
+	logger.Debug().Msgf("singals count: %d", s.size())
+
+	if matches.size() == s.size() {
+		return true, fmt.Sprintf("pull request matches all %s signals", tag), nil
+	}
+
+	return false, fmt.Sprintf("pull request does not match all %s signals", tag), nil
 }
 
 // MatchesAny returns true if the pull request meets one or more signals. It also
