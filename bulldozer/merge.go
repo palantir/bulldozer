@@ -156,6 +156,11 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 
 	base, head := pullCtx.Branches()
 	mergeMethod := mergeConfig.Method
+	
+	if branchMergeMethod, ok := mergeConfig.BranchMethod[base]; ok {
+		mergeMethod = branchMergeMethod
+	}
+
 	for i := 0; i < len(mergeConfig.Methods); i++ {
 		conditionalMethod := mergeConfig.Methods[i]
 		triggered, reason, err := IsMergeMethodTriggered(ctx, pullCtx, conditionalMethod.Trigger)
@@ -171,10 +176,6 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 		}
 	}
 
-
-	if branchMergeMethod, ok := mergeConfig.BranchMethod[base]; ok {
-		mergeMethod = branchMergeMethod
-	}
 	if !isValidMergeMethod(mergeMethod) {
 		mergeMethod = MergeCommit
 	}
