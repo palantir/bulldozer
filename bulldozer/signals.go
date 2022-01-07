@@ -233,7 +233,6 @@ func (s *Signals) commentMatches(ctx context.Context, pullCtx pull.Context, tag 
 			matches = append(matches, signalComment)
 			descriptions = append(descriptions, fmt.Sprintf("pull request body is a %s comment: %q", tag, signalComment))
 		} else {
-			// TODO: Use a set and remove the else
 			for _, comment := range comments {
 				if comment == signalComment {
 					matches = append(matches, signalComment)
@@ -277,7 +276,6 @@ func (s *Signals) commentSubstringMatches(ctx context.Context, pullCtx pull.Cont
 			matches = append(matches, signalSubstring)
 			descriptions = append(descriptions, fmt.Sprintf("pull request body matches a %s substring: %q", tag, signalSubstring))
 		} else {
-			// TODO: Use a set and remove the else
 			for _, comment := range comments {
 				if strings.Contains(comment, signalSubstring) {
 					matches = append(matches, signalSubstring)
