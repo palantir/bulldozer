@@ -125,7 +125,7 @@ func (s *Signals) MatchesAny(ctx context.Context, pullCtx pull.Context, tag stri
 		return true, descriptions[0], nil
 	}
 
-	descriptions, _, err = s.commentMatches(ctx, pullCtx, tag)
+	descriptions, matches, err = s.commentMatches(ctx, pullCtx, tag)
 	if err != nil {
 		return false, "", err
 	}
@@ -134,7 +134,7 @@ func (s *Signals) MatchesAny(ctx context.Context, pullCtx pull.Context, tag stri
 		return true, descriptions[0], nil
 	}
 
-	descriptions, _, err = s.commentSubstringMatches(ctx, pullCtx, tag)
+	descriptions, matches, err = s.commentSubstringMatches(ctx, pullCtx, tag)
 	if err != nil {
 		return false, "", err
 	}
@@ -143,7 +143,7 @@ func (s *Signals) MatchesAny(ctx context.Context, pullCtx pull.Context, tag stri
 		return true, descriptions[0], nil
 	}
 
-	descriptions, _, err = s.prBodyMatches(ctx, pullCtx, tag)
+	descriptions, matches, err = s.prBodyMatches(ctx, pullCtx, tag)
 	if err != nil {
 		return false, "", err
 	}
@@ -152,7 +152,7 @@ func (s *Signals) MatchesAny(ctx context.Context, pullCtx pull.Context, tag stri
 		return true, descriptions[0], nil
 	}
 
-	descriptions, _, err = s.branchMatches(ctx, pullCtx, tag)
+	descriptions, matches, err = s.branchMatches(ctx, pullCtx, tag)
 	if err != nil {
 		return false, "", err
 	}
@@ -161,7 +161,7 @@ func (s *Signals) MatchesAny(ctx context.Context, pullCtx pull.Context, tag stri
 		return true, descriptions[0], nil
 	}
 
-	descriptions, _, err = s.branchPatternMatches(ctx, pullCtx, tag)
+	descriptions, matches, err = s.branchPatternMatches(ctx, pullCtx, tag)
 	if err != nil {
 		return false, "", err
 	}
