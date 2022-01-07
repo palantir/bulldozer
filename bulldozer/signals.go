@@ -34,6 +34,7 @@ type Signals struct {
 	PRBodySubstrings  Signal `yaml:"pr_body_substrings"`
 	Branches          Signal `yaml:"branches"`
 	BranchPatterns    Signal `yaml:"branch_patterns"`
+	MaxCommits        int `yaml:"max_commits"`
 }
 
 type SignalsMatches struct {
@@ -90,6 +91,11 @@ func (s *Signals) MatchesAll(ctx context.Context, pullCtx pull.Context, tag stri
 	}
 
 	_, matches.BranchPatterns, err = s.branchPatternMatches(ctx, pullCtx, tag)
+	if err != nil {
+		return false, "", err
+	}
+
+	_, matches.MaxCommits, err = s.maxCommitsMatches(ctx, pullCtx, tag)
 	if err != nil {
 		return false, "", err
 	}
@@ -376,6 +382,34 @@ func (s *Signals) branchPatternMatches(ctx context.Context, pullCtx pull.Context
 			matches = append(matches, signalBranch)
 			descriptions = append(descriptions, fmt.Sprintf("pull request target branch (%q) matches pattern: %q", targetBranch, signalBranch))
 		}
+	}
+
+	return descriptions, matches, nil
+}
+
+// maxCommitsMatches determines if the number of commits in a PR is at or below a given max. It returns:
+// - An empty list if there is no match, otherwise a single string description of the match
+// - A match value of 0 if there is no match, otherwise the value of the max commits signal
+func (s *Signals) maxCommitsMatches(ctx context.Context, pullCtx pull.Context, tag string) ([]string, int, error) {
+	logger := zerolog.Ctx(ctx)
+	matches := 0
+	descriptions := []string{}
+
+	if s.MaxCommits <= 0 {
+		logger.Debug().Msgf("No valid max commits value has been provided to match against")
+		return descriptions, matches, nil
+	}
+	
+	commits, _ := pullCtx.Commits(ctx)
+
+	if len(commits) < s.MaxCommits {
+		matches = s.MaxCommits
+		descriptions = append(descriptions, fmt.Sprintf("pull request has %q commits, which is less than the maximum of %q", len(commits), s.MaxCommits))
+	}
+
+	if len(commits) == s.MaxCommits {
+		matches = s.MaxCommits
+		descriptions = append(descriptions, fmt.Sprintf("pull request has %q commits, which is the maximum", len(commits)))
 	}
 
 	return descriptions, matches, nil
