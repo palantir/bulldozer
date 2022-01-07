@@ -175,6 +175,11 @@ func (s *Signals) labelMatches(ctx context.Context, pullCtx pull.Context, tag st
 	matches := Signal{}
 	descriptions := []string{}
 
+	if len(s.Labels) == 0 {
+		logger.Debug().Msgf("No label singals have been provided to match against")
+		return descriptions, matches, nil
+	}
+
 	labels, err := pullCtx.Labels(ctx)
 	if err != nil {
 		return descriptions, matches, errors.Wrap(err, "unable to list pull request labels")
@@ -182,6 +187,7 @@ func (s *Signals) labelMatches(ctx context.Context, pullCtx pull.Context, tag st
 
 	if len(labels) == 0 {
 		logger.Debug().Msgf("No labels found to match against")
+		return descriptions, matches, nil
 	}
 
 	for _, signalLabel := range s.Labels {
@@ -204,6 +210,11 @@ func (s *Signals) commentMatches(ctx context.Context, pullCtx pull.Context, tag 
 	matches := Signal{}
 	descriptions := []string{}
 
+	if len(s.Comments) == 0 {
+		logger.Debug().Msgf("No comment singals have been provided to match against")
+		return descriptions, matches, nil
+	}
+
 	body := pullCtx.Body()
 	comments, err := pullCtx.Comments(ctx)
 	if err != nil {
@@ -212,6 +223,7 @@ func (s *Signals) commentMatches(ctx context.Context, pullCtx pull.Context, tag 
 
 	if len(comments) == 0 {
 		logger.Debug().Msgf("No comments found to match against")
+		return descriptions, matches, nil
 	}
 
 	for _, signalComment := range s.Comments {
@@ -241,6 +253,11 @@ func (s *Signals) commentSubstringMatches(ctx context.Context, pullCtx pull.Cont
 	matches := Signal{}
 	descriptions := []string{}
 
+	if len(s.CommentSubstrings) == 0 {
+		logger.Debug().Msgf("No comment substring singals have been provided to match against")
+		return descriptions, matches, nil
+	}
+
 	body := pullCtx.Body()
 	comments, err := pullCtx.Comments(ctx)
 	if err != nil {
@@ -249,6 +266,7 @@ func (s *Signals) commentSubstringMatches(ctx context.Context, pullCtx pull.Cont
 
 	if len(s.CommentSubstrings) == 0 {
 		logger.Debug().Msgf("No comment substrings found to match against")
+		return descriptions, matches, nil
 	}
 
 	for _, signalSubstring := range s.CommentSubstrings {
@@ -277,10 +295,16 @@ func (s *Signals) prBodyMatches(ctx context.Context, pullCtx pull.Context, tag s
 	matches := Signal{}
 	descriptions := []string{}
 
+	if len(s.PRBodySubstrings) == 0 {
+		logger.Debug().Msgf("No pr body substring singals have been provided to match against")
+		return descriptions, matches, nil
+	}
+
 	body := pullCtx.Body()
 
 	if len(s.PRBodySubstrings) == 0 {
 		logger.Debug().Msgf("No PR body substrings found to match against")
+		return descriptions, matches, nil
 	}
 
 	for _, signalSubstring := range s.PRBodySubstrings {
@@ -301,10 +325,16 @@ func (s *Signals) branchMatches(ctx context.Context, pullCtx pull.Context, tag s
 	matches := Signal{}
 	descriptions := []string{}
 
+	if len(s.Branches) == 0 {
+		logger.Debug().Msgf("No branch singals have been provided to match against")
+		return descriptions, matches, nil
+	}
+
 	targetBranch, _ := pullCtx.Branches()
 
 	if len(s.Branches) == 0 {
 		logger.Debug().Msgf("No branches found to match against")
+		return descriptions, matches, nil
 	}
 
 	for _, signalBranch := range s.Branches {
@@ -325,10 +355,16 @@ func (s *Signals) branchPatternMatches(ctx context.Context, pullCtx pull.Context
 	matches := Signal{}
 	descriptions := []string{}
 
+	if len(s.BranchPatterns) == 0 {
+		logger.Debug().Msgf("No branch pattern singals have been provided to match against")
+		return descriptions, matches, nil
+	}
+
 	targetBranch, _ := pullCtx.Branches()
 
 	if len(s.BranchPatterns) == 0 {
 		logger.Debug().Msgf("No branch patterns found to match against")
+		return descriptions, matches, nil
 	}
 
 	for _, signalBranch := range s.BranchPatterns {
