@@ -161,8 +161,7 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 		mergeMethod = branchMergeMethod
 	}
 
-	for i := 0; i < len(mergeConfig.Methods); i++ {
-		conditionalMethod := mergeConfig.Methods[i]
+	for _, conditionalMethod := range mergeConfig.Methods {
 		triggered, reason, err := IsMergeMethodTriggered(ctx, pullCtx, conditionalMethod.Trigger)
 		if err != nil {
 			logger.Error().Err(err).Msg("Failed to determine if merge method is triggered")
