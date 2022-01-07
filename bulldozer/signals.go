@@ -96,7 +96,7 @@ func (s *Signals) MatchesAll(ctx context.Context, pullCtx pull.Context, tag stri
 
 	logger := zerolog.Ctx(ctx)
 	logger.Debug().Msgf("matches count: %d", matches.size())
-	logger.Debug().Msgf("singals count: %d", s.size())
+	logger.Debug().Msgf("signals count: %d", s.size())
 
 	if matches.size() == s.size() {
 		return true, fmt.Sprintf("pull request matches all %s signals", tag), nil
