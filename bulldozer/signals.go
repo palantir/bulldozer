@@ -169,6 +169,7 @@ func (s *Signals) MatchesAny(ctx context.Context, pullCtx pull.Context, tag stri
 
 // labelMatches determines which label signals match the given PR. It returns:
 // - A list of descriptions for each matched signal
+//   - These will only include the first item the signal matched when there is more than one
 // - A list of the matched signals
 func (s *Signals) labelMatches(ctx context.Context, pullCtx pull.Context, tag string) ([]string, Signal, error) {
 	logger := zerolog.Ctx(ctx)
@@ -204,6 +205,7 @@ func (s *Signals) labelMatches(ctx context.Context, pullCtx pull.Context, tag st
 
 // commentMatches determines which comment signals match the given PR. It returns:
 // - A list of descriptions for each matched signal
+//   - These will only include the first item the signal matched when there is more than one
 // - A list of the matched signals
 func (s *Signals) commentMatches(ctx context.Context, pullCtx pull.Context, tag string) ([]string, Signal, error) {
 	logger := zerolog.Ctx(ctx)
@@ -247,6 +249,7 @@ func (s *Signals) commentMatches(ctx context.Context, pullCtx pull.Context, tag 
 
 // commentSubstringMatches determines which comment substring signals match the given PR. It returns:
 // - A list of descriptions for each matched signal
+//   - These will only include the first item the signal matched when there is more than one
 // - A list of the matched signals
 func (s *Signals) commentSubstringMatches(ctx context.Context, pullCtx pull.Context, tag string) ([]string, Signal, error) {
 	logger := zerolog.Ctx(ctx)
@@ -289,6 +292,7 @@ func (s *Signals) commentSubstringMatches(ctx context.Context, pullCtx pull.Cont
 
 // prBodyMatches determines which PR body signals match the given PR. It returns:
 // - A list of descriptions for each matched signal
+//   - These will only include the first item the signal matched when there is more than one
 // - A list of the matched signals
 func (s *Signals) prBodyMatches(ctx context.Context, pullCtx pull.Context, tag string) ([]string, Signal, error) {
 	logger := zerolog.Ctx(ctx)
@@ -319,6 +323,7 @@ func (s *Signals) prBodyMatches(ctx context.Context, pullCtx pull.Context, tag s
 
 // branchMatches determines which branch signals match the given PR. It returns:
 // - A list of descriptions for each matched signal
+//   - These will only include the first item the signal matched when there is more than one
 // - A list of the matched signals
 func (s *Signals) branchMatches(ctx context.Context, pullCtx pull.Context, tag string) ([]string, Signal, error) {
 	logger := zerolog.Ctx(ctx)
@@ -349,6 +354,7 @@ func (s *Signals) branchMatches(ctx context.Context, pullCtx pull.Context, tag s
 
 // branchPatternMatches determines which branch pattern signals match the given PR. It returns:
 // - A list of descriptions for each matched signal
+//   - These will only include the first item the signal matched when there is more than one
 // - A list of the matched signals
 func (s *Signals) branchPatternMatches(ctx context.Context, pullCtx pull.Context, tag string) ([]string, Signal, error) {
 	logger := zerolog.Ctx(ctx)
