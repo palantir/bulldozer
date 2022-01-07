@@ -45,7 +45,7 @@ func IsPRTriggered(ctx context.Context, pullCtx pull.Context, config Signals) (b
 	return matches, reason, err
 }
 
-// IsMergeMethod returns true if ALL signals are fully matched,
+// IsMergeMethodTriggered returns true if ALL signals are fully matched,
 // false otherwise. Additionally, a description of the reason will be returned.
 func IsMergeMethodTriggered(ctx context.Context, pullCtx pull.Context, config Signals) (bool, string, error) {
 	matches, reason, err := config.MatchesAll(ctx, pullCtx, "triggered")
