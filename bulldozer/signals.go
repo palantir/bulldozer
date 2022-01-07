@@ -229,8 +229,8 @@ func (s *Signals) commentMatches(ctx context.Context, pullCtx pull.Context, tag 
 		return descriptions, matches, errors.Wrap(err, "unable to list pull request comments")
 	}
 
-	if len(comments) == 0 {
-		logger.Debug().Msgf("No comments found to match against")
+	if len(comments) == 0 && body == "" {
+		logger.Debug().Msgf("No comments or body content found to match against")
 		return descriptions, matches, nil
 	}
 
@@ -272,8 +272,8 @@ func (s *Signals) commentSubstringMatches(ctx context.Context, pullCtx pull.Cont
 		return descriptions, matches, errors.Wrap(err, "unable to list pull request comments")
 	}
 
-	if len(s.CommentSubstrings) == 0 {
-		logger.Debug().Msgf("No comment substrings found to match against")
+	if len(comments) == 0 && body == "" {
+		logger.Debug().Msgf("No comments or body content found to match against")
 		return descriptions, matches, nil
 	}
 
@@ -310,8 +310,8 @@ func (s *Signals) prBodyMatches(ctx context.Context, pullCtx pull.Context, tag s
 
 	body := pullCtx.Body()
 
-	if len(s.PRBodySubstrings) == 0 {
-		logger.Debug().Msgf("No PR body substrings found to match against")
+	if body == "" {
+		logger.Debug().Msgf("No body content found to match against")
 		return descriptions, matches, nil
 	}
 
