@@ -45,7 +45,7 @@ type MergeConfig struct {
 	AllowMergeWithNoChecks bool `yaml:"allow_merge_with_no_checks"`
 
 	Method  MergeMethod        `yaml:"method"`
-	Methods []ConditionalMerge `yaml:"methods"`
+	Methods []ConditionalMerge `yaml:"merge_method"`
 	Options MergeOptions       `yaml:"options"`
 
 	BranchMethod map[string]MergeMethod `yaml:"branch_method"`
