@@ -341,11 +341,6 @@ func (s *Signals) branchMatches(ctx context.Context, pullCtx pull.Context, tag s
 
 	targetBranch, _ := pullCtx.Branches()
 
-	if len(s.Branches) == 0 {
-		logger.Debug().Msgf("No branches found to match against")
-		return descriptions, matches, nil
-	}
-
 	for _, signalBranch := range s.Branches {
 		if targetBranch == signalBranch {
 			matches = append(matches, signalBranch)
@@ -371,11 +366,6 @@ func (s *Signals) branchPatternMatches(ctx context.Context, pullCtx pull.Context
 	}
 
 	targetBranch, _ := pullCtx.Branches()
-
-	if len(s.BranchPatterns) == 0 {
-		logger.Debug().Msgf("No branch patterns found to match against")
-		return descriptions, matches, nil
-	}
 
 	for _, signalBranch := range s.BranchPatterns {
 		if matched, _ := regexp.MatchString(fmt.Sprintf("^%s$", signalBranch), targetBranch); matched {
