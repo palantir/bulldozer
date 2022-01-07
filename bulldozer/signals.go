@@ -49,6 +49,9 @@ func (s *Signals) size() int {
 	size += len(s.PRBodySubstrings)
 	size += len(s.Branches)
 	size += len(s.BranchPatterns)
+	if s.MaxCommits > 0 {
+		size += 1 
+	}
 	return size
 }
 
