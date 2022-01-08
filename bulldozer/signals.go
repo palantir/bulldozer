@@ -37,22 +37,35 @@ type Signals struct {
 	MaxCommits        int `yaml:"max_commits"`
 }
 
-func (s *Signals) size() int {
-	size := 0
-	size += len(s.Labels)
-	size += len(s.CommentSubstrings)
-	size += len(s.Comments)
-	size += len(s.PRBodySubstrings)
-	size += len(s.Branches)
-	size += len(s.BranchPatterns)
-	if s.MaxCommits > 0 {
-		size += 1 
+// count returns the number of signals that are non-zero value
+func (s *Signals) count() int {
+	count := 0
+	if len(s.Labels) > 0 {
+		count += 1 
 	}
-	return size
+	if len(s.CommentSubstrings) > 0 {
+		count += 1 
+	}
+	if len(s.Comments) > 0 {
+		count += 1 
+	}
+	if len(s.PRBodySubstrings) > 0 {
+		count += 1 
+	}
+	if len(s.Branches) > 0 {
+		count += 1 
+	}
+	if len(s.BranchPatterns) > 0 {
+		count += 1 
+	}
+	if s.MaxCommits > 0 {
+		count += 1 
+	}
+	return count
 }
 
 func (s *Signals) Enabled() bool {
-	return s.size() > 0
+	return s.count() > 0
 }
 
 // MatchesAll returns true if the pull request matches ALL of the signals. It also
@@ -99,11 +112,7 @@ func (s *Signals) MatchesAll(ctx context.Context, pullCtx pull.Context, tag stri
 		return false, "", err
 	}
 
-	logger := zerolog.Ctx(ctx)
-	logger.Debug().Msgf("matches count: %d", matches.size())
-	logger.Debug().Msgf("signals count: %d", s.size())
-
-	if matches.size() == s.size() {
+	if matches.count() == s.count() {
 		return true, fmt.Sprintf("pull request matches all %s signals", tag), nil
 	}
 
