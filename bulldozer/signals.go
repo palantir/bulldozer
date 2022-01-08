@@ -37,10 +37,6 @@ type Signals struct {
 	MaxCommits        int `yaml:"max_commits"`
 }
 
-type SignalsMatches struct {
-	Signals
-}
-
 func (s *Signals) size() int {
 	size := 0
 	size += len(s.Labels)
@@ -64,7 +60,7 @@ func (s *Signals) Enabled() bool {
 // in this description and indicates the behavior (trigger, ignore) this
 // set of signals is associated with.
 func (s *Signals) MatchesAll(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
-	matches := SignalsMatches{}
+	matches := Signals{}
 	var err error
 
 	_, matches.Labels, err = s.labelMatches(ctx, pullCtx, tag)
