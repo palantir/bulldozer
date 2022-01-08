@@ -150,12 +150,12 @@ func (m *PushRestrictionMerger) DeleteHead(ctx context.Context, pullCtx pull.Con
 }
 
 // DetermineMergeMethod determines which merge method to use when merging the PR
-func DetermineMergeMethod(ctx context.Context, pullCtx pull.Context, mergeConfig MergeConfig) (MergeMethod, error){
+func DetermineMergeMethod(ctx context.Context, pullCtx pull.Context, mergeConfig MergeConfig) (MergeMethod, error) {
 	logger := zerolog.Ctx(ctx)
 
 	base, _ := pullCtx.Branches()
 	mergeMethod := mergeConfig.Method
-	
+
 	if branchMergeMethod, ok := mergeConfig.BranchMethod[base]; ok {
 		mergeMethod = branchMergeMethod
 	}

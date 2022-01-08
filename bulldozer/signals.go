@@ -34,32 +34,32 @@ type Signals struct {
 	PRBodySubstrings  Signal `yaml:"pr_body_substrings"`
 	Branches          Signal `yaml:"branches"`
 	BranchPatterns    Signal `yaml:"branch_patterns"`
-	MaxCommits        int `yaml:"max_commits"`
+	MaxCommits        int    `yaml:"max_commits"`
 }
 
 // count returns the number of signals that are non-zero value
 func (s *Signals) count() int {
 	count := 0
 	if len(s.Labels) > 0 {
-		count += 1 
+		count += 1
 	}
 	if len(s.CommentSubstrings) > 0 {
-		count += 1 
+		count += 1
 	}
 	if len(s.Comments) > 0 {
-		count += 1 
+		count += 1
 	}
 	if len(s.PRBodySubstrings) > 0 {
-		count += 1 
+		count += 1
 	}
 	if len(s.Branches) > 0 {
-		count += 1 
+		count += 1
 	}
 	if len(s.BranchPatterns) > 0 {
-		count += 1 
+		count += 1
 	}
 	if s.MaxCommits > 0 {
-		count += 1 
+		count += 1
 	}
 	return count
 }
@@ -397,7 +397,7 @@ func (s *Signals) maxCommitsMatches(ctx context.Context, pullCtx pull.Context, t
 		logger.Debug().Msgf("No valid max commits value has been provided to match against")
 		return descriptions, matches, nil
 	}
-	
+
 	commits, _ := pullCtx.Commits(ctx)
 
 	if len(commits) < s.MaxCommits {

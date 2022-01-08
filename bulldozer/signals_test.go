@@ -193,8 +193,7 @@ func TestSignalsMatchesAll(t *testing.T) {
 		},
 		"matchWithZeroCommits": {
 			PullContext: &pulltest.MockPullContext{
-				CommitsValue: []*pull.Commit{
-				},
+				CommitsValue: []*pull.Commit{},
 			},
 			Matches: true,
 			Reason:  `pull request matches all testlist signals`,
