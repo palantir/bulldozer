@@ -153,7 +153,7 @@ func (m *PushRestrictionMerger) DeleteHead(ctx context.Context, pullCtx pull.Con
 func DetermineMergeMethod(ctx context.Context, pullCtx pull.Context, mergeConfig MergeConfig) (MergeMethod, error){
 	logger := zerolog.Ctx(ctx)
 
-	base, head := pullCtx.Branches()
+	base, _ := pullCtx.Branches()
 	mergeMethod := mergeConfig.Method
 	
 	if branchMergeMethod, ok := mergeConfig.BranchMethod[base]; ok {
@@ -237,6 +237,7 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 		time.Sleep(4 * time.Second)
 	}
 
+	_, head := pullCtx.Branches()
 	if merged {
 		if mergeConfig.DeleteAfterMerge {
 			attemptDelete(ctx, pullCtx, head, merger)
