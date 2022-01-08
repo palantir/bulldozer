@@ -44,9 +44,9 @@ type MergeConfig struct {
 	DeleteAfterMerge       bool `yaml:"delete_after_merge"`
 	AllowMergeWithNoChecks bool `yaml:"allow_merge_with_no_checks"`
 
-	Method  MergeMethod        `yaml:"method"`
-	Methods []ConditionalMerge `yaml:"merge_method"`
-	Options MergeOptions       `yaml:"options"`
+	Method       MergeMethod              `yaml:"method"`
+	MergeMethods []ConditionalMergeMethod `yaml:"merge_method"`
+	Options      MergeOptions             `yaml:"options"`
 
 	BranchMethod map[string]MergeMethod `yaml:"branch_method"`
 
@@ -59,7 +59,7 @@ type MergeOptions struct {
 	Squash *SquashOptions `yaml:"squash"`
 }
 
-type ConditionalMerge struct {
+type ConditionalMergeMethod struct {
 	Method  MergeMethod `yaml:"method"`
 	Trigger Signals     `yaml:"trigger"`
 }

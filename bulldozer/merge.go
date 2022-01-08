@@ -160,7 +160,7 @@ func DetermineMergeMethod(ctx context.Context, pullCtx pull.Context, mergeConfig
 		mergeMethod = branchMergeMethod
 	}
 
-	for _, method := range mergeConfig.Methods {
+	for _, method := range mergeConfig.MergeMethods {
 		triggered, reason, err := IsMergeMethodTriggered(ctx, pullCtx, method.Trigger)
 		if err != nil {
 			logger.Error().Err(err).Msg("Failed to determine if merge method is triggered")
