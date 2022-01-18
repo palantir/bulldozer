@@ -8,10 +8,10 @@ require (
 	github.com/google/go-github/v40 v40.0.0
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/palantir/go-baseapp v0.3.1
-	github.com/palantir/go-githubapp v0.10.1
+	github.com/palantir/go-githubapp v0.11.0
 	github.com/pkg/errors v0.9.1
-	github.com/rs/zerolog v1.26.0
-	github.com/spf13/cobra v1.2.1
+	github.com/rs/zerolog v1.26.1
+	github.com/spf13/cobra v1.3.0
 	github.com/stretchr/testify v1.7.0
 	goji.io v2.0.2+incompatible
 	gopkg.in/yaml.v2 v2.4.0
