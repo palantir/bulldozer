@@ -73,7 +73,7 @@ func (h *CheckRun) Handle(ctx context.Context, eventType, deliveryID string, pay
 		}
 		pullCtx := pull.NewGithubContext(client, fullPR)
 
-		config, err := h.FetchConfig(ctx, client, fullPR)
+		config, err := h.FetchConfigForPR(ctx, client, fullPR)
 		if err != nil {
 			return err
 		}

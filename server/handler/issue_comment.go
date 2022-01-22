@@ -56,7 +56,7 @@ func (h *IssueComment) Handle(ctx context.Context, eventType, deliveryID string,
 	}
 	pullCtx := pull.NewGithubContext(client, pr)
 
-	config, err := h.FetchConfig(ctx, client, pr)
+	config, err := h.FetchConfigForPR(ctx, client, pr)
 	if err != nil {
 		return err
 	}
