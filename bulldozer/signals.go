@@ -209,7 +209,7 @@ func (s *Signals) MatchesAny(ctx context.Context, pullCtx pull.Context, tag stri
 // - A list of descriptions for each matched signal
 //   - These will only include the first item the signal matched when there is more than one
 // - A list of the matched signals
-func (s *Signals) labelMatches(ctx context.Context, pullCtx pull.Context, tag string) ([]string, Signal, error) {
+func (s *Signals) labelMatches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
 	logger := zerolog.Ctx(ctx)
 	matches := Signal{}
 	descriptions := []string{}
@@ -245,7 +245,7 @@ func (s *Signals) labelMatches(ctx context.Context, pullCtx pull.Context, tag st
 // - A list of descriptions for each matched signal
 //   - These will only include the first item the signal matched when there is more than one
 // - A list of the matched signals
-func (s *Signals) commentMatches(ctx context.Context, pullCtx pull.Context, tag string) ([]string, Signal, error) {
+func (s *Signals) commentMatches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
 	logger := zerolog.Ctx(ctx)
 	matches := Signal{}
 	descriptions := []string{}
@@ -288,7 +288,7 @@ func (s *Signals) commentMatches(ctx context.Context, pullCtx pull.Context, tag 
 // - A list of descriptions for each matched signal
 //   - These will only include the first item the signal matched when there is more than one
 // - A list of the matched signals
-func (s *Signals) commentSubstringMatches(ctx context.Context, pullCtx pull.Context, tag string) ([]string, Signal, error) {
+func (s *Signals) commentSubstringMatches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
 	logger := zerolog.Ctx(ctx)
 	matches := Signal{}
 	descriptions := []string{}
@@ -330,7 +330,7 @@ func (s *Signals) commentSubstringMatches(ctx context.Context, pullCtx pull.Cont
 // - A list of descriptions for each matched signal
 //   - These will only include the first item the signal matched when there is more than one
 // - A list of the matched signals
-func (s *Signals) prBodyMatches(ctx context.Context, pullCtx pull.Context, tag string) ([]string, Signal, error) {
+func (s *Signals) prBodyMatches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
 	logger := zerolog.Ctx(ctx)
 	matches := Signal{}
 	descriptions := []string{}
@@ -361,7 +361,7 @@ func (s *Signals) prBodyMatches(ctx context.Context, pullCtx pull.Context, tag s
 // - A list of descriptions for each matched signal
 //   - These will only include the first item the signal matched when there is more than one
 // - A list of the matched signals
-func (s *Signals) branchMatches(ctx context.Context, pullCtx pull.Context, tag string) ([]string, Signal, error) {
+func (s *Signals) branchMatches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
 	logger := zerolog.Ctx(ctx)
 	matches := Signal{}
 	descriptions := []string{}
@@ -387,7 +387,7 @@ func (s *Signals) branchMatches(ctx context.Context, pullCtx pull.Context, tag s
 // - A list of descriptions for each matched signal
 //   - These will only include the first item the signal matched when there is more than one
 // - A list of the matched signals
-func (s *Signals) branchPatternMatches(ctx context.Context, pullCtx pull.Context, tag string) ([]string, Signal, error) {
+func (s *Signals) branchPatternMatches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
 	logger := zerolog.Ctx(ctx)
 	matches := Signal{}
 	descriptions := []string{}
