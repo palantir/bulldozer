@@ -124,58 +124,58 @@ func (s *Signals) MatchesAll(ctx context.Context, pullCtx pull.Context, tag stri
 // in this description and indicates the behavior (trigger, ignore) this
 // set of signals is associated with.
 func (s *Signals) MatchesAny(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
-	descriptions, matches, err := s.labelMatches(ctx, pullCtx, tag)
+	matches, description, err := s.labelMatches(ctx, pullCtx, tag)
 	if err != nil {
 		return false, "", err
 	}
 
-	if len(matches) > 0 {
-		return true, descriptions[0], nil
+	if matches {
+		return true, description, nil
 	}
 
-	descriptions, matches, err = s.commentMatches(ctx, pullCtx, tag)
+	matches, description, err = s.commentMatches(ctx, pullCtx, tag)
 	if err != nil {
 		return false, "", err
 	}
 
-	if len(matches) > 0 {
-		return true, descriptions[0], nil
+	if matches {
+		return true, description, nil
 	}
 
-	descriptions, matches, err = s.commentSubstringMatches(ctx, pullCtx, tag)
+	matches, description, err = s.commentSubstringMatches(ctx, pullCtx, tag)
 	if err != nil {
 		return false, "", err
 	}
 
-	if len(matches) > 0 {
-		return true, descriptions[0], nil
+	if matches {
+		return true, description, nil
 	}
 
-	descriptions, matches, err = s.prBodyMatches(ctx, pullCtx, tag)
+	matches, description, err = s.prBodyMatches(ctx, pullCtx, tag)
 	if err != nil {
 		return false, "", err
 	}
 
-	if len(matches) > 0 {
-		return true, descriptions[0], nil
+	if matches {
+		return true, description, nil
 	}
 
-	descriptions, matches, err = s.branchMatches(ctx, pullCtx, tag)
+	matches, description, err = s.branchMatches(ctx, pullCtx, tag)
 	if err != nil {
 		return false, "", err
 	}
 
-	if len(matches) > 0 {
-		return true, descriptions[0], nil
+	if matches {
+		return true, description, nil
 	}
 
-	descriptions, matches, err = s.branchPatternMatches(ctx, pullCtx, tag)
+	matches, description, err = s.branchPatternMatches(ctx, pullCtx, tag)
 	if err != nil {
 		return false, "", err
 	}
 
-	if len(matches) > 0 {
-		return true, descriptions[0], nil
+	if matches {
+		return true, description, nil
 	}
 
 	return false, fmt.Sprintf("pull request does not match the %s", tag), nil
