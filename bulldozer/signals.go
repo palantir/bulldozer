@@ -76,47 +76,71 @@ func (s *Signals) MatchesAll(ctx context.Context, pullCtx pull.Context, tag stri
 	matches := Signals{}
 	var err error
 
-	_, matches.Labels, err = s.labelMatches(ctx, pullCtx, tag)
-	// TODO: Collect errors as a list
+	matches, _, err = s.labelMatches(ctx, pullCtx, tag)
 	if err != nil {
 		return false, "", err
 	}
 
-	_, matches.Comments, err = s.commentMatches(ctx, pullCtx, tag)
+	if !matches {
+		return false, fmt.Sprintf("pull request does not match all %s signals", tag), nil
+	}
+
+	matches, _, err = s.commentMatches(ctx, pullCtx, tag)
 	if err != nil {
 		return false, "", err
 	}
 
-	_, matches.CommentSubstrings, err = s.commentSubstringMatches(ctx, pullCtx, tag)
+	if !matches {
+		return false, fmt.Sprintf("pull request does not match all %s signals", tag), nil
+	}
+
+	matches, _, err = s.commentSubstringMatches(ctx, pullCtx, tag)
 	if err != nil {
 		return false, "", err
 	}
 
-	_, matches.PRBodySubstrings, err = s.prBodyMatches(ctx, pullCtx, tag)
+	if !matches {
+		return false, fmt.Sprintf("pull request does not match all %s signals", tag), nil
+	}
+
+	matches, _, err = s.prBodyMatches(ctx, pullCtx, tag)
 	if err != nil {
 		return false, "", err
 	}
 
-	_, matches.Branches, err = s.branchMatches(ctx, pullCtx, tag)
+	if !matches {
+		return false, fmt.Sprintf("pull request does not match all %s signals", tag), nil
+	}
+
+	matches, _, err = s.branchMatches(ctx, pullCtx, tag)
 	if err != nil {
 		return false, "", err
 	}
 
-	_, matches.BranchPatterns, err = s.branchPatternMatches(ctx, pullCtx, tag)
+	if !matches {
+		return false, fmt.Sprintf("pull request does not match all %s signals", tag), nil
+	}
+
+	matches, _, err = s.branchPatternMatches(ctx, pullCtx, tag)
 	if err != nil {
 		return false, "", err
 	}
 
-	_, matches.MaxCommits, err = s.maxCommitsMatches(ctx, pullCtx, tag)
+	if !matches {
+		return false, fmt.Sprintf("pull request does not match all %s signals", tag), nil
+	}
+
+	matches, _, err = s.maxCommitsMatches(ctx, pullCtx, tag)
 	if err != nil {
 		return false, "", err
 	}
 
-	if matches.count() == s.count() {
-		return true, fmt.Sprintf("pull request matches all %s signals", tag), nil
+	if !matches {
+		return false, fmt.Sprintf("pull request does not match all %s signals", tag), nil
 	}
 
-	return false, fmt.Sprintf("pull request does not match all %s signals", tag), nil
+	return true, fmt.Sprintf("pull request matches all %s signals", tag), nil
+	
 }
 
 // MatchesAny returns true if the pull request meets one or more signals. It also
