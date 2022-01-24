@@ -107,7 +107,7 @@ func New(c *Config) (*Server, error) {
 			&handler.IssueComment{Base: baseHandler},
 			&handler.PullRequest{Base: baseHandler},
 			&handler.PullRequestReview{Base: baseHandler},
-			&handler.Push{Base: baseHandler},
+			&handler.Push{Base: baseHandler, Delays: c.Options.PullUpdateDelays},
 			&handler.Status{Base: baseHandler},
 		},
 		c.Github.App.WebhookSecret,

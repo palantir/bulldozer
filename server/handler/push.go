@@ -27,15 +27,19 @@ import (
 )
 
 const (
-	PullQueryDelay = 250 * time.Millisecond
-
-	PullUpdateBaseDelay = 1 * time.Second
-	PullUpdateMaxDelay  = 60 * time.Second
-	PullUpdateDelayMult = 1.5
+	DefaultPullUpdateQueryDelay = 250 * time.Millisecond
+	DefaultPullUpdateDelay      = 2 * time.Second
 )
+
+type PullUpdateDelays struct {
+	PullUpdateQueryDelay *time.Duration `yaml:"pull_update_query_delay"`
+	PullUpdateDelay      *time.Duration `yaml:"pull_update_delay"`
+}
 
 type Push struct {
 	Base
+
+	Delays PullUpdateDelays
 }
 
 func (h *Push) Handles() []string {
@@ -111,7 +115,7 @@ func (h *Push) Handle(ctx context.Context, eventType, deliveryID string, payload
 		}
 
 		if i < len(prs)-1 {
-			time.Sleep(delay(i, PullQueryDelay, 1, PullQueryDelay))
+			time.Sleep(delay(h.Delays.PullUpdateQueryDelay, DefaultPullUpdateQueryDelay))
 		}
 	}
 
@@ -119,9 +123,7 @@ func (h *Push) Handle(ctx context.Context, eventType, deliveryID string, payload
 	for i, pr := range toUpdate {
 		bulldozer.UpdatePR(pr.ctx, pr.pullCtx, client, config.Update, baseRef)
 		if i < len(toUpdate)-1 {
-			d := delay(i, PullUpdateBaseDelay, PullUpdateDelayMult, PullUpdateMaxDelay)
-			logger.Debug().Msgf("Waiting %v until next update to avoid GitHub rate limits", d)
-			time.Sleep(d)
+			time.Sleep(delay(h.Delays.PullUpdateDelay, DefaultPullUpdateDelay))
 		}
 	}
 
@@ -133,15 +135,11 @@ type updateCtx struct {
 	pullCtx pull.Context
 }
 
-func delay(iter int, base time.Duration, mult float64, max time.Duration) time.Duration {
-	t := base
-	for ; iter > 0; iter-- {
-		t = time.Duration(mult * float64(t))
-		if t > max {
-			return max
-		}
+func delay(opt *time.Duration, def time.Duration) time.Duration {
+	if opt != nil {
+		return *opt
 	}
-	return t
+	return def
 }
 
 // type assertion
