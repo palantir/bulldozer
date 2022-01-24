@@ -44,12 +44,8 @@ func NewConfigFetcher(loader *appconfig.Loader, defaultConfig *bulldozer.Config)
 	}
 }
 
-func (cf *ConfigFetcher) ConfigForPR(ctx context.Context, client *github.Client, pr *github.PullRequest) FetchedConfig {
+func (cf *ConfigFetcher) Config(ctx context.Context, client *github.Client, owner, repo, ref string) FetchedConfig {
 	logger := zerolog.Ctx(ctx)
-
-	owner := pr.GetBase().GetRepo().GetOwner().GetLogin()
-	repo := pr.GetBase().GetRepo().GetName()
-	ref := pr.GetBase().GetRef()
 
 	c, err := cf.loader.LoadConfig(ctx, client, owner, repo, ref)
 	fc := FetchedConfig{

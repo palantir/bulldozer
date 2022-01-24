@@ -53,6 +53,7 @@ func (h *Push) Handle(ctx context.Context, eventType, deliveryID string, payload
 	}
 
 	ctx, logger := githubapp.PrepareRepoContext(ctx, installationID, ghRepo)
+	logger.Debug().Msgf("Received push event with base ref %s", baseRef)
 
 	client, err := h.ClientCreator.NewInstallationClient(installationID)
 	if err != nil {
@@ -63,24 +64,22 @@ func (h *Push) Handle(ctx context.Context, eventType, deliveryID string, payload
 	if err != nil {
 		return errors.Wrap(err, "failed to determine open pull requests matching the push change")
 	}
-
-	logger.Debug().Msgf("received push event with base ref %s", baseRef)
-
 	if len(prs) == 0 {
-		logger.Debug().Msg("Doing nothing since push event affects no open pull requests")
+		logger.Debug().Msgf("Doing nothing since push to %s affects no open pull requests", baseRef)
 		return nil
 	}
 
+	// Fetch configuration once, since we know all PRs target the same ref
+	config, err := h.FetchConfig(ctx, client, owner, repoName, baseRef)
+	if err != nil {
+		return err
+	}
+
 	for _, pr := range prs {
-		pullCtx := pull.NewGithubContext(client, pr)
 		logger := logger.With().Int(githubapp.LogKeyPRNum, pr.GetNumber()).Logger()
+		logger.Debug().Msgf("Considering pull request for update")
 
-		config, err := h.FetchConfig(ctx, client, pr)
-		if err != nil {
-			return errors.Wrap(err, "failed to fetch configuration")
-		}
-
-		logger.Debug().Msgf("checking status for updated sha %s", baseRef)
+		pullCtx := pull.NewGithubContext(client, pr)
 		if _, err := h.UpdatePullRequest(logger.WithContext(ctx), pullCtx, client, config, pr, baseRef); err != nil {
 			logger.Error().Err(errors.WithStack(err)).Msg("Error updating pull request")
 		}

@@ -67,7 +67,7 @@ func (h *Status) Handle(ctx context.Context, eventType, deliveryID string, paylo
 	for _, pr := range prs {
 		pullCtx := pull.NewGithubContext(client, pr)
 		logger := logger.With().Int(githubapp.LogKeyPRNum, pr.GetNumber()).Logger()
-		config, err := h.FetchConfig(ctx, client, pr)
+		config, err := h.FetchConfigForPR(ctx, client, pr)
 		if err != nil {
 			return err
 		}

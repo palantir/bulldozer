@@ -32,10 +32,17 @@ type Base struct {
 	PushRestrictionUserToken string
 }
 
-func (b *Base) FetchConfig(ctx context.Context, client *github.Client, pr *github.PullRequest) (*bulldozer.Config, error) {
+func (b *Base) FetchConfigForPR(ctx context.Context, client *github.Client, pr *github.PullRequest) (*bulldozer.Config, error) {
+	owner := pr.GetBase().GetRepo().GetOwner().GetLogin()
+	repo := pr.GetBase().GetRepo().GetName()
+	ref := pr.GetBase().GetRef()
+	return b.FetchConfig(ctx, client, owner, repo, ref)
+}
+
+func (b *Base) FetchConfig(ctx context.Context, client *github.Client, owner, repo, ref string) (*bulldozer.Config, error) {
 	logger := zerolog.Ctx(ctx)
 
-	fc := b.ConfigFetcher.ConfigForPR(ctx, client, pr)
+	fc := b.ConfigFetcher.Config(ctx, client, owner, repo, ref)
 	switch {
 	case fc.LoadError != nil:
 		return nil, errors.Wrapf(fc.LoadError, "failed to load configuration: %s: %s", fc.Source, fc.Path)

@@ -56,7 +56,7 @@ func (h *PullRequestReview) Handle(ctx context.Context, eventType, deliveryID st
 	}
 	pullCtx := pull.NewGithubContext(client, pr)
 
-	config, err := h.FetchConfig(ctx, client, pr)
+	config, err := h.FetchConfigForPR(ctx, client, pr)
 	if err != nil {
 		return errors.Wrap(err, "failed to fetch configuration")
 	}
