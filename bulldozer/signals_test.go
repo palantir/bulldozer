@@ -150,6 +150,45 @@ func TestSignalsMatchesAny(t *testing.T) {
 	}
 }
 
+func TestSignalsMatchesAnyNoSignals(t *testing.T) {
+	signals := Signals{}
+
+	ctx := context.Background()
+
+	tests := map[string]struct {
+		PullContext pull.Context
+		Matches     bool
+		Reason      string
+	}{
+		"noMatchNoSignalsProvidedWithEmptyPR": {
+			PullContext: &pulltest.MockPullContext{},
+			Matches:     false,
+			Reason:      `no testlist signals provided to match against`,
+		},
+		"noMatchNoSignalsProvidedWithNonEmptyPR": {
+			PullContext: &pulltest.MockPullContext{
+				CommentValue: []string{"FULL_COMMENT_PLZ_MERGE"},
+			},
+			Matches: false,
+			Reason:  `no testlist signals provided to match against`,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			matches, reason, err := signals.MatchesAny(ctx, test.PullContext, "testlist")
+			require.NoError(t, err)
+
+			if test.Matches {
+				assert.True(t, matches, "expected pull request to match, but it didn't")
+			} else {
+				assert.False(t, matches, "expected pull request to not match, but it did")
+			}
+			assert.Equal(t, test.Reason, reason)
+		})
+	}
+}
+
 func TestSignalsMaxCommits(t *testing.T) {
 	signals := Signals{
 		MaxCommits: 2,
@@ -265,6 +304,45 @@ func TestSignalsMatchesAll(t *testing.T) {
 			PullContext: &pulltest.MockPullContext{},
 			Matches:     false,
 			Reason:      `pull request does not match all testlist signals`,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			matches, reason, err := signals.MatchesAll(ctx, test.PullContext, "testlist")
+			require.NoError(t, err)
+
+			if test.Matches {
+				assert.True(t, matches, "expected pull request to match, but it didn't")
+			} else {
+				assert.False(t, matches, "expected pull request to not match, but it did")
+			}
+			assert.Equal(t, test.Reason, reason)
+		})
+	}
+}
+
+func TestSignalsMatchesAllNoSignals(t *testing.T) {
+	signals := Signals{}
+
+	ctx := context.Background()
+
+	tests := map[string]struct {
+		PullContext pull.Context
+		Matches     bool
+		Reason      string
+	}{
+		"noMatchNoSignalsProvidedWithEmptyPR": {
+			PullContext: &pulltest.MockPullContext{},
+			Matches:     false,
+			Reason:      `no testlist signals provided to match against`,
+		},
+		"noMatchNoSignalsProvidedWithNonEmptyPR": {
+			PullContext: &pulltest.MockPullContext{
+				CommentValue: []string{"FULL_COMMENT_PLZ_MERGE"},
+			},
+			Matches: false,
+			Reason:  `no testlist signals provided to match against`,
 		},
 	}
 

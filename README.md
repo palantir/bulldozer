@@ -145,6 +145,7 @@ merge:
   # will trigger bulldozer.
   # - This will override any branch_method logic if one of the methods is
   # triggered
+  # - If no trigger criteria is provided the method is ignored
   merge_method:
     # "method" defines the merge method. The available options are "merge",
     # "rebase", "squash", and "ff-only".
