@@ -105,13 +105,15 @@ func (s Signals) MatchesAll(ctx context.Context, pullCtx pull.Context, tag strin
 	}
 
 	for _, signal := range signals {
-		matches, _, err := signal.Matches(ctx, pullCtx, tag)
-		if err != nil {
-			return false, "", err
-		}
+		if signal.Enabled() {
+			matches, _, err := signal.Matches(ctx, pullCtx, tag)
+			if err != nil {
+				return false, "", err
+			}
 
-		if signal.Enabled() && !matches {
-			return false, fmt.Sprintf("pull request does not match all %s signals", tag), nil
+			if !matches {
+				return false, fmt.Sprintf("pull request does not match all %s signals", tag), nil
+			}
 		}
 	}
 
