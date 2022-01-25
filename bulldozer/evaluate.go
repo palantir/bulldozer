@@ -26,10 +26,10 @@ import (
 // IsPRIgnored returns true if the PR is identified as ignored,
 // false otherwise. Additionally, a description of the reason will be returned.
 func IsPRIgnored(ctx context.Context, pullCtx pull.Context, config Signals) (bool, string, error) {
-	matches, reason, err := config.Matches(ctx, pullCtx, "ignored")
+	matches, reason, err := config.MatchesAny(ctx, pullCtx, "ignored")
 	if err != nil {
 		// ignore must always fail closed (matches on error)
-		matches = true
+		return true, reason, err
 	}
 	return matches, reason, err
 }
@@ -37,7 +37,18 @@ func IsPRIgnored(ctx context.Context, pullCtx pull.Context, config Signals) (boo
 // IsPRTriggered returns true if the PR is identified as triggered,
 // false otherwise. Additionally, a description of the reason will be returned.
 func IsPRTriggered(ctx context.Context, pullCtx pull.Context, config Signals) (bool, string, error) {
-	matches, reason, err := config.Matches(ctx, pullCtx, "triggered")
+	matches, reason, err := config.MatchesAny(ctx, pullCtx, "triggered")
+	if err != nil {
+		// trigger must always fail closed (no match on error)
+		return false, reason, err
+	}
+	return matches, reason, err
+}
+
+// IsMergeMethodTriggered returns true if ALL signals are fully matched,
+// false otherwise. Additionally, a description of the reason will be returned.
+func IsMergeMethodTriggered(ctx context.Context, pullCtx pull.Context, config Signals) (bool, string, error) {
+	matches, reason, err := config.MatchesAll(ctx, pullCtx, "triggered")
 	if err != nil {
 		// trigger must always fail closed (no match on error)
 		return false, reason, err

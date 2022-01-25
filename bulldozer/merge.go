@@ -149,19 +149,47 @@ func (m *PushRestrictionMerger) DeleteHead(ctx context.Context, pullCtx pull.Con
 	return m.Normal.DeleteHead(ctx, pullCtx)
 }
 
-// MergePR merges a pull request if all conditions are met. It logs any errors
-// that it encounters.
-func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConfig MergeConfig) {
+// DetermineMergeMethod determines which merge method to use when merging the PR
+func DetermineMergeMethod(ctx context.Context, pullCtx pull.Context, mergeConfig MergeConfig) (MergeMethod, error) {
 	logger := zerolog.Ctx(ctx)
 
-	base, head := pullCtx.Branches()
+	base, _ := pullCtx.Branches()
 	mergeMethod := mergeConfig.Method
 
 	if branchMergeMethod, ok := mergeConfig.BranchMethod[base]; ok {
 		mergeMethod = branchMergeMethod
 	}
+
+	for _, method := range mergeConfig.MergeMethods {
+		triggered, reason, err := IsMergeMethodTriggered(ctx, pullCtx, method.Trigger)
+		if err != nil {
+			err = errors.Wrapf(err, "Failed to determine if merge method '%s' is triggered", method.Method)
+			return "", err
+		}
+
+		if triggered {
+			mergeMethod = method.Method
+			logger.Debug().Msgf("%s method is triggered because %s matched", mergeMethod, reason)
+			break
+		}
+	}
+
 	if !isValidMergeMethod(mergeMethod) {
 		mergeMethod = MergeCommit
+	}
+
+	return mergeMethod, nil
+}
+
+// MergePR merges a pull request if all conditions are met. It logs any errors
+// that it encounters.
+func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConfig MergeConfig) {
+	logger := zerolog.Ctx(ctx)
+
+	mergeMethod, err := DetermineMergeMethod(ctx, pullCtx, mergeConfig)
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to determine merge method")
+		return
 	}
 
 	commitMsg := CommitMessage{}
@@ -210,6 +238,7 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 		time.Sleep(4 * time.Second)
 	}
 
+	_, head := pullCtx.Branches()
 	if merged {
 		if mergeConfig.DeleteAfterMerge {
 			attemptDelete(ctx, pullCtx, head, merger)

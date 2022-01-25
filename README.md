@@ -126,13 +126,36 @@ merge:
   # "rebase", "squash", and "ff-only".
   method: squash
 
-  # Allows the merge method that is used when auto-merging a PR to be different based on the
+  ##### branch_method has been DEPRECATED in favor of merge_method #####
+  # 
+  # Allows the merge method that is used when auto-merging a PR to be different
   # target branch. The keys of the hash are the target branch name, and the values are the merge method that
   # will be used for PRs targeting that branch. The valid values are the same as for the "method" key.
   # Note: If the target branch does not match any of the specified keys, the "method" key is used instead.
   branch_method:
     develop: squash
     master: merge
+  ##### branch_method has been DEPRECATED in favor of merge_method #####
+
+  # Allows the merge method that is used when auto-merging a PR to be different
+  # based on trigger criteria. The first method where ALL triggers match will
+  # be used. Otherwise, the method specified previously in "merge.method" will 
+  # be used.
+  # - ALL trigger criteria must match, unlike merge/trigger where ANY match 
+  # will trigger bulldozer.
+  # - This will override any branch_method logic if one of the methods is
+  # triggered
+  # - If no trigger criteria is provided the method is ignored
+  merge_method:
+    # "method" defines the merge method. The available options are "merge",
+    # "rebase", "squash", and "ff-only".
+    - method: squash
+      trigger:
+        # All methods from merge/trigger are supported. Additionally, the
+        # following additional methods are provided:
+
+        # Pull requests which a number of commits less than or equal to this value are added to the trigger.
+        max_commits: 3
 
   # "options" defines additional options for the individual merge methods.
   options:

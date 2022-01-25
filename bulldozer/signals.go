@@ -21,45 +21,162 @@ import (
 	"strings"
 
 	"github.com/palantir/bulldozer/pull"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 )
 
+type Signal interface {
+	// Determine if the signal has values assigned to it and should be considered when matching
+	Enabled() bool
+
+	// Determine if the signal matches a value in the target pull request
+	Matches(context.Context, pull.Context, string) (bool, string, error)
+}
+
+type LabelsSignal []string
+type CommentSubstringsSignal []string
+type CommentsSignal []string
+type PRBodySubstringsSignal []string
+type BranchesSignal []string
+type BranchPatternsSignal []string
+type MaxCommitsSignal int
+
 type Signals struct {
-	Labels            []string `yaml:"labels"`
-	CommentSubstrings []string `yaml:"comment_substrings"`
-	Comments          []string `yaml:"comments"`
-	PRBodySubstrings  []string `yaml:"pr_body_substrings"`
-	Branches          []string `yaml:"branches"`
-	BranchPatterns    []string `yaml:"branch_patterns"`
+	Labels            LabelsSignal            `yaml:"labels"`
+	CommentSubstrings CommentSubstringsSignal `yaml:"comment_substrings"`
+	Comments          CommentsSignal          `yaml:"comments"`
+	PRBodySubstrings  PRBodySubstringsSignal  `yaml:"pr_body_substrings"`
+	Branches          BranchesSignal          `yaml:"branches"`
+	BranchPatterns    BranchPatternsSignal    `yaml:"branch_patterns"`
+	MaxCommits        MaxCommitsSignal        `yaml:"max_commits"`
 }
 
-func (s *Signals) Enabled() bool {
-	size := 0
-	size += len(s.Labels)
-	size += len(s.CommentSubstrings)
-	size += len(s.Comments)
-	size += len(s.PRBodySubstrings)
-	size += len(s.Branches)
-	size += len(s.BranchPatterns)
-	return size > 0
+func (signal LabelsSignal) Enabled() bool {
+	return len(signal) > 0
 }
 
-// Matches returns true if the pull request meets one or more signals. It also
+func (signal CommentSubstringsSignal) Enabled() bool {
+	return len(signal) > 0
+}
+
+func (signal CommentsSignal) Enabled() bool {
+	return len(signal) > 0
+}
+
+func (signal PRBodySubstringsSignal) Enabled() bool {
+	return len(signal) > 0
+}
+
+func (signal BranchesSignal) Enabled() bool {
+	return len(signal) > 0
+}
+
+func (signal BranchPatternsSignal) Enabled() bool {
+	return len(signal) > 0
+}
+
+func (signal MaxCommitsSignal) Enabled() bool {
+	return signal > 0
+}
+
+func (s Signals) Enabled() bool {
+	return s.Labels.Enabled() ||
+		s.CommentSubstrings.Enabled() ||
+		s.Comments.Enabled() ||
+		s.PRBodySubstrings.Enabled() ||
+		s.Branches.Enabled() ||
+		s.BranchPatterns.Enabled() ||
+		s.MaxCommits.Enabled()
+}
+
+// MatchesAll returns true if the pull request matches ALL of the signals. It also
+// returns a description of the match status. The tag argument appears
+// in this description and indicates the behavior (trigger, ignore) this
+// set of signals is associated with.
+func (s Signals) MatchesAll(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
+	if !s.Enabled() {
+		return false, fmt.Sprintf("no %s signals provided to match against", tag), nil
+	}
+
+	signals := []Signal{
+		&s.Labels,
+		&s.CommentSubstrings,
+		&s.Comments,
+		&s.PRBodySubstrings,
+		&s.Branches,
+		&s.BranchPatterns,
+		&s.MaxCommits,
+	}
+
+	for _, signal := range signals {
+		if signal.Enabled() {
+			matches, _, err := signal.Matches(ctx, pullCtx, tag)
+			if err != nil {
+				return false, "", err
+			}
+
+			if !matches {
+				return false, fmt.Sprintf("pull request does not match all %s signals", tag), nil
+			}
+		}
+	}
+
+	return true, fmt.Sprintf("pull request matches all %s signals", tag), nil
+}
+
+// MatchesAny returns true if the pull request meets one or more signals. It also
 // returns a description of the signal that was met. The tag argument appears
 // in this description and indicates the behavior (trigger, ignore) this
 // set of signals is associated with.
-func (s *Signals) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
+func (s Signals) MatchesAny(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
+	if !s.Enabled() {
+		return false, fmt.Sprintf("no %s signals provided to match against", tag), nil
+	}
+
+	signals := []Signal{
+		&s.Labels,
+		&s.CommentSubstrings,
+		&s.Comments,
+		&s.PRBodySubstrings,
+		&s.Branches,
+		&s.BranchPatterns,
+	}
+
+	for _, signal := range signals {
+		matches, description, err := signal.Matches(ctx, pullCtx, tag)
+		if err != nil {
+			return false, "", err
+		}
+
+		if matches {
+			return true, description, nil
+		}
+	}
+
+	return false, fmt.Sprintf("pull request does not match the %s", tag), nil
+}
+
+// Matches Determines which label signals match the given PR. It returns:
+// - A boolean to indicate if a signal matched
+// - A description of the first matched signal
+func (signal LabelsSignal) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
 	logger := zerolog.Ctx(ctx)
+
+	if !signal.Enabled() {
+		return false, "", nil
+	}
 
 	labels, err := pullCtx.Labels(ctx)
 	if err != nil {
-		return false, "unable to list pull request labels", err
+		return false, "", errors.Wrap(err, "unable to list pull request labels")
 	}
 
 	if len(labels) == 0 {
 		logger.Debug().Msgf("No labels found to match against")
+		return false, "", nil
 	}
-	for _, signalLabel := range s.Labels {
+
+	for _, signalLabel := range signal {
 		for _, label := range labels {
 			if strings.EqualFold(signalLabel, label) {
 				return true, fmt.Sprintf("pull request has a %s label: %q", tag, signalLabel), nil
@@ -67,16 +184,31 @@ func (s *Signals) Matches(ctx context.Context, pullCtx pull.Context, tag string)
 		}
 	}
 
+	return false, "", nil
+}
+
+// Matches Determines which comment signals match the given PR. It returns:
+// - A boolean to indicate if a signal matched
+// - A description of the first matched signal
+func (signal CommentsSignal) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
+	logger := zerolog.Ctx(ctx)
+
+	if !signal.Enabled() {
+		return false, "", nil
+	}
+
 	body := pullCtx.Body()
 	comments, err := pullCtx.Comments(ctx)
 	if err != nil {
-		return false, "unable to list pull request comments", err
+		return false, "", errors.Wrap(err, "unable to list pull request comments")
 	}
 
-	if len(comments) == 0 {
-		logger.Debug().Msgf("No comments found to match against")
+	if len(comments) == 0 && body == "" {
+		logger.Debug().Msgf("No comments or body content found to match against")
+		return false, "", nil
 	}
-	for _, signalComment := range s.Comments {
+
+	for _, signalComment := range signal {
 		if body == signalComment {
 			return true, fmt.Sprintf("pull request body is a %s comment: %q", tag, signalComment), nil
 		}
@@ -87,10 +219,31 @@ func (s *Signals) Matches(ctx context.Context, pullCtx pull.Context, tag string)
 		}
 	}
 
-	if len(s.CommentSubstrings) == 0 {
-		logger.Debug().Msgf("No comment substrings found to match against")
+	return false, "", nil
+}
+
+// Matches Determines which comment substring signals match the given PR. It returns:
+// - A boolean to indicate if a signal matched
+// - A description of the first matched signal
+func (signal CommentSubstringsSignal) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
+	logger := zerolog.Ctx(ctx)
+
+	if !signal.Enabled() {
+		return false, "", nil
 	}
-	for _, signalSubstring := range s.CommentSubstrings {
+
+	body := pullCtx.Body()
+	comments, err := pullCtx.Comments(ctx)
+	if err != nil {
+		return false, "", errors.Wrap(err, "unable to list pull request comments")
+	}
+
+	if len(comments) == 0 && body == "" {
+		logger.Debug().Msgf("No comments or body content found to match against")
+		return false, "", nil
+	}
+
+	for _, signalSubstring := range signal {
 		if strings.Contains(body, signalSubstring) {
 			return true, fmt.Sprintf("pull request body matches a %s substring: %q", tag, signalSubstring), nil
 		}
@@ -101,29 +254,89 @@ func (s *Signals) Matches(ctx context.Context, pullCtx pull.Context, tag string)
 		}
 	}
 
-	if len(s.PRBodySubstrings) == 0 {
-		logger.Debug().Msgf("No PR body substrings found to match against")
+	return false, "", nil
+}
+
+// Matches Determines which PR body signals match the given PR. It returns:
+// - A boolean to indicate if a signal matched
+// - A description of the first matched signal
+func (signal PRBodySubstringsSignal) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
+	logger := zerolog.Ctx(ctx)
+
+	if !signal.Enabled() {
+		return false, "", nil
 	}
-	for _, signalSubstring := range s.PRBodySubstrings {
+
+	body := pullCtx.Body()
+
+	if body == "" {
+		logger.Debug().Msgf("No body content found to match against")
+		return false, "", nil
+	}
+
+	for _, signalSubstring := range signal {
 		if strings.Contains(body, signalSubstring) {
 			return true, fmt.Sprintf("pull request body matches a %s substring: %q", tag, signalSubstring), nil
 		}
 	}
 
-	targetBranch, _ := pullCtx.Branches()
-	if len(s.Branches) == 0 || len(s.BranchPatterns) == 0 {
-		logger.Debug().Msgf("No branches or branch patterns found to match against")
+	return false, "", nil
+}
+
+// Matches Determines which branch signals match the given PR. It returns:
+// - A boolean to indicate if a signal matched
+// - A description of the first matched signal
+func (signal BranchesSignal) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
+	if !signal.Enabled() {
+		return false, "", nil
 	}
-	for _, signalBranch := range s.Branches {
+
+	targetBranch, _ := pullCtx.Branches()
+
+	for _, signalBranch := range signal {
 		if targetBranch == signalBranch {
 			return true, fmt.Sprintf("pull request target is a %s branch: %q", tag, signalBranch), nil
 		}
 	}
-	for _, signalBranch := range s.BranchPatterns {
+
+	return false, "", nil
+}
+
+// Matches Determines which branch pattern signals match the given PR. It returns:
+// - A boolean to indicate if a signal matched
+// - A description of the first matched signal
+func (signal BranchPatternsSignal) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
+	if !signal.Enabled() {
+		return false, "", nil
+	}
+
+	targetBranch, _ := pullCtx.Branches()
+
+	for _, signalBranch := range signal {
 		if matched, _ := regexp.MatchString(fmt.Sprintf("^%s$", signalBranch), targetBranch); matched {
 			return true, fmt.Sprintf("pull request target branch (%q) matches pattern: %q", targetBranch, signalBranch), nil
 		}
 	}
 
-	return false, fmt.Sprintf("pull request does not match the %s", tag), nil
+	return false, "", nil
+}
+
+// Matches Determines if the number of commits in a PR is at or below a given max. It returns:
+// - An empty list if there is no match, otherwise a single string description of the match
+// - A match value of 0 if there is no match, otherwise the value of the max commits signal
+func (signal MaxCommitsSignal) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
+	logger := zerolog.Ctx(ctx)
+
+	if !signal.Enabled() {
+		logger.Debug().Msgf("No valid max commits value has been provided to match against")
+		return false, "", nil
+	}
+
+	commits, _ := pullCtx.Commits(ctx)
+
+	if len(commits) <= int(signal) {
+		return true, fmt.Sprintf("pull request has %q commits, which is less than or equal to the maximum of %q", len(commits), signal), nil
+	}
+
+	return false, "", nil
 }
