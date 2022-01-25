@@ -25,45 +25,66 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type Signals struct {
-	Labels            []string `yaml:"labels"`
-	CommentSubstrings []string `yaml:"comment_substrings"`
-	Comments          []string `yaml:"comments"`
-	PRBodySubstrings  []string `yaml:"pr_body_substrings"`
-	Branches          []string `yaml:"branches"`
-	BranchPatterns    []string `yaml:"branch_patterns"`
-	MaxCommits        int      `yaml:"max_commits"`
+type Signal interface {
+	Enabled() bool
+
+	Matches(context.Context, pull.Context, string) (bool, string, error)
 }
 
-// count returns the number of signals that are non-zero value
-func (s *Signals) count() int {
-	count := 0
-	if len(s.Labels) > 0 {
-		count += 1
-	}
-	if len(s.CommentSubstrings) > 0 {
-		count += 1
-	}
-	if len(s.Comments) > 0 {
-		count += 1
-	}
-	if len(s.PRBodySubstrings) > 0 {
-		count += 1
-	}
-	if len(s.Branches) > 0 {
-		count += 1
-	}
-	if len(s.BranchPatterns) > 0 {
-		count += 1
-	}
-	if s.MaxCommits > 0 {
-		count += 1
-	}
-	return count
+type Labels []string
+type CommentSubstrings []string
+type Comments []string
+type PRBodySubstrings []string
+type Branches []string
+type BranchPatterns []string
+type MaxCommits int
+
+type Signals struct {
+	Labels            `yaml:"labels"`
+	CommentSubstrings `yaml:"comment_substrings"`
+	Comments          `yaml:"comments"`
+	PRBodySubstrings  `yaml:"pr_body_substrings"`
+	Branches          `yaml:"branches"`
+	BranchPatterns    `yaml:"branch_patterns"`
+	MaxCommits        `yaml:"max_commits"`
+}
+
+func (s *Labels) Enabled() bool {
+	return len(*s) > 0
+}
+
+func (s *CommentSubstrings) Enabled() bool {
+	return len(*s) > 0
+}
+
+func (s *Comments) Enabled() bool {
+	return len(*s) > 0
+}
+
+func (s *PRBodySubstrings) Enabled() bool {
+	return len(*s) > 0
+}
+
+func (s *Branches) Enabled() bool {
+	return len(*s) > 0
+}
+
+func (s *BranchPatterns) Enabled() bool {
+	return len(*s) > 0
+}
+
+func (s *MaxCommits) Enabled() bool {
+	return *s > 0
 }
 
 func (s *Signals) Enabled() bool {
-	return s.count() > 0
+	return s.Labels.Enabled() ||
+		s.CommentSubstrings.Enabled() ||
+		s.Comments.Enabled() ||
+		s.PRBodySubstrings.Enabled() ||
+		s.Branches.Enabled() ||
+		s.BranchPatterns.Enabled() ||
+		s.MaxCommits.Enabled()
 }
 
 // MatchesAll returns true if the pull request matches ALL of the signals. It also
@@ -71,70 +92,25 @@ func (s *Signals) Enabled() bool {
 // in this description and indicates the behavior (trigger, ignore) this
 // set of signals is associated with.
 func (s *Signals) MatchesAll(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
-	var matches bool
-	var err error
-
-	matches, _, err = s.labelMatches(ctx, pullCtx, tag)
-	if err != nil {
-		return false, "", err
+	signals := []Signal{
+		&s.Labels,
+		&s.CommentSubstrings,
+		&s.Comments,
+		&s.PRBodySubstrings,
+		&s.Branches,
+		&s.BranchPatterns,
+		&s.MaxCommits,
 	}
 
-	if len(s.Labels) > 0 && !matches {
-		return false, fmt.Sprintf("pull request does not match all %s signals", tag), nil
-	}
+	for _, signal := range signals {
+		matches, _, err := signal.Matches(ctx, pullCtx, tag)
+		if err != nil {
+			return false, "", err
+		}
 
-	matches, _, err = s.commentMatches(ctx, pullCtx, tag)
-	if err != nil {
-		return false, "", err
-	}
-
-	if len(s.Comments) > 0 && !matches {
-		return false, fmt.Sprintf("pull request does not match all %s signals", tag), nil
-	}
-
-	matches, _, err = s.commentSubstringMatches(ctx, pullCtx, tag)
-	if err != nil {
-		return false, "", err
-	}
-
-	if len(s.CommentSubstrings) > 0 && !matches {
-		return false, fmt.Sprintf("pull request does not match all %s signals", tag), nil
-	}
-
-	matches, _, err = s.prBodyMatches(ctx, pullCtx, tag)
-	if err != nil {
-		return false, "", err
-	}
-
-	if len(s.PRBodySubstrings) > 0 && !matches {
-		return false, fmt.Sprintf("pull request does not match all %s signals", tag), nil
-	}
-
-	matches, _, err = s.branchMatches(ctx, pullCtx, tag)
-	if err != nil {
-		return false, "", err
-	}
-
-	if len(s.Branches) > 0 && !matches {
-		return false, fmt.Sprintf("pull request does not match all %s signals", tag), nil
-	}
-
-	matches, _, err = s.branchPatternMatches(ctx, pullCtx, tag)
-	if err != nil {
-		return false, "", err
-	}
-
-	if len(s.BranchPatterns) > 0 && !matches {
-		return false, fmt.Sprintf("pull request does not match all %s signals", tag), nil
-	}
-
-	matches, _, err = s.maxCommitsMatches(ctx, pullCtx, tag)
-	if err != nil {
-		return false, "", err
-	}
-
-	if s.MaxCommits > 0 && !matches {
-		return false, fmt.Sprintf("pull request does not match all %s signals", tag), nil
+		if signal.Enabled() && !matches {
+			return false, fmt.Sprintf("pull request does not match all %s signals", tag), nil
+		}
 	}
 
 	return true, fmt.Sprintf("pull request matches all %s signals", tag), nil
@@ -145,72 +121,37 @@ func (s *Signals) MatchesAll(ctx context.Context, pullCtx pull.Context, tag stri
 // in this description and indicates the behavior (trigger, ignore) this
 // set of signals is associated with.
 func (s *Signals) MatchesAny(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
-	matches, description, err := s.labelMatches(ctx, pullCtx, tag)
-	if err != nil {
-		return false, "", err
+	signals := []Signal{
+		&s.Labels,
+		&s.CommentSubstrings,
+		&s.Comments,
+		&s.PRBodySubstrings,
+		&s.Branches,
+		&s.BranchPatterns,
 	}
 
-	if matches {
-		return true, description, nil
-	}
+	for _, signal := range signals {
+		matches, description, err := signal.Matches(ctx, pullCtx, tag)
+		if err != nil {
+			return false, "", err
+		}
 
-	matches, description, err = s.commentMatches(ctx, pullCtx, tag)
-	if err != nil {
-		return false, "", err
-	}
-
-	if matches {
-		return true, description, nil
-	}
-
-	matches, description, err = s.commentSubstringMatches(ctx, pullCtx, tag)
-	if err != nil {
-		return false, "", err
-	}
-
-	if matches {
-		return true, description, nil
-	}
-
-	matches, description, err = s.prBodyMatches(ctx, pullCtx, tag)
-	if err != nil {
-		return false, "", err
-	}
-
-	if matches {
-		return true, description, nil
-	}
-
-	matches, description, err = s.branchMatches(ctx, pullCtx, tag)
-	if err != nil {
-		return false, "", err
-	}
-
-	if matches {
-		return true, description, nil
-	}
-
-	matches, description, err = s.branchPatternMatches(ctx, pullCtx, tag)
-	if err != nil {
-		return false, "", err
-	}
-
-	if matches {
-		return true, description, nil
+		if matches {
+			return true, description, nil
+		}
 	}
 
 	return false, fmt.Sprintf("pull request does not match the %s", tag), nil
 }
 
-// labelMatches determines which label signals match the given PR. It returns:
-// - A list of descriptions for each matched signal
-//   - These will only include the first item the signal matched when there is more than one
-// - A list of the matched signals
-func (s *Signals) labelMatches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
+// Determines which label signals match the given PR. It returns:
+// - A boolean to indicate if a signal matched
+// - A description of the first matched signal
+func (signal *Labels) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
 	logger := zerolog.Ctx(ctx)
 
-	if len(s.Labels) == 0 {
-		logger.Debug().Msgf("No label singals have been provided to match against")
+	if !signal.Enabled() {
+		logger.Debug().Msgf("No label signals have been provided to match against")
 		return false, "", nil
 	}
 
@@ -224,7 +165,7 @@ func (s *Signals) labelMatches(ctx context.Context, pullCtx pull.Context, tag st
 		return false, "", nil
 	}
 
-	for _, signalLabel := range s.Labels {
+	for _, signalLabel := range *signal {
 		for _, label := range labels {
 			if strings.EqualFold(signalLabel, label) {
 				return true, fmt.Sprintf("pull request has a %s label: %q", tag, signalLabel), nil
@@ -235,15 +176,14 @@ func (s *Signals) labelMatches(ctx context.Context, pullCtx pull.Context, tag st
 	return false, "", nil
 }
 
-// commentMatches determines which comment signals match the given PR. It returns:
-// - A list of descriptions for each matched signal
-//   - These will only include the first item the signal matched when there is more than one
-// - A list of the matched signals
-func (s *Signals) commentMatches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
+// Determines which comment signals match the given PR. It returns:
+// - A boolean to indicate if a signal matched
+// - A description of the first matched signal
+func (signal *Comments) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
 	logger := zerolog.Ctx(ctx)
 
-	if len(s.Comments) == 0 {
-		logger.Debug().Msgf("No comment singals have been provided to match against")
+	if !signal.Enabled() {
+		logger.Debug().Msgf("No comment signals have been provided to match against")
 		return false, "", nil
 	}
 
@@ -258,7 +198,7 @@ func (s *Signals) commentMatches(ctx context.Context, pullCtx pull.Context, tag 
 		return false, "", nil
 	}
 
-	for _, signalComment := range s.Comments {
+	for _, signalComment := range *signal {
 		if body == signalComment {
 			return true, fmt.Sprintf("pull request body is a %s comment: %q", tag, signalComment), nil
 		} else {
@@ -274,15 +214,14 @@ func (s *Signals) commentMatches(ctx context.Context, pullCtx pull.Context, tag 
 	return false, "", nil
 }
 
-// commentSubstringMatches determines which comment substring signals match the given PR. It returns:
-// - A list of descriptions for each matched signal
-//   - These will only include the first item the signal matched when there is more than one
-// - A list of the matched signals
-func (s *Signals) commentSubstringMatches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
+// Determines which comment substring signals match the given PR. It returns:
+// - A boolean to indicate if a signal matched
+// - A description of the first matched signal
+func (signal *CommentSubstrings) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
 	logger := zerolog.Ctx(ctx)
 
-	if len(s.CommentSubstrings) == 0 {
-		logger.Debug().Msgf("No comment substring singals have been provided to match against")
+	if !signal.Enabled() {
+		logger.Debug().Msgf("No comment substring signals have been provided to match against")
 		return false, "", nil
 	}
 
@@ -297,7 +236,7 @@ func (s *Signals) commentSubstringMatches(ctx context.Context, pullCtx pull.Cont
 		return false, "", nil
 	}
 
-	for _, signalSubstring := range s.CommentSubstrings {
+	for _, signalSubstring := range *signal {
 		if strings.Contains(body, signalSubstring) {
 			return true, fmt.Sprintf("pull request body matches a %s substring: %q", tag, signalSubstring), nil
 		} else {
@@ -312,15 +251,14 @@ func (s *Signals) commentSubstringMatches(ctx context.Context, pullCtx pull.Cont
 	return false, "", nil
 }
 
-// prBodyMatches determines which PR body signals match the given PR. It returns:
-// - A list of descriptions for each matched signal
-//   - These will only include the first item the signal matched when there is more than one
-// - A list of the matched signals
-func (s *Signals) prBodyMatches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
+// Determines which PR body signals match the given PR. It returns:
+// - A boolean to indicate if a signal matched
+// - A description of the first matched signal
+func (signal *PRBodySubstrings) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
 	logger := zerolog.Ctx(ctx)
 
-	if len(s.PRBodySubstrings) == 0 {
-		logger.Debug().Msgf("No pr body substring singals have been provided to match against")
+	if !signal.Enabled() {
+		logger.Debug().Msgf("No pr body substring signals have been provided to match against")
 		return false, "", nil
 	}
 
@@ -331,7 +269,7 @@ func (s *Signals) prBodyMatches(ctx context.Context, pullCtx pull.Context, tag s
 		return false, "", nil
 	}
 
-	for _, signalSubstring := range s.PRBodySubstrings {
+	for _, signalSubstring := range *signal {
 		if strings.Contains(body, signalSubstring) {
 			return true, fmt.Sprintf("pull request body matches a %s substring: %q", tag, signalSubstring), nil
 		}
@@ -340,21 +278,20 @@ func (s *Signals) prBodyMatches(ctx context.Context, pullCtx pull.Context, tag s
 	return false, "", nil
 }
 
-// branchMatches determines which branch signals match the given PR. It returns:
-// - A list of descriptions for each matched signal
-//   - These will only include the first item the signal matched when there is more than one
-// - A list of the matched signals
-func (s *Signals) branchMatches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
+// Determines which branch signals match the given PR. It returns:
+// - A boolean to indicate if a signal matched
+// - A description of the first matched signal
+func (signal *Branches) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
 	logger := zerolog.Ctx(ctx)
 
-	if len(s.Branches) == 0 {
-		logger.Debug().Msgf("No branch singals have been provided to match against")
+	if !signal.Enabled() {
+		logger.Debug().Msgf("No branch signals have been provided to match against")
 		return false, "", nil
 	}
 
 	targetBranch, _ := pullCtx.Branches()
 
-	for _, signalBranch := range s.Branches {
+	for _, signalBranch := range *signal {
 		if targetBranch == signalBranch {
 			return true, fmt.Sprintf("pull request target is a %s branch: %q", tag, signalBranch), nil
 		}
@@ -363,21 +300,20 @@ func (s *Signals) branchMatches(ctx context.Context, pullCtx pull.Context, tag s
 	return false, "", nil
 }
 
-// branchPatternMatches determines which branch pattern signals match the given PR. It returns:
-// - A list of descriptions for each matched signal
-//   - These will only include the first item the signal matched when there is more than one
-// - A list of the matched signals
-func (s *Signals) branchPatternMatches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
+// Determines which branch pattern signals match the given PR. It returns:
+// - A boolean to indicate if a signal matched
+// - A description of the first matched signal
+func (signal *BranchPatterns) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
 	logger := zerolog.Ctx(ctx)
 
-	if len(s.BranchPatterns) == 0 {
-		logger.Debug().Msgf("No branch pattern singals have been provided to match against")
+	if !signal.Enabled() {
+		logger.Debug().Msgf("No branch pattern signals have been provided to match against")
 		return false, "", nil
 	}
 
 	targetBranch, _ := pullCtx.Branches()
 
-	for _, signalBranch := range s.BranchPatterns {
+	for _, signalBranch := range *signal {
 		if matched, _ := regexp.MatchString(fmt.Sprintf("^%s$", signalBranch), targetBranch); matched {
 			return true, fmt.Sprintf("pull request target branch (%q) matches pattern: %q", targetBranch, signalBranch), nil
 		}
@@ -386,25 +322,21 @@ func (s *Signals) branchPatternMatches(ctx context.Context, pullCtx pull.Context
 	return false, "", nil
 }
 
-// maxCommitsMatches determines if the number of commits in a PR is at or below a given max. It returns:
+// Determines if the number of commits in a PR is at or below a given max. It returns:
 // - An empty list if there is no match, otherwise a single string description of the match
 // - A match value of 0 if there is no match, otherwise the value of the max commits signal
-func (s *Signals) maxCommitsMatches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
+func (signal *MaxCommits) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
 	logger := zerolog.Ctx(ctx)
 
-	if s.MaxCommits <= 0 {
+	if !signal.Enabled() {
 		logger.Debug().Msgf("No valid max commits value has been provided to match against")
 		return false, "", nil
 	}
 
 	commits, _ := pullCtx.Commits(ctx)
 
-	if len(commits) < s.MaxCommits {
-		return true, fmt.Sprintf("pull request has %q commits, which is less than the maximum of %q", len(commits), s.MaxCommits), nil
-	}
-
-	if len(commits) == s.MaxCommits {
-		return true, fmt.Sprintf("pull request has %q commits, which is the maximum", len(commits)), nil
+	if len(commits) <= int(*signal) {
+		return true, fmt.Sprintf("pull request has %q commits, which is less than or equal to the maximum of %q", len(commits), *signal), nil
 	}
 
 	return false, "", nil
