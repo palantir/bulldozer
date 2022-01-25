@@ -26,11 +26,11 @@ import (
 )
 
 type Signal interface {
-	Enabled() bool
 	// Determine if the signal has values assigned to it and should be considered when matching
+	Enabled() bool
 
-	Matches(context.Context, pull.Context, string) (bool, string, error)
 	// Determine if the signal matches a value in the target pull request
+	Matches(context.Context, pull.Context, string) (bool, string, error)
 }
 
 type Labels []string
