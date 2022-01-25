@@ -150,7 +150,7 @@ func TestSignalsMatchesAny(t *testing.T) {
 	}
 }
 
-func TestSignalsMatchesAll(t *testing.T) {
+func TestSignalsMaxCommits(t *testing.T) {
 	signals := Signals{
 		MaxCommits: 2,
 	}
@@ -197,6 +197,74 @@ func TestSignalsMatchesAll(t *testing.T) {
 			},
 			Matches: true,
 			Reason:  `pull request matches all testlist signals`,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			matches, reason, err := signals.MatchesAll(ctx, test.PullContext, "testlist")
+			require.NoError(t, err)
+
+			if test.Matches {
+				assert.True(t, matches, "expected pull request to match, but it didn't")
+			} else {
+				assert.False(t, matches, "expected pull request to not match, but it did")
+			}
+			assert.Equal(t, test.Reason, reason)
+		})
+	}
+}
+
+func TestSignalsMatchesAll(t *testing.T) {
+	signals := Signals{
+		Labels:            []string{"LABEL_MERGE", "OTHER_LABEL"},
+		Comments:          []string{"FULL_COMMENT_PLZ_MERGE", "OTHER_COMMENT"},
+		CommentSubstrings: []string{"PLZ_MERGE", "OTHER_SUBSTRING"},
+		PRBodySubstrings:  []string{":+1:", "OTHER_SUBSTRING"},
+		Branches:          []string{"test/v9.9.9", "other"},
+		BranchPatterns:    []string{"test/.*", "^feature/.*$"},
+		MaxCommits:        2,
+	}
+
+	ctx := context.Background()
+
+	tests := map[string]struct {
+		PullContext pull.Context
+		Matches     bool
+		Reason      string
+	}{
+		"matchWithAll": {
+			PullContext: &pulltest.MockPullContext{
+				LabelValue:   []string{"LABEL_MERGE"},
+				CommentValue: []string{"FULL_COMMENT_PLZ_MERGE"},
+				BodyValue:    "My PR Body\n\n\n:+1:",
+				BranchBase:   "test/v9.9.9",
+				CommitsValue: []*pull.Commit{
+					{SHA: "1", Message: "commit 1"},
+					{SHA: "2", Message: "commit 2"},
+				},
+			},
+			Matches: true,
+			Reason:  `pull request matches all testlist signals`,
+		},
+		"noMatchWithMissingElements": {
+			PullContext: &pulltest.MockPullContext{
+				LabelValue:   []string{"LABEL_MERGE"},
+				CommentValue: []string{"FULL_COMMENT_PLZ_MERGE"},
+				BodyValue:    "My PR Body\n\n\n:-1:",
+				BranchBase:   "test/v1.1.1",
+				CommitsValue: []*pull.Commit{
+					{SHA: "1", Message: "commit 1"},
+					{SHA: "2", Message: "commit 2"},
+				},
+			},
+			Matches: false,
+			Reason:  `pull request does not match all testlist signals`,
+		},
+		"noMatchWithEmptyPR": {
+			PullContext: &pulltest.MockPullContext{},
+			Matches:     false,
+			Reason:      `pull request does not match all testlist signals`,
 		},
 	}
 
