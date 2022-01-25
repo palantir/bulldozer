@@ -29,7 +29,7 @@ func IsPRIgnored(ctx context.Context, pullCtx pull.Context, config Signals) (boo
 	matches, reason, err := config.MatchesAny(ctx, pullCtx, "ignored")
 	if err != nil {
 		// ignore must always fail closed (matches on error)
-		return false, reason, err
+		return true, reason, err
 	}
 	return matches, reason, err
 }
