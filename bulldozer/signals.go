@@ -129,6 +129,10 @@ func (s Signals) MatchesAll(ctx context.Context, pullCtx pull.Context, tag strin
 // in this description and indicates the behavior (trigger, ignore) this
 // set of signals is associated with.
 func (s Signals) MatchesAny(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
+	if !s.Enabled() {
+		return false, fmt.Sprintf("no %s signals provided to match against", tag), nil
+	}
+
 	signals := []Signal{
 		&s.Labels,
 		&s.CommentSubstrings,
