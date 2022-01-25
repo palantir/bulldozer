@@ -139,7 +139,8 @@ merge:
 
   # Allows the merge method that is used when auto-merging a PR to be different
   # based on trigger criteria. The first method where ALL triggers match will
-  # be used. Otherwise, the method specified previously in merge/method will be # used.
+  # be used. Otherwise, the method specified previously in "merge.method" will 
+  # be used.
   # - ALL trigger criteria must match, unlike merge/trigger where ANY match 
   # will trigger bulldozer.
   # - This will override any branch_method logic if one of the methods is
