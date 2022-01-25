@@ -155,7 +155,6 @@ func (signal LabelsSignal) Matches(ctx context.Context, pullCtx pull.Context, ta
 	logger := zerolog.Ctx(ctx)
 
 	if !signal.Enabled() {
-		logger.Debug().Msgf("No label signals have been provided to match against")
 		return false, "", nil
 	}
 
@@ -187,7 +186,6 @@ func (signal CommentsSignal) Matches(ctx context.Context, pullCtx pull.Context, 
 	logger := zerolog.Ctx(ctx)
 
 	if !signal.Enabled() {
-		logger.Debug().Msgf("No comment signals have been provided to match against")
 		return false, "", nil
 	}
 
@@ -223,7 +221,6 @@ func (signal CommentSubstringsSignal) Matches(ctx context.Context, pullCtx pull.
 	logger := zerolog.Ctx(ctx)
 
 	if !signal.Enabled() {
-		logger.Debug().Msgf("No comment substring signals have been provided to match against")
 		return false, "", nil
 	}
 
@@ -259,7 +256,6 @@ func (signal PRBodySubstringsSignal) Matches(ctx context.Context, pullCtx pull.C
 	logger := zerolog.Ctx(ctx)
 
 	if !signal.Enabled() {
-		logger.Debug().Msgf("No pr body substring signals have been provided to match against")
 		return false, "", nil
 	}
 
@@ -286,7 +282,6 @@ func (signal BranchesSignal) Matches(ctx context.Context, pullCtx pull.Context, 
 	logger := zerolog.Ctx(ctx)
 
 	if !signal.Enabled() {
-		logger.Debug().Msgf("No branch signals have been provided to match against")
 		return false, "", nil
 	}
 
@@ -308,7 +303,6 @@ func (signal BranchPatternsSignal) Matches(ctx context.Context, pullCtx pull.Con
 	logger := zerolog.Ctx(ctx)
 
 	if !signal.Enabled() {
-		logger.Debug().Msgf("No branch pattern signals have been provided to match against")
 		return false, "", nil
 	}
 
