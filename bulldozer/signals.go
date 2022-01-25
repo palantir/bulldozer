@@ -279,8 +279,6 @@ func (signal PRBodySubstringsSignal) Matches(ctx context.Context, pullCtx pull.C
 // - A boolean to indicate if a signal matched
 // - A description of the first matched signal
 func (signal BranchesSignal) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
-	logger := zerolog.Ctx(ctx)
-
 	if !signal.Enabled() {
 		return false, "", nil
 	}
@@ -300,8 +298,6 @@ func (signal BranchesSignal) Matches(ctx context.Context, pullCtx pull.Context, 
 // - A boolean to indicate if a signal matched
 // - A description of the first matched signal
 func (signal BranchPatternsSignal) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
-	logger := zerolog.Ctx(ctx)
-
 	if !signal.Enabled() {
 		return false, "", nil
 	}
