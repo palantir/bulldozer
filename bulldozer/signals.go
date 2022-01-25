@@ -51,32 +51,32 @@ type Signals struct {
 	MaxCommits        `yaml:"max_commits"`
 }
 
-func (s *Labels) Enabled() bool {
-	return len(*s) > 0
+func (signal *Labels) Enabled() bool {
+	return len(*signal) > 0
 }
 
-func (s *CommentSubstrings) Enabled() bool {
-	return len(*s) > 0
+func (signal *CommentSubstrings) Enabled() bool {
+	return len(*signal) > 0
 }
 
-func (s *Comments) Enabled() bool {
-	return len(*s) > 0
+func (signal *Comments) Enabled() bool {
+	return len(*signal) > 0
 }
 
-func (s *PRBodySubstrings) Enabled() bool {
-	return len(*s) > 0
+func (signal *PRBodySubstrings) Enabled() bool {
+	return len(*signal) > 0
 }
 
-func (s *Branches) Enabled() bool {
-	return len(*s) > 0
+func (signal *Branches) Enabled() bool {
+	return len(*signal) > 0
 }
 
-func (s *BranchPatterns) Enabled() bool {
-	return len(*s) > 0
+func (signal *BranchPatterns) Enabled() bool {
+	return len(*signal) > 0
 }
 
-func (s *MaxCommits) Enabled() bool {
-	return *s > 0
+func (signal *MaxCommits) Enabled() bool {
+	return *signal > 0
 }
 
 func (s *Signals) Enabled() bool {
