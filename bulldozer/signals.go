@@ -27,8 +27,10 @@ import (
 
 type Signal interface {
 	Enabled() bool
+	// Determine if the signal has values assigned to it and should be considered when matching
 
 	Matches(context.Context, pull.Context, string) (bool, string, error)
+	// Determine if the signal matches a value in the target pull request
 }
 
 type Labels []string
@@ -144,7 +146,7 @@ func (s *Signals) MatchesAny(ctx context.Context, pullCtx pull.Context, tag stri
 	return false, fmt.Sprintf("pull request does not match the %s", tag), nil
 }
 
-// Determines which label signals match the given PR. It returns:
+// Matches Determines which label signals match the given PR. It returns:
 // - A boolean to indicate if a signal matched
 // - A description of the first matched signal
 func (signal *Labels) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
@@ -176,7 +178,7 @@ func (signal *Labels) Matches(ctx context.Context, pullCtx pull.Context, tag str
 	return false, "", nil
 }
 
-// Determines which comment signals match the given PR. It returns:
+// Matches Determines which comment signals match the given PR. It returns:
 // - A boolean to indicate if a signal matched
 // - A description of the first matched signal
 func (signal *Comments) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
@@ -214,7 +216,7 @@ func (signal *Comments) Matches(ctx context.Context, pullCtx pull.Context, tag s
 	return false, "", nil
 }
 
-// Determines which comment substring signals match the given PR. It returns:
+// Matches Determines which comment substring signals match the given PR. It returns:
 // - A boolean to indicate if a signal matched
 // - A description of the first matched signal
 func (signal *CommentSubstrings) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
@@ -251,7 +253,7 @@ func (signal *CommentSubstrings) Matches(ctx context.Context, pullCtx pull.Conte
 	return false, "", nil
 }
 
-// Determines which PR body signals match the given PR. It returns:
+// Matches Determines which PR body signals match the given PR. It returns:
 // - A boolean to indicate if a signal matched
 // - A description of the first matched signal
 func (signal *PRBodySubstrings) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
@@ -278,7 +280,7 @@ func (signal *PRBodySubstrings) Matches(ctx context.Context, pullCtx pull.Contex
 	return false, "", nil
 }
 
-// Determines which branch signals match the given PR. It returns:
+// Matches Determines which branch signals match the given PR. It returns:
 // - A boolean to indicate if a signal matched
 // - A description of the first matched signal
 func (signal *Branches) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
@@ -300,7 +302,7 @@ func (signal *Branches) Matches(ctx context.Context, pullCtx pull.Context, tag s
 	return false, "", nil
 }
 
-// Determines which branch pattern signals match the given PR. It returns:
+// Matches Determines which branch pattern signals match the given PR. It returns:
 // - A boolean to indicate if a signal matched
 // - A description of the first matched signal
 func (signal *BranchPatterns) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
@@ -322,7 +324,7 @@ func (signal *BranchPatterns) Matches(ctx context.Context, pullCtx pull.Context,
 	return false, "", nil
 }
 
-// Determines if the number of commits in a PR is at or below a given max. It returns:
+// Matches Determines if the number of commits in a PR is at or below a given max. It returns:
 // - An empty list if there is no match, otherwise a single string description of the match
 // - A match value of 0 if there is no match, otherwise the value of the max commits signal
 func (signal *MaxCommits) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
