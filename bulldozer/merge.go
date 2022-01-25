@@ -163,7 +163,7 @@ func DetermineMergeMethod(ctx context.Context, pullCtx pull.Context, mergeConfig
 	for _, method := range mergeConfig.MergeMethods {
 		triggered, reason, err := IsMergeMethodTriggered(ctx, pullCtx, method.Trigger)
 		if err != nil {
-			logger.Error().Err(err).Msg("Failed to determine if merge method is triggered")
+			err = errors.Wrapf(err, "Failed to determine if merge method '%s' is triggered", method.Method)
 			return "", err
 		}
 
@@ -188,6 +188,7 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 
 	mergeMethod, err := DetermineMergeMethod(ctx, pullCtx, mergeConfig)
 	if err != nil {
+		logger.Error().Err(err).Msg("Failed to determine merge method")
 		return
 	}
 
