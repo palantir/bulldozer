@@ -203,14 +203,12 @@ func (signal *Comments) Matches(ctx context.Context, pullCtx pull.Context, tag s
 	for _, signalComment := range *signal {
 		if body == signalComment {
 			return true, fmt.Sprintf("pull request body is a %s comment: %q", tag, signalComment), nil
-		} else {
-			for _, comment := range comments {
-				if comment == signalComment {
-					return true, fmt.Sprintf("pull request has a %s comment: %q", tag, signalComment), nil
-				}
+		}
+		for _, comment := range comments {
+			if comment == signalComment {
+				return true, fmt.Sprintf("pull request has a %s comment: %q", tag, signalComment), nil
 			}
 		}
-
 	}
 
 	return false, "", nil
@@ -241,11 +239,10 @@ func (signal *CommentSubstrings) Matches(ctx context.Context, pullCtx pull.Conte
 	for _, signalSubstring := range *signal {
 		if strings.Contains(body, signalSubstring) {
 			return true, fmt.Sprintf("pull request body matches a %s substring: %q", tag, signalSubstring), nil
-		} else {
-			for _, comment := range comments {
-				if strings.Contains(comment, signalSubstring) {
-					return true, fmt.Sprintf("pull request comment matches a %s substring: %q", tag, signalSubstring), nil
-				}
+		}
+		for _, comment := range comments {
+			if strings.Contains(comment, signalSubstring) {
+				return true, fmt.Sprintf("pull request comment matches a %s substring: %q", tag, signalSubstring), nil
 			}
 		}
 	}
