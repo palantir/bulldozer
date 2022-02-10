@@ -45,7 +45,7 @@ func (h *IssueComment) Handle(ctx context.Context, eventType, deliveryID string,
 	installationID := githubapp.GetInstallationIDFromEvent(&event)
 	ctx, logger := githubapp.PreparePRContext(ctx, installationID, repo, number)
 
-	logger.Debug().Msgf("received issue_comment %s event", event.GetAction())
+	logger.Debug().Msgf("Received issue_comment %s event", event.GetAction())
 
 	client, err := h.ClientCreator.NewInstallationClient(installationID)
 	if err != nil {
