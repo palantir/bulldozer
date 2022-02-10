@@ -45,7 +45,7 @@ func (h *PullRequestReview) Handle(ctx context.Context, eventType, deliveryID st
 	installationID := githubapp.GetInstallationIDFromEvent(&event)
 	ctx, logger := githubapp.PreparePRContext(ctx, installationID, repo, number)
 
-	logger.Debug().Msgf("received pull_request_review %s event", event.GetAction())
+	logger.Debug().Msgf("Received pull_request_review %s event", event.GetAction())
 
 	client, err := h.ClientCreator.NewInstallationClient(installationID)
 	if err != nil {
