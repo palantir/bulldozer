@@ -47,7 +47,7 @@ func (h *Status) Handle(ctx context.Context, eventType, deliveryID string, paylo
 	installationID := githubapp.GetInstallationIDFromEvent(&event)
 	ctx, logger := githubapp.PrepareRepoContext(ctx, installationID, repo)
 
-	logger.Debug().Msgf("Received status event for %s with state %s", checkName, checkState)
+	logger.Debug().Msgf("Received status %s event from %s", checkState, checkName)
 
 	if checkState != "success" {
 		logger.Debug().Msgf("Doing nothing since context state for %q was %q", event.GetContext(), event.GetState())
