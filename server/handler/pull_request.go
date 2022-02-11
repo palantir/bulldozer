@@ -45,7 +45,7 @@ func (h *PullRequest) Handle(ctx context.Context, eventType, deliveryID string, 
 	installationID := githubapp.GetInstallationIDFromEvent(&event)
 	ctx, logger := githubapp.PreparePRContext(ctx, installationID, repo, number)
 
-	logger.Debug().Msgf("received pull_request %s event", event.GetAction())
+	logger.Debug().Msgf("Received pull_request %s event", event.GetAction())
 
 	if event.GetAction() == "closed" {
 		logger.Debug().Msg("Doing nothing since pull request is closed")
