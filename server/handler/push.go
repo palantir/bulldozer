@@ -17,15 +17,29 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/google/go-github/v41/github"
+	"github.com/palantir/bulldozer/bulldozer"
 	"github.com/palantir/bulldozer/pull"
 	"github.com/palantir/go-githubapp/githubapp"
 	"github.com/pkg/errors"
 )
 
+const (
+	DefaultPullUpdateQueryDelay = 250 * time.Millisecond
+	DefaultPullUpdateDelay      = 2 * time.Second
+)
+
+type PullUpdateDelays struct {
+	PullUpdateQueryDelay *time.Duration `yaml:"pull_update_query_delay"`
+	PullUpdateDelay      *time.Duration `yaml:"pull_update_delay"`
+}
+
 type Push struct {
 	Base
+
+	Delays PullUpdateDelays
 }
 
 func (h *Push) Handles() []string {
@@ -75,17 +89,57 @@ func (h *Push) Handle(ctx context.Context, eventType, deliveryID string, payload
 		return err
 	}
 
-	for _, pr := range prs {
-		logger := logger.With().Int(githubapp.LogKeyPRNum, pr.GetNumber()).Logger()
-		logger.Debug().Msgf("Considering pull request for update")
+	if config == nil {
+		logger.Debug().Msg("Skipping pull request updates to missing configuration")
+		return nil
+	}
 
+	var toUpdate []updateCtx
+	for i, pr := range prs {
+		logger := logger.With().Int(githubapp.LogKeyPRNum, pr.GetNumber()).Logger()
+		logger.Debug().Msg("Checking if pull request should update")
+
+		ctx := logger.WithContext(ctx)
 		pullCtx := pull.NewGithubContext(client, pr)
-		if _, err := h.UpdatePullRequest(logger.WithContext(ctx), pullCtx, client, config, pr, baseRef); err != nil {
-			logger.Error().Err(errors.WithStack(err)).Msg("Error updating pull request")
+
+		shouldUpdate, err := bulldozer.ShouldUpdatePR(ctx, pullCtx, config.Update)
+		if err != nil {
+			logger.Error().Err(err).Msg("Error determining if pull request should update, skipping")
+			continue
+		}
+		if shouldUpdate {
+			toUpdate = append(toUpdate, updateCtx{
+				ctx:     ctx,
+				pullCtx: pullCtx,
+			})
+		}
+
+		if i < len(prs)-1 {
+			time.Sleep(delay(h.Delays.PullUpdateQueryDelay, DefaultPullUpdateQueryDelay))
+		}
+	}
+
+	logger.Info().Msgf("Found %d pull requests that need updates", len(toUpdate))
+	for i, pr := range toUpdate {
+		bulldozer.UpdatePR(pr.ctx, pr.pullCtx, client, config.Update, baseRef)
+		if i < len(toUpdate)-1 {
+			time.Sleep(delay(h.Delays.PullUpdateDelay, DefaultPullUpdateDelay))
 		}
 	}
 
 	return nil
+}
+
+type updateCtx struct {
+	ctx     context.Context
+	pullCtx pull.Context
+}
+
+func delay(opt *time.Duration, def time.Duration) time.Duration {
+	if opt != nil {
+		return *opt
+	}
+	return def
 }
 
 // type assertion

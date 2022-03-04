@@ -19,6 +19,7 @@ import (
 
 	"github.com/c2h5oh/datasize"
 	"github.com/palantir/bulldozer/bulldozer"
+	"github.com/palantir/bulldozer/server/handler"
 	"github.com/palantir/go-baseapp/baseapp"
 	"github.com/palantir/go-baseapp/baseapp/datadog"
 	"github.com/palantir/go-githubapp/githubapp"
@@ -64,6 +65,8 @@ type Options struct {
 	SharedRepository        string            `yaml:"shared_repository"`
 	SharedConfigurationPath string            `yaml:"shared_configuration_path"`
 	DefaultRepositoryConfig *bulldozer.Config `yaml:"default_repository_config"`
+
+	handler.PullUpdateDelays `yaml:",inline"`
 
 	ConfigurationV0Paths []string `yaml:"configuration_v0_paths"`
 }
