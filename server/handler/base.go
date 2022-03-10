@@ -30,6 +30,7 @@ type Base struct {
 
 	ConfigFetcher            *ConfigFetcher
 	PushRestrictionUserToken string
+	DisableUpdateFeature     bool
 }
 
 func (b *Base) FetchConfigForPR(ctx context.Context, client *github.Client, pr *github.PullRequest) (*bulldozer.Config, error) {

@@ -89,6 +89,7 @@ func New(c *Config) (*Server, error) {
 		),
 
 		PushRestrictionUserToken: c.Options.PushRestrictionUserToken,
+		DisableUpdateFeature:     c.Options.DisableUpdateFeature,
 	}
 
 	queueSize := c.Workers.QueueSize

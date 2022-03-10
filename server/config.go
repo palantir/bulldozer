@@ -66,6 +66,8 @@ type Options struct {
 	DefaultRepositoryConfig *bulldozer.Config `yaml:"default_repository_config"`
 
 	ConfigurationV0Paths []string `yaml:"configuration_v0_paths"`
+
+	DisableUpdateFeature bool `yaml:"disable_update_feature"`
 }
 
 func ParseConfig(bytes []byte) (*Config, error) {

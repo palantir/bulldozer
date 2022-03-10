@@ -55,6 +55,12 @@ func (h *Push) Handle(ctx context.Context, eventType, deliveryID string, payload
 	ctx, logger := githubapp.PrepareRepoContext(ctx, installationID, ghRepo)
 	logger.Debug().Msgf("Received push event with base ref %s", baseRef)
 
+	// Skip any further processing of pull request updates if enabled at the server level
+	if h.DisableUpdateFeature {
+		logger.Debug().Msgf("Skipping updates to base ref %s due to server configuration override", baseRef)
+		return nil
+	}
+
 	client, err := h.ClientCreator.NewInstallationClient(installationID)
 	if err != nil {
 		return errors.Wrap(err, "failed to instantiate github client")
