@@ -69,7 +69,9 @@ func (h *PullRequest) Handle(ctx context.Context, eventType, deliveryID string, 
 	}
 
 	if event.GetAction() == "labeled" || event.GetAction() == "opened" {
-		if !h.DisableUpdateFeature {
+		if h.DisableUpdateFeature {
+			logger.Debug().Msgf("Skipping updates to pull request due to server configuration override")
+		} else {
 			base, _ := pullCtx.Branches()
 			didUpdatePR, err := h.UpdatePullRequest(logger.WithContext(ctx), pullCtx, client, config, pr, base)
 			if err != nil {
@@ -79,8 +81,6 @@ func (h *PullRequest) Handle(ctx context.Context, eventType, deliveryID string, 
 			if didUpdatePR {
 				return nil
 			}
-		} else {
-			logger.Debug().Msgf("Skipping updates to pull request due to server configuration override")
 		}
 	}
 

@@ -428,6 +428,7 @@ server level by specifying the following server option:
 ```yaml
 options:
   disable_update_feature: true
+```
 
 
 ## Development
