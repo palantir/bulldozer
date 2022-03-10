@@ -115,6 +115,9 @@ merge:
     # Pull requests targeting branches matching any of these regular expressions are added to the trigger.
     branch_patterns: ["feature/.*"]
 
+    # Pull requests with auto merge enabled are added to the trigger.
+    auto_merge: true
+
   # "ignore" defines the set of pull request ignored by bulldozer. If the
   # section is missing, bulldozer considers all pull requests. It takes the
   # same keys as the "trigger" section.
