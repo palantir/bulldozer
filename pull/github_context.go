@@ -293,5 +293,11 @@ func (ghc *GithubContext) IsDraft(ctx context.Context) bool {
 	return ghc.pr.GetDraft()
 }
 
+func (ghc *GithubContext) AutoMerge(ctx context.Context) bool {
+	autoMerge := ghc.pr.GetAutoMerge()
+
+	return autoMerge != nil
+}
+
 // type assertion
 var _ Context = &GithubContext{}

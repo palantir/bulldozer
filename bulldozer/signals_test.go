@@ -32,6 +32,7 @@ func TestSignalsMatchesAny(t *testing.T) {
 		PRBodySubstrings:  []string{"BODY_MERGE_PLZ"},
 		Branches:          []string{"develop"},
 		BranchPatterns:    []string{"test/.*", "^feature/.*$"},
+		AutoMerge:         true,
 	}
 
 	ctx := context.Background()
@@ -132,6 +133,13 @@ func TestSignalsMatchesAny(t *testing.T) {
 			},
 			Matches: true,
 			Reason:  `pull request target branch ("feature/awesomeFeature") matches pattern: "^feature/.*$"`,
+		},
+		"autoMergeMatch": {
+			PullContext: &pulltest.MockPullContext{
+				AutoMergeValue: true,
+			},
+			Matches: true,
+			Reason:  "pull request is configured to auto merge",
 		},
 	}
 
@@ -263,6 +271,7 @@ func TestSignalsMatchesAll(t *testing.T) {
 		Branches:          []string{"test/v9.9.9", "other"},
 		BranchPatterns:    []string{"test/.*", "^feature/.*$"},
 		MaxCommits:        2,
+		AutoMerge:         true,
 	}
 
 	ctx := context.Background()
@@ -282,6 +291,7 @@ func TestSignalsMatchesAll(t *testing.T) {
 					{SHA: "1", Message: "commit 1"},
 					{SHA: "2", Message: "commit 2"},
 				},
+				AutoMergeValue: true,
 			},
 			Matches: true,
 			Reason:  `pull request matches all testlist signals`,
@@ -296,6 +306,7 @@ func TestSignalsMatchesAll(t *testing.T) {
 					{SHA: "1", Message: "commit 1"},
 					{SHA: "2", Message: "commit 2"},
 				},
+				AutoMergeValue: false,
 			},
 			Matches: false,
 			Reason:  `pull request does not match all testlist signals`,
