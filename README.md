@@ -416,6 +416,20 @@ The upgrade process is therefore to deploy the latest version of bulldozer with 
 `configuration_v0_path` configured, and to enable the bulldozer GitHub App on all organizations where it was
 previously installed.
 
+### Reducing Update Commit and CI Pressure
+
+The Bulldozer "Update" feature is useful when keeping branches up-to-date,  but 
+can cause lots of pressure on CI build systems and Github when there are many pull requests
+open on a single repository.
+
+To reduce pressure on CI systems and Github, the update feature can be disabled at the
+server level by specifying the following server option:
+
+```yaml
+options:
+  disable_update_feature: true
+
+
 ## Development
 
 To develop `bulldozer`, you will need a [Go installation](https://golang.org/doc/install).
