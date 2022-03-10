@@ -84,6 +84,9 @@ type Context interface {
 
 	// IsDraft returns true if the PR is in a draft state.
 	IsDraft(ctx context.Context) bool
+
+	// AutoMerge returns true if the PR is configured to be automatically merged.
+	AutoMerge(ctx context.Context) bool
 }
 
 type MergeState struct {

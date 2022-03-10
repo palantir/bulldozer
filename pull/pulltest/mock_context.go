@@ -58,7 +58,8 @@ type MockPullContext struct {
 	IsTargetedValue    bool
 	IsTargetedErrValue error
 
-	IsDraftValue bool
+	IsDraftValue   bool
+	AutoMergeValue bool
 }
 
 func (c *MockPullContext) Owner() string {
@@ -130,6 +131,10 @@ func (c *MockPullContext) IsTargeted(ctx context.Context) (bool, error) {
 
 func (c *MockPullContext) IsDraft(ctx context.Context) bool {
 	return c.IsDraftValue
+}
+
+func (c *MockPullContext) AutoMerge(ctx context.Context) bool {
+	return c.AutoMergeValue
 }
 
 // type assertion

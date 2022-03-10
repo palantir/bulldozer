@@ -40,6 +40,7 @@ type PRBodySubstringsSignal []string
 type BranchesSignal []string
 type BranchPatternsSignal []string
 type MaxCommitsSignal int
+type AutoMergeSignal bool
 
 type Signals struct {
 	Labels            LabelsSignal            `yaml:"labels"`
@@ -49,6 +50,7 @@ type Signals struct {
 	Branches          BranchesSignal          `yaml:"branches"`
 	BranchPatterns    BranchPatternsSignal    `yaml:"branch_patterns"`
 	MaxCommits        MaxCommitsSignal        `yaml:"max_commits"`
+	AutoMerge         AutoMergeSignal         `yaml:"auto_merge"`
 }
 
 func (signal LabelsSignal) Enabled() bool {
@@ -79,6 +81,10 @@ func (signal MaxCommitsSignal) Enabled() bool {
 	return signal > 0
 }
 
+func (signal AutoMergeSignal) Enabled() bool {
+	return bool(signal)
+}
+
 func (s Signals) Enabled() bool {
 	return s.Labels.Enabled() ||
 		s.CommentSubstrings.Enabled() ||
@@ -86,7 +92,8 @@ func (s Signals) Enabled() bool {
 		s.PRBodySubstrings.Enabled() ||
 		s.Branches.Enabled() ||
 		s.BranchPatterns.Enabled() ||
-		s.MaxCommits.Enabled()
+		s.MaxCommits.Enabled() ||
+		s.AutoMerge.Enabled()
 }
 
 // MatchesAll returns true if the pull request matches ALL of the signals. It also
@@ -106,6 +113,7 @@ func (s Signals) MatchesAll(ctx context.Context, pullCtx pull.Context, tag strin
 		&s.Branches,
 		&s.BranchPatterns,
 		&s.MaxCommits,
+		&s.AutoMerge,
 	}
 
 	for _, signal := range signals {
@@ -140,6 +148,7 @@ func (s Signals) MatchesAny(ctx context.Context, pullCtx pull.Context, tag strin
 		&s.PRBodySubstrings,
 		&s.Branches,
 		&s.BranchPatterns,
+		&s.AutoMerge,
 	}
 
 	for _, signal := range signals {
@@ -336,6 +345,23 @@ func (signal MaxCommitsSignal) Matches(ctx context.Context, pullCtx pull.Context
 
 	if len(commits) <= int(signal) {
 		return true, fmt.Sprintf("pull request has %q commits, which is less than or equal to the maximum of %q", len(commits), signal), nil
+	}
+
+	return false, "", nil
+}
+
+func (signal AutoMergeSignal) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
+	logger := zerolog.Ctx(ctx)
+
+	if !signal.Enabled() {
+		logger.Debug().Msgf("No valid auto merge value has been provided to match against")
+		return false, "", nil
+	}
+
+	autoMerge := pullCtx.AutoMerge(ctx)
+
+	if autoMerge {
+		return true, "pull request is configured to auto merge", nil
 	}
 
 	return false, "", nil
