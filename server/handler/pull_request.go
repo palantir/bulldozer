@@ -69,14 +69,18 @@ func (h *PullRequest) Handle(ctx context.Context, eventType, deliveryID string, 
 	}
 
 	if event.GetAction() == "labeled" || event.GetAction() == "opened" {
-		base, _ := pullCtx.Branches()
-		didUpdatePR, err := h.UpdatePullRequest(logger.WithContext(ctx), pullCtx, client, config, pr, base)
-		if err != nil {
-			logger.Error().Err(errors.WithStack(err)).Msg("Error updating pull request")
-		}
+		if h.DisableUpdateFeature {
+			logger.Debug().Msgf("Skipping updates to pull request due to server configuration override")
+		} else {
+			base, _ := pullCtx.Branches()
+			didUpdatePR, err := h.UpdatePullRequest(logger.WithContext(ctx), pullCtx, client, config, pr, base)
+			if err != nil {
+				logger.Error().Err(errors.WithStack(err)).Msg("Error updating pull request")
+			}
 
-		if didUpdatePR {
-			return nil
+			if didUpdatePR {
+				return nil
+			}
 		}
 	}
 
