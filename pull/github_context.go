@@ -190,7 +190,7 @@ func (ghc *GithubContext) PushRestrictions(ctx context.Context) (bool, error) {
 func (ghc *GithubContext) loadBranchProtection(ctx context.Context) error {
 	protection, _, err := ghc.client.Repositories.GetBranchProtection(ctx, ghc.owner, ghc.repo, ghc.pr.GetBase().GetRef())
 	if err != nil {
-		if isNotFound(err) {
+		if isNotFound(err) || err == github.ErrBranchNotProtected {
 			ghc.branchProtection = &github.Protection{}
 			return nil
 		}
