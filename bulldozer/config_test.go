@@ -38,6 +38,7 @@ merge:
     squash:
       body: summarize_commits
   delete_after_merge: true
+  required_statuses: ["Test 1", "Test 2"]
 
 update:
   trigger:
@@ -45,6 +46,7 @@ update:
   ignore:
     labels: ["do not update"]
   ignore_drafts: true
+  required_statuses: ["Test 3", "Test 4"]
 `
 
 		actual, err := ParseConfig([]byte(config))
@@ -57,7 +59,34 @@ update:
 			Labels:            []string{"do not merge"},
 			CommentSubstrings: []string{"==DO_NOT_MERGE=="},
 		}, actual.Merge.Ignore)
+		assert.Equal(t, []string{"Test 1", "Test 2"}, actual.Merge.RequiredStatuses)
+
 		assert.Equal(t, *actual.Update.IgnoreDrafts, true)
+		assert.Equal(t, []string{"Test 3", "Test 4"}, actual.Update.RequiredStatuses)
+	})
+
+	t.Run("parseDefaults", func(t *testing.T) {
+		config := `
+version: 1
+
+merge:
+  method: squash
+  options:
+    squash:
+      body: summarize_commits
+`
+
+		actual, err := ParseConfig([]byte(config))
+		require.Nil(t, err)
+
+		assert.Empty(t, actual.Merge.Trigger)
+		assert.Empty(t, actual.Merge.Ignore)
+		assert.Empty(t, actual.Merge.RequiredStatuses)
+
+		assert.Empty(t, actual.Update.Trigger)
+		assert.Empty(t, actual.Update.Ignore)
+		assert.Nil(t, actual.Update.IgnoreDrafts)
+		assert.Empty(t, actual.Update.RequiredStatuses)
 	})
 
 	t.Run("parseExisting", func(t *testing.T) {
@@ -102,7 +131,6 @@ update:
 		assert.Equal(t, Signals{
 			Labels: []string{"do not update"},
 		}, actual.Update.Ignore)
-		assert.Nil(t, actual.Update.IgnoreDrafts)
 	})
 
 	t.Run("ignoresOldConfig", func(t *testing.T) {
