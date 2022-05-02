@@ -210,6 +210,12 @@ update:
   # If true, bulldozer will ignore updating draft pull requests, unless they
   # explicitly match a configured trigger condition.
   ignore_drafts: false
+
+  # "required_statuses" is a list of additional status contexts that must pass
+  # before bulldozer can update a pull request. This is useful if you want to
+  # require certain statuses to pass before automated updates are made.
+  required_statuses:
+    - "policy-bot: develop"
 ```
 
 #### Remote Configuration
