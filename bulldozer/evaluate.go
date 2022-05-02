@@ -140,7 +140,7 @@ func ShouldMergePR(ctx context.Context, pullCtx pull.Context, mergeConfig MergeC
 
 	successStatuses, err := pullCtx.CurrentSuccessStatuses(ctx)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to determine currently successful status checks")
+		return false, errors.Wrap(err, "failed to determine currently successful status checks for considering merge")
 	}
 
 	unsatisfiedStatuses := statusSetDifference(requiredStatuses, successStatuses)
@@ -188,6 +188,21 @@ func ShouldUpdatePR(ctx context.Context, pullCtx pull.Context, updateConfig Upda
 	if updateConfig.IgnoreDrafts != nil && *updateConfig.IgnoreDrafts && pullCtx.IsDraft(ctx) {
 		logger.Debug().Msgf("%s is deemed not updateable because PR is in a draft state", pullCtx.Locator())
 		return false, nil
+	}
+
+	requiredStatuses := updateConfig.RequiredStatuses
+
+	if len(requiredStatuses) > 0 {
+		successStatuses, err := pullCtx.CurrentSuccessStatuses(ctx)
+		if err != nil {
+			return false, errors.Wrap(err, "failed to determine currently successful status checks for considering update")
+		}
+
+		unsatisfiedStatuses := statusSetDifference(requiredStatuses, successStatuses)
+		if len(unsatisfiedStatuses) > 0 {
+			logger.Debug().Msgf("%s is deemed not updateable because of unfulfilled status checks: [%s]", pullCtx.Locator(), strings.Join(unsatisfiedStatuses, ","))
+			return false, nil
+		}
 	}
 
 	return true, nil
