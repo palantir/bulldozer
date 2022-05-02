@@ -102,34 +102,34 @@ func ShouldMergePR(ctx context.Context, pullCtx pull.Context, mergeConfig MergeC
 	if mergeConfig.Ignore.Enabled() {
 		ignored, reason, err := IsPRIgnored(ctx, pullCtx, mergeConfig.Ignore)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to determine if pull request is ignored")
+			return false, errors.Wrap(err, "failed to determine if pull request is ignored for merge")
 		}
 		if ignored {
 			logger.Debug().Msgf("%s is deemed not mergeable because ignoring is enabled and %s", pullCtx.Locator(), reason)
 			return false, nil
 		}
 	} else {
-		logger.Debug().Msg("ignoring is not enabled")
+		logger.Debug().Msg("ignoring for merge is not enabled")
 	}
 
 	if mergeConfig.Trigger.Enabled() {
 		triggered, reason, err := IsPRTriggered(ctx, pullCtx, mergeConfig.Trigger)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to determine if pull request is triggered")
+			return false, errors.Wrap(err, "failed to determine if pull request is triggered for merge")
 		}
 		if !triggered {
 			logger.Debug().Msgf("%s is deemed not mergeable because triggering is enabled and no trigger signal detected", pullCtx.Locator())
 			return false, nil
 		}
 
-		logger.Debug().Msgf("%s is triggered because triggering is enabled and %s", pullCtx.Locator(), reason)
+		logger.Debug().Msgf("%s is triggered for merge because triggering is enabled and %s", pullCtx.Locator(), reason)
 	} else {
-		logger.Debug().Msg("triggering is not enabled")
+		logger.Debug().Msg("triggering for merge is not enabled")
 	}
 
 	requiredStatuses, err := pullCtx.RequiredStatuses(ctx)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to determine required Github status checks")
+		return false, errors.Wrap(err, "failed to determine required Github status checks for merge")
 	}
 	requiredStatuses = append(requiredStatuses, mergeConfig.RequiredStatuses...)
 
@@ -140,7 +140,7 @@ func ShouldMergePR(ctx context.Context, pullCtx pull.Context, mergeConfig MergeC
 
 	successStatuses, err := pullCtx.CurrentSuccessStatuses(ctx)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to determine currently successful status checks for considering merge")
+		return false, errors.Wrap(err, "failed to determine currently successful status checks for merge")
 	}
 
 	unsatisfiedStatuses := statusSetDifference(requiredStatuses, successStatuses)
@@ -163,7 +163,7 @@ func ShouldUpdatePR(ctx context.Context, pullCtx pull.Context, updateConfig Upda
 	if updateConfig.Ignore.Enabled() {
 		ignored, reason, err := IsPRIgnored(ctx, pullCtx, updateConfig.Ignore)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to determine if pull request is ignored")
+			return false, errors.Wrap(err, "failed to determine if pull request is ignored for update")
 		}
 		if ignored {
 			logger.Debug().Msgf("%s is deemed not updateable because ignoring is enabled and %s", pullCtx.Locator(), reason)
@@ -174,14 +174,14 @@ func ShouldUpdatePR(ctx context.Context, pullCtx pull.Context, updateConfig Upda
 	if updateConfig.Trigger.Enabled() {
 		triggered, reason, err := IsPRTriggered(ctx, pullCtx, updateConfig.Trigger)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to determine if pull request is triggered")
+			return false, errors.Wrap(err, "failed to determine if pull request is triggered for update")
 		}
 		if !triggered {
 			logger.Debug().Msgf("%s is deemed not updateable because triggering is enabled and no trigger signal detected", pullCtx.Locator())
 			return false, nil
 		}
 
-		logger.Debug().Msgf("%s is triggered because triggering is enabled and %s", pullCtx.Locator(), reason)
+		logger.Debug().Msgf("%s is triggered for update because triggering is enabled and %s", pullCtx.Locator(), reason)
 		return true, nil
 	}
 
@@ -195,7 +195,7 @@ func ShouldUpdatePR(ctx context.Context, pullCtx pull.Context, updateConfig Upda
 	if len(requiredStatuses) > 0 {
 		successStatuses, err := pullCtx.CurrentSuccessStatuses(ctx)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to determine currently successful status checks for considering update")
+			return false, errors.Wrap(err, "failed to determine currently successful status checks for update")
 		}
 
 		unsatisfiedStatuses := statusSetDifference(requiredStatuses, successStatuses)
