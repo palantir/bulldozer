@@ -156,7 +156,7 @@ func ShouldMergePR(ctx context.Context, pullCtx pull.Context, mergeConfig MergeC
 func ShouldUpdatePR(ctx context.Context, pullCtx pull.Context, updateConfig UpdateConfig) (bool, error) {
 	logger := zerolog.Ctx(ctx)
 
-	if !updateConfig.Ignore.Enabled() && !updateConfig.Trigger.Enabled() && updateConfig.IgnoreDrafts == nil {
+	if !updateConfig.Ignore.Enabled() && !updateConfig.Trigger.Enabled() && updateConfig.IgnoreDrafts == nil && len(updateConfig.RequiredStatuses) == 0 {
 		return false, nil
 	}
 
