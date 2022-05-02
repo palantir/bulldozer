@@ -76,6 +76,10 @@ type UpdateConfig struct {
 
 	IgnoreDrafts *bool `yaml:"ignore_drafts"`
 
+	// Additional status checks that bulldozer should require
+	// (even if the branch protection settings doesn't require it)
+	RequiredStatuses []string `yaml:"required_statuses"`
+
 	// Blacklist and Whitelist are legacy options that will be disabled in a future v2 format
 	Blacklist Signals `yaml:"blacklist"`
 	Whitelist Signals `yaml:"whitelist"`
