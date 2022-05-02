@@ -152,3 +152,43 @@ func ShouldMergePR(ctx context.Context, pullCtx pull.Context, mergeConfig MergeC
 	// Ignore required reviews and try a merge (which may fail with a 4XX).
 	return true, nil
 }
+
+func ShouldUpdatePR(ctx context.Context, pullCtx pull.Context, updateConfig UpdateConfig) (bool, error) {
+	logger := zerolog.Ctx(ctx)
+
+	if !updateConfig.Ignore.Enabled() && !updateConfig.Trigger.Enabled() && updateConfig.IgnoreDrafts == nil {
+		return false, nil
+	}
+
+	if updateConfig.Ignore.Enabled() {
+		ignored, reason, err := IsPRIgnored(ctx, pullCtx, updateConfig.Ignore)
+		if err != nil {
+			return false, errors.Wrap(err, "failed to determine if pull request is ignored")
+		}
+		if ignored {
+			logger.Debug().Msgf("%s is deemed not updateable because ignoring is enabled and %s", pullCtx.Locator(), reason)
+			return false, nil
+		}
+	}
+
+	if updateConfig.Trigger.Enabled() {
+		triggered, reason, err := IsPRTriggered(ctx, pullCtx, updateConfig.Trigger)
+		if err != nil {
+			return false, errors.Wrap(err, "failed to determine if pull request is triggered")
+		}
+		if !triggered {
+			logger.Debug().Msgf("%s is deemed not updateable because triggering is enabled and no trigger signal detected", pullCtx.Locator())
+			return false, nil
+		}
+
+		logger.Debug().Msgf("%s is triggered because triggering is enabled and %s", pullCtx.Locator(), reason)
+		return true, nil
+	}
+
+	if updateConfig.IgnoreDrafts != nil && *updateConfig.IgnoreDrafts && pullCtx.IsDraft(ctx) {
+		logger.Debug().Msgf("%s is deemed not updateable because PR is in a draft state", pullCtx.Locator())
+		return false, nil
+	}
+
+	return true, nil
+}
