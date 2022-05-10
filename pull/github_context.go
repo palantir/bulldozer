@@ -37,7 +37,7 @@ type GithubContext struct {
 	comments         []string
 	commits          []*Commit
 	branchProtection *github.Protection
-	successStatuses  []string
+	successStatuses  map[string]string
 }
 
 func NewGithubContext(client *github.Client, pr *github.PullRequest) Context {
@@ -205,10 +205,10 @@ func isNotFound(err error) bool {
 	return ok && rerr.Response.StatusCode == http.StatusNotFound
 }
 
-func (ghc *GithubContext) CurrentSuccessStatuses(ctx context.Context) ([]string, error) {
+func (ghc *GithubContext) CurrentSuccessStatuses(ctx context.Context) (map[string]string, error) {
 	if ghc.successStatuses == nil {
 		opts := &github.ListOptions{PerPage: 100}
-		var successStatuses []string
+		var successStatuses map[string]string
 		allowedCheckConclusions := map[string]bool{
 			"success": true,
 			"neutral": true,
@@ -223,7 +223,7 @@ func (ghc *GithubContext) CurrentSuccessStatuses(ctx context.Context) ([]string,
 
 			for _, s := range combinedStatus.Statuses {
 				if s.GetState() == "success" {
-					successStatuses = append(successStatuses, s.GetContext())
+					successStatuses[s.GetContext()] = *s.Creator.Login
 				}
 			}
 
@@ -242,7 +242,7 @@ func (ghc *GithubContext) CurrentSuccessStatuses(ctx context.Context) ([]string,
 
 			for _, s := range checkRuns.CheckRuns {
 				if allowedCheckConclusions[s.GetConclusion()] {
-					successStatuses = append(successStatuses, s.GetName())
+					successStatuses[s.GetName()] = *s.App.Owner.Login
 				}
 			}
 

@@ -142,3 +142,31 @@ func parseConfigV0(bytes []byte) (*Config, error) {
 
 	return &config, nil
 }
+
+func requiredStatusesFromStrings(list []string) RequiredStatuses {
+	requiredStatuses := make(RequiredStatuses)
+	for i := range list {
+		requiredStatuses[list[i]] = []string{}
+	}
+	return requiredStatuses
+}
+
+func mergeRequiredStatuses(first RequiredStatuses, second RequiredStatuses) RequiredStatuses {
+	for k, v := range second {
+		first[k] = append(first[k], v...)
+	}
+	return first
+}
+
+func (requiredStatuses *RequiredStatuses) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var list []string
+	if err := unmarshal(&list); err == nil {
+		*requiredStatuses = requiredStatusesFromStrings(list)
+		return nil
+	}
+	type wrappedRequiredStatuses RequiredStatuses
+	if err := unmarshal((*wrappedRequiredStatuses)(requiredStatuses)); err == nil {
+		return nil
+	}
+	return errors.New("failed to parse required statuses")
+}

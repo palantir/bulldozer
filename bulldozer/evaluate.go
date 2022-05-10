@@ -58,7 +58,7 @@ func IsMergeMethodTriggered(ctx context.Context, pullCtx pull.Context, config Si
 
 // statusSetDifference returns all statuses in required that are not in actual,
 // accouting for special behavior in GitHub.
-func statusSetDifference(required, actual []string) []string {
+func statusSetDifference(required RequiredStatuses, actual map[string]string) []string {
 	// GitHub apparently implements special behavior with required statuses for
 	// Travis CI for what I assume are legacy reasons. If travisStatusBase is
 	// required, both travisStatusPush and travisStatusPR inherit the required
@@ -74,21 +74,29 @@ func statusSetDifference(required, actual []string) []string {
 		travisStatusPR   = "continuous-integration/travis-ci/pr"
 	)
 
-	actualSet := make(map[string]struct{})
-	for _, s := range actual {
+	actualSet := make(map[string]string)
+	for s, u := range actual {
 		if s == travisStatusPush || s == travisStatusPR {
-			actualSet[travisStatusBase] = struct{}{}
+			actualSet[travisStatusBase] = u
 		}
-		actualSet[s] = struct{}{}
+		actualSet[s] = u
 	}
 
-	seen := make(map[string]struct{})
 	var result []string
-	for _, s := range required {
-		if _, ok := actualSet[s]; !ok {
-			if _, alreadySeen := seen[s]; !alreadySeen {
-				result = append(result, s)
-				seen[s] = struct{}{}
+	for s, u := range required {
+		if v, ok := actualSet[s]; !ok {
+			result = append(result, s)
+		} else {
+			if len(u) != 0 {
+				var found = false
+				for i := range u {
+					if u[i] == v {
+						found = true
+					}
+				}
+				if !found {
+					result = append(result, s)
+				}
 			}
 		}
 	}
@@ -127,11 +135,12 @@ func ShouldMergePR(ctx context.Context, pullCtx pull.Context, mergeConfig MergeC
 		logger.Debug().Msg("triggering is not enabled")
 	}
 
-	requiredStatuses, err := pullCtx.RequiredStatuses(ctx)
+	list, err := pullCtx.RequiredStatuses(ctx)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to determine required Github status checks")
 	}
-	requiredStatuses = append(requiredStatuses, mergeConfig.RequiredStatuses...)
+	requiredStatuses := requiredStatusesFromStrings(list)
+	requiredStatuses = mergeRequiredStatuses(requiredStatuses, mergeConfig.RequiredStatuses)
 
 	if len(requiredStatuses) == 0 && !mergeConfig.AllowMergeWithNoChecks {
 		logger.Debug().Msgf("%s has 0 required status checks, but is deemed not mergeable because AllowMergeWithNoChecks is false", pullCtx.Locator())

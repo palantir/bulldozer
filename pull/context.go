@@ -67,7 +67,7 @@ type Context interface {
 
 	// CurrentSuccessStatuses returns the names of all currently
 	// successful status checks for the pull request.
-	CurrentSuccessStatuses(ctx context.Context) ([]string, error)
+	CurrentSuccessStatuses(ctx context.Context) (map[string]string, error)
 
 	// Comments lists all comments on the pull request.
 	Comments(ctx context.Context) ([]string, error)

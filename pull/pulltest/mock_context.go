@@ -52,7 +52,7 @@ type MockPullContext struct {
 	PushRestrictionsValue    bool
 	PushRestrictionsErrValue error
 
-	SuccessStatusesValue    []string
+	SuccessStatusesValue    map[string]string
 	SuccessStatusesErrValue error
 
 	IsTargetedValue    bool
@@ -117,7 +117,7 @@ func (c *MockPullContext) PushRestrictions(ctx context.Context) (bool, error) {
 	return c.PushRestrictionsValue, c.PushRestrictionsErrValue
 }
 
-func (c *MockPullContext) CurrentSuccessStatuses(ctx context.Context) ([]string, error) {
+func (c *MockPullContext) CurrentSuccessStatuses(ctx context.Context) (map[string]string, error) {
 	return c.SuccessStatusesValue, c.SuccessStatusesErrValue
 }
 

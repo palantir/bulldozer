@@ -154,4 +154,36 @@ update:
 			Labels: []string{"new dnu"},
 		}, actual.Update.Ignore)
 	})
+
+	t.Run("requiredStatusesStrings", func(t *testing.T) {
+		config := `
+version: 1
+
+merge:
+ required_statuses:
+   - foo
+   - bar
+`
+		actual, err := ParseConfig([]byte(config))
+		require.Nil(t, err)
+
+		assert.Equal(t, MergeConfig{RequiredStatuses: RequiredStatuses{"foo": []string{}, "bar": []string{}}}, actual.Merge)
+	})
+
+	t.Run("requiredStatusesMap", func(t *testing.T) {
+		config := `
+version: 1
+
+merge:
+ required_statuses:
+   foo:
+   - baz
+   bar:
+   - qux
+`
+		actual, err := ParseConfig([]byte(config))
+		require.Nil(t, err)
+
+		assert.Equal(t, MergeConfig{RequiredStatuses: RequiredStatuses{"foo": []string{"baz"}, "bar": []string{"qux"}}}, actual.Merge)
+	})
 }

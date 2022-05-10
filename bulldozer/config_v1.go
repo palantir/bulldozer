@@ -52,8 +52,10 @@ type MergeConfig struct {
 
 	// Additional status checks that bulldozer should require
 	// (even if the branch protection settings doesn't require it)
-	RequiredStatuses []string `yaml:"required_statuses"`
+	RequiredStatuses RequiredStatuses `yaml:"required_statuses"`
 }
+
+type RequiredStatuses map[string][]string
 
 type MergeOptions struct {
 	Squash *SquashOptions `yaml:"squash"`

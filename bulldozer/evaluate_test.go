@@ -277,7 +277,7 @@ func TestShouldMerge(t *testing.T) {
 	t.Run("allStatusChecksMet", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			LabelValue:            []string{"LABEL_MERGE"},
-			SuccessStatusesValue:  []string{"StatusCheckA", "StatusCheckB"},
+			SuccessStatusesValue:  map[string]string{"StatusCheckA": "UserA", "StatusCheckB": "UserB"},
 			RequiredStatusesValue: []string{"StatusCheckB", "StatusCheckA"},
 		}
 
@@ -290,7 +290,7 @@ func TestShouldMerge(t *testing.T) {
 	t.Run("notAllStatusChecksMet", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
 			LabelValue:            []string{"LABEL_MERGE"},
-			SuccessStatusesValue:  []string{"StatusCheckA"},
+			SuccessStatusesValue:  map[string]string{"StatusCheckA": "UserA"},
 			RequiredStatusesValue: []string{"StatusCheckA", "StatusCheckB"},
 		}
 
@@ -302,8 +302,11 @@ func TestShouldMerge(t *testing.T) {
 
 	t.Run("travisCiPushCheckMet", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
-			LabelValue:            []string{"LABEL_MERGE"},
-			SuccessStatusesValue:  []string{"continuous-integration/travis-ci/push", "StatusCheckA"},
+			LabelValue: []string{"LABEL_MERGE"},
+			SuccessStatusesValue: map[string]string{
+				"continuous-integration/travis-ci/push": "TravisCI",
+				"StatusCheckA":                          "UserA",
+			},
 			RequiredStatusesValue: []string{"continuous-integration/travis-ci"},
 		}
 
@@ -315,12 +318,72 @@ func TestShouldMerge(t *testing.T) {
 
 	t.Run("travisCiPrCheckMet", func(t *testing.T) {
 		pc := &pulltest.MockPullContext{
-			LabelValue:            []string{"LABEL_MERGE"},
-			SuccessStatusesValue:  []string{"continuous-integration/travis-ci/pr", "StatusCheckA"},
+			LabelValue: []string{"LABEL_MERGE"},
+			SuccessStatusesValue: map[string]string{
+				"continuous-integration/travis-ci/pr": "TravisCI",
+				"StatusCheckA":                        "UserA",
+			},
 			RequiredStatusesValue: []string{"continuous-integration/travis-ci"},
 		}
 
 		actualShouldMerge, err := ShouldMergePR(ctx, pc, mergeConfig)
+
+		require.Nil(t, err)
+		assert.True(t, actualShouldMerge)
+	})
+
+	t.Run("requiredStatusMatchingUserCheckMet", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			SuccessStatusesValue: map[string]string{
+				"continuous-integration/travis-ci/pr": "TravisCI",
+				"StatusCheckA":                        "UserA",
+			},
+			RequiredStatusesValue: []string{"continuous-integration/travis-ci"},
+		}
+
+		actualShouldMerge, err := ShouldMergePR(ctx, pc, MergeConfig{
+			RequiredStatuses: RequiredStatuses{
+				"StatusCheckA": {"UserA"},
+			},
+		})
+
+		require.Nil(t, err)
+		assert.True(t, actualShouldMerge)
+	})
+
+	t.Run("requiredStatusNoMatchingUserCheckMet", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			SuccessStatusesValue: map[string]string{
+				"continuous-integration/travis-ci/pr": "TravisCI",
+				"StatusCheckA":                        "UserB",
+			},
+			RequiredStatusesValue: []string{"continuous-integration/travis-ci"},
+		}
+
+		actualShouldMerge, err := ShouldMergePR(ctx, pc, MergeConfig{
+			RequiredStatuses: RequiredStatuses{
+				"StatusCheckA": {"UserA", "UserC"},
+			},
+		})
+
+		require.Nil(t, err)
+		assert.False(t, actualShouldMerge)
+	})
+
+	t.Run("requiredStatusCheckMet", func(t *testing.T) {
+		pc := &pulltest.MockPullContext{
+			SuccessStatusesValue: map[string]string{
+				"continuous-integration/travis-ci/pr": "TravisCI",
+				"StatusCheckA":                        "UserA",
+			},
+			RequiredStatusesValue: []string{"continuous-integration/travis-ci"},
+		}
+
+		actualShouldMerge, err := ShouldMergePR(ctx, pc, MergeConfig{
+			RequiredStatuses: RequiredStatuses{
+				"StatusCheckA": {},
+			},
+		})
 
 		require.Nil(t, err)
 		assert.True(t, actualShouldMerge)
