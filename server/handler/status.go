@@ -76,8 +76,23 @@ func (h *Status) Handle(ctx context.Context, eventType, deliveryID string, paylo
 		if err != nil {
 			return err
 		}
-		if err := h.ProcessPullRequest(logger.WithContext(ctx), pullCtx, client, config, pr); err != nil {
-			logger.Error().Err(errors.WithStack(err)).Msg("Error processing pull request")
+
+		var didUpdatePR = false
+		if h.DisableUpdateFeature {
+			logger.Debug().Msgf("Skipping updates to pull request due to server configuration override")
+		} else {
+			base, _ := pullCtx.Branches()
+			var err error
+			didUpdatePR, err = h.UpdatePullRequest(logger.WithContext(ctx), pullCtx, client, config, pr, base)
+			if err != nil {
+				logger.Error().Err(errors.WithStack(err)).Msg("Error updating pull request")
+			}
+		}
+
+		if !didUpdatePR {
+			if err := h.ProcessPullRequest(logger.WithContext(ctx), pullCtx, client, config, pr); err != nil {
+				logger.Error().Err(errors.WithStack(err)).Msg("Error processing pull request")
+			}
 		}
 	}
 

@@ -77,8 +77,23 @@ func (h *CheckRun) Handle(ctx context.Context, eventType, deliveryID string, pay
 		if err != nil {
 			return err
 		}
-		if err := h.ProcessPullRequest(ctx, pullCtx, client, config, fullPR); err != nil {
-			logger.Error().Err(errors.WithStack(err)).Msg("Error processing pull request")
+
+		var didUpdatePR = false
+		if h.DisableUpdateFeature {
+			logger.Debug().Msgf("Skipping updates to pull request due to server configuration override")
+		} else {
+			base, _ := pullCtx.Branches()
+			var err error
+			didUpdatePR, err = h.UpdatePullRequest(logger.WithContext(ctx), pullCtx, client, config, pr, base)
+			if err != nil {
+				logger.Error().Err(errors.WithStack(err)).Msg("Error updating pull request")
+			}
+		}
+
+		if !didUpdatePR {
+			if err := h.ProcessPullRequest(ctx, pullCtx, client, config, fullPR); err != nil {
+				logger.Error().Err(errors.WithStack(err)).Msg("Error processing pull request")
+			}
 		}
 	}
 
