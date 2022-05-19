@@ -336,7 +336,7 @@ func TestShouldUpdatePR(t *testing.T) {
 		updateConfig    UpdateConfig
 		expectingUpdate bool
 	}{
-		// Test default cases
+		// Test default cases and trigger / ignore handling (excluding drafts and required statuses)
 		{
 			name: "default",
 			pullCtx: pulltest.MockPullContext{
@@ -346,18 +346,28 @@ func TestShouldUpdatePR(t *testing.T) {
 			expectingUpdate: false,
 		},
 		{
-			name: "defaultDraft",
+			name: "labelsOnly",
 			pullCtx: pulltest.MockPullContext{
-				IsDraftValue: true,
+				IsDraftValue: false,
+				LabelValue:   []string{"ignore", "trigger"},
 			},
 			updateConfig:    UpdateConfig{},
 			expectingUpdate: false,
 		},
 		{
-			name: "labelsOnly",
+			name: "ignoreLabelOnly",
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: false,
-				LabelValue:   []string{"ignore", "trigger"},
+				LabelValue:   []string{"ignore"},
+			},
+			updateConfig:    UpdateConfig{},
+			expectingUpdate: false,
+		},
+		{
+			name: "triggerLabelOnly",
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+				LabelValue:   []string{"trigger"},
 			},
 			updateConfig:    UpdateConfig{},
 			expectingUpdate: false,
@@ -402,14 +412,31 @@ func TestShouldUpdatePR(t *testing.T) {
 			expectingUpdate: false,
 		},
 		{
-			name: "statusesOnly",
+			name: "ignoreConfigTriggerLabel",
 			pullCtx: pulltest.MockPullContext{
-				SuccessStatusesValue: []string{"status1", "status2"},
+				IsDraftValue: false,
+				LabelValue:   []string{"trigger"},
 			},
-			updateConfig:    UpdateConfig{},
+			updateConfig: UpdateConfig{
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+			},
+			expectingUpdate: true,
+		},
+		{
+			name: "triggerConfigIgnoreLabel",
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+				LabelValue:   []string{"ignore"},
+			},
+			updateConfig: UpdateConfig{
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+			},
 			expectingUpdate: false,
 		},
-		// Test trigger and ignore handling (excluding drafts and required statuses)
 		{
 			name: "ignored",
 			pullCtx: pulltest.MockPullContext{
@@ -485,6 +512,41 @@ func TestShouldUpdatePR(t *testing.T) {
 			expectingUpdate: false,
 		},
 		{
+			name: "triggeredWithIgnoreLabel",
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+				LabelValue:   []string{"trigger", "ignore"},
+			},
+			updateConfig: UpdateConfig{
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+			},
+			expectingUpdate: true,
+		},
+		{
+			name: "ignoredWithTriggerLabel",
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+				LabelValue:   []string{"ignore", "trigger"},
+			},
+			updateConfig: UpdateConfig{
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+			},
+			expectingUpdate: false,
+		},
+		// Test ignore draft handling
+		{
+			name: "defaultDraft",
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: true,
+			},
+			updateConfig:    UpdateConfig{},
+			expectingUpdate: false,
+		},
+		{
 			name: "ignoredDraft",
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: true,
@@ -511,23 +573,6 @@ func TestShouldUpdatePR(t *testing.T) {
 			expectingUpdate: true,
 		},
 		{
-			name: "ignoredAndTriggeredDraft",
-			pullCtx: pulltest.MockPullContext{
-				IsDraftValue: true,
-				LabelValue:   []string{"ignore", "trigger"},
-			},
-			updateConfig: UpdateConfig{
-				Ignore: Signals{
-					Labels: []string{"ignore"},
-				},
-				Trigger: Signals{
-					Labels: []string{"trigger"},
-				},
-			},
-			expectingUpdate: false,
-		},
-		// Test ignore draft handling
-		{
 			name: "ignoreDraftsDraft",
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: true,
@@ -548,9 +593,23 @@ func TestShouldUpdatePR(t *testing.T) {
 			expectingUpdate: true,
 		},
 		{
-			name: "ignoreDraftsAndTriggeredNonDraft",
+			name: "ignoreDraftsAndTriggeredDraft",
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: true,
+				LabelValue:   []string{"trigger"},
+			},
+			updateConfig: UpdateConfig{
+				IgnoreDrafts: boolVal(true),
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+			},
+			expectingUpdate: true,
+		},
+		{
+			name: "ignoreDraftsAndTriggeredNonDraft",
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
 				LabelValue:   []string{"trigger"},
 			},
 			updateConfig: UpdateConfig{
@@ -590,6 +649,40 @@ func TestShouldUpdatePR(t *testing.T) {
 			expectingUpdate: false,
 		},
 		{
+			name: "ignoreDraftsTriggeredAndIgnoredDraft",
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: true,
+				LabelValue:   []string{"ignore", "trigger"},
+			},
+			updateConfig: UpdateConfig{
+				IgnoreDrafts: boolVal(true),
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+			},
+			expectingUpdate: false,
+		},
+		{
+			name: "ignoreDraftsTriggeredAndIgnoredNonDraft",
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+				LabelValue:   []string{"ignore", "trigger"},
+			},
+			updateConfig: UpdateConfig{
+				IgnoreDrafts: boolVal(true),
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+			},
+			expectingUpdate: false,
+		},
+		{
 			name: "ignoreDraftsAndIgnoreConfigOnly",
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: true,
@@ -616,8 +709,160 @@ func TestShouldUpdatePR(t *testing.T) {
 			expectingUpdate: false,
 		},
 		// Test required statuses handling
-		
+		{
+			name: "statusesOnly",
+			pullCtx: pulltest.MockPullContext{
+				SuccessStatusesValue: []string{"status1", "status2"},
+			},
+			updateConfig:    UpdateConfig{},
+			expectingUpdate: false,
+		},
+		{
+			name: "fulfilledStatuses",
+			pullCtx: pulltest.MockPullContext{
+				SuccessStatusesValue: []string{"status1", "status2"},
+			},
+			updateConfig:    UpdateConfig{
+				RequiredStatuses: []string{"status1", "status2"},
+			},
+			expectingUpdate: true,
+		},
+		{
+			name: "missingStatuses",
+			pullCtx: pulltest.MockPullContext{
+				SuccessStatusesValue: []string{"status1"},
+			},
+			updateConfig:    UpdateConfig{
+				RequiredStatuses: []string{"status1", "status2"},
+			},
+			expectingUpdate: false,
+		},
+		{
+			name: "fulfilledTravisCIStatuses",
+			pullCtx: pulltest.MockPullContext{
+				SuccessStatusesValue: []string{"status1", "continuous-integration/travis-ci"},
+			},
+			updateConfig:    UpdateConfig{
+				RequiredStatuses: []string{"status1", "continuous-integration/travis-ci"},
+			},
+			expectingUpdate: true,
+		},
+		{
+			name: "missingTravisCIStatuses",
+			pullCtx: pulltest.MockPullContext{
+				SuccessStatusesValue: []string{"status1"},
+			},
+			updateConfig:    UpdateConfig{
+				RequiredStatuses: []string{"status1", "continuous-integration/travis-ci"},
+			},
+			expectingUpdate: false,
+		},
+		{
+			name: "triggeredMissingStatuses",
+			pullCtx: pulltest.MockPullContext{
+				LabelValue:   []string{"trigger"},
+				SuccessStatusesValue: []string{"status1", "status2"},
+			},
+			updateConfig:    UpdateConfig{
+				RequiredStatuses: []string{"status1"},
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+			},
+			expectingUpdate: true,
+		},
+		{
+			name: "ignoredMissingStatuses",
+			pullCtx: pulltest.MockPullContext{
+				LabelValue:   []string{"ignore"},
+				SuccessStatusesValue: []string{"status1", "status2"},
+			},
+			updateConfig:    UpdateConfig{
+				RequiredStatuses: []string{"status1"},
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+			},
+			expectingUpdate: false,
+		},
+		{
+			name: "triggeredAndIgnoredMissingStatuses",
+			pullCtx: pulltest.MockPullContext{
+				LabelValue:   []string{"trigger", "ignore"},
+				SuccessStatusesValue: []string{"status1", "status2"},
+			},
+			updateConfig:    UpdateConfig{
+				RequiredStatuses: []string{"status1"},
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+			},
+			expectingUpdate: false,
+		},
+		{
+			name: "missingStatusesDraft",
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: true,
+				SuccessStatusesValue: []string{"status1"},
+			},
+			updateConfig:    UpdateConfig{
+				RequiredStatuses: []string{"status1", "status2"},
+			},
+			expectingUpdate: false,
+		},
+		{
+			name: "missingStatusesIgnoreDraftDraft",
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: true,
+				SuccessStatusesValue: []string{"status1"},
+			},
+			updateConfig:    UpdateConfig{
+				IgnoreDrafts: boolVal(true),
+				RequiredStatuses: []string{"status1", "status2"},
+			},
+			expectingUpdate: false,
+		},
+		{
+			name: "fulfilledStatusesIgnoreDraftDraft",
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: true,
+				SuccessStatusesValue: []string{"status1", "status2"},
+			},
+			updateConfig:    UpdateConfig{
+				IgnoreDrafts: boolVal(true),
+				RequiredStatuses: []string{"status1", "status2"},
+			},
+			expectingUpdate: false,
+		},
+		{
+			name: "missingStatusesIgnoreDraftNonDraft",
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+				SuccessStatusesValue: []string{"status1"},
+			},
+			updateConfig:    UpdateConfig{
+				IgnoreDrafts: boolVal(true),
+				RequiredStatuses: []string{"status1", "status2"},
+			},
+			expectingUpdate: false,
+		},
+		{
+			name: "fulfilledStatusesIgnoreDraftNonDraft",
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+				SuccessStatusesValue: []string{"status1", "status2"},
+			},
+			updateConfig:    UpdateConfig{
+				IgnoreDrafts: boolVal(true),
+				RequiredStatuses: []string{"status1", "status2"},
+			},
+			expectingUpdate: true,
+		},
 		// Test error handling
+		// TestShouldUpdatePR TODO: add error scenario coverage
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -628,93 +873,6 @@ func TestShouldUpdatePR(t *testing.T) {
 			require.Equal(t, tc.expectingUpdate, updating, msg)
 		})
 	}
-	// testMatrix := []struct {
-	// 	ignoreEnabled   bool
-	// 	ignored         bool
-	// 	triggerEnabled  bool
-	// 	triggered       bool
-	// 	ignoreDrafts    *bool
-	// 	isDraft         bool
-	// 	expectingUpdate bool
-	// }{
-	// 	{false, false, false, true, nil, false, false},
-	// 	{false, false, true, false, nil, false, false},
-	// 	{false, false, true, true, nil, false, true},
-	// 	{false, true, false, false, nil, false, false},
-	// 	{false, true, false, true, nil, false, false},
-	// 	{false, true, true, false, nil, false, false},
-	// 	{false, true, true, true, nil, false, true},
-	// 	{true, false, false, false, nil, false, true},
-	// 	{true, false, false, true, nil, false, true},
-	// 	{true, false, true, false, nil, false, false},
-	// 	{true, false, true, true, nil, false, true},
-	// 	{true, true, false, false, nil, false, false},
-	// 	{true, true, false, true, nil, false, false},
-	// 	{true, true, true, false, nil, false, false},
-	// 	{true, true, true, true, nil, false, false},
-	// 	// Test Draft PRs are still handled correctly when ignoring them is not configured
-	// 	{false, false, false, false, nil, true, false},
-	// 	{false, false, false, true, nil, true, false},
-	// 	{false, false, true, false, nil, true, false},
-	// 	{false, false, true, true, nil, true, true},
-	// 	{false, true, false, false, nil, true, false},
-	// 	{false, true, false, true, nil, true, false},
-	// 	{false, true, true, false, nil, true, false},
-	// 	{false, true, true, true, nil, true, true},
-	// 	{true, false, false, false, nil, true, true},
-	// 	{true, false, false, true, nil, true, true},
-	// 	{true, false, true, false, nil, true, false},
-	// 	{true, false, true, true, nil, true, true},
-	// 	{true, true, false, false, nil, true, false},
-	// 	{true, true, false, true, nil, true, false},
-	// 	{true, true, true, false, nil, true, false},
-	// 	{true, true, true, true, nil, true, false},
-	// 	// Test Draft PRs are handled correctly when ignoring them is not enabled
-	// 	{false, false, false, false, boolVal(false), true, true}, // All updates enabled
-	// 	{false, false, false, true, boolVal(false), true, true},  // All updates enabled
-	// 	{false, false, true, false, boolVal(false), true, false},
-	// 	{false, false, true, true, boolVal(false), true, true},
-	// 	{false, true, false, false, boolVal(false), true, true}, // All updates enabled
-	// 	{false, true, false, true, boolVal(false), true, true},  // All updates enabled
-	// 	{false, true, true, false, boolVal(false), true, false},
-	// 	{false, true, true, true, boolVal(false), true, true},
-	// 	{true, false, false, false, boolVal(false), true, true},
-	// 	{true, false, false, true, boolVal(false), true, true},
-	// 	{true, false, true, false, boolVal(false), true, false},
-	// 	{true, false, true, true, boolVal(false), true, true},
-	// 	{true, true, false, false, boolVal(false), true, false},
-	// 	{true, true, false, true, boolVal(false), true, false},
-	// 	{true, true, true, false, boolVal(false), true, false},
-	// 	{true, true, true, true, boolVal(false), true, false},
-	// 	// Test Draft PRs are handled correctly when ignoring them is enabled
-	// 	{false, false, false, false, boolVal(true), true, false},
-	// 	{true, true, false, false, boolVal(true), true, false},
-	// 	{true, false, false, false, boolVal(true), true, false},
-	// 	{false, true, false, false, boolVal(true), true, false},
-	// 	{false, false, true, true, boolVal(true), true, true},
-	// 	{false, false, true, false, boolVal(true), true, false},
-	// 	{false, false, false, true, boolVal(true), true, false},
-	// 	{true, true, true, true, boolVal(true), true, false},
-	// 	{true, false, true, true, boolVal(true), true, true},
-	// 	{false, true, true, true, boolVal(true), true, true},
-	// 	{true, true, false, true, boolVal(true), true, false},
-	// 	{true, true, true, false, boolVal(true), true, false},
-	// 	{true, false, true, false, boolVal(true), true, false},
-	// 	{false, true, false, true, boolVal(true), true, false},
-	// }
-
-	// for ndx, testCase := range testMatrix {
-	// 	pullCtx, updateConfig := generateUpdateTestCase(testCase.ignoreEnabled, testCase.ignored, testCase.triggerEnabled, testCase.triggered, testCase.ignoreDrafts, testCase.isDraft)
-	// 	updating, err := ShouldUpdatePR(ctx, pullCtx, updateConfig)
-	// 	require.NoError(t, err)
-	// 	ignoreDraftsPrintVal := "nil"
-	// 	if testCase.ignoreDrafts != nil {
-	// 		ignoreDraftsPrintVal = strconv.FormatBool(*testCase.ignoreDrafts)
-	// 	}
-	// 	msg := fmt.Sprintf("case %d - ignoreEnabled=%t ignored=%t triggerEnabled=%t triggered=%t ignoreDrafts=%v isDraft=%t -> doUpdate=%t",
-	// 		ndx, testCase.ignoreEnabled, testCase.ignored, testCase.triggerEnabled, testCase.triggered, ignoreDraftsPrintVal, testCase.isDraft, testCase.expectingUpdate)
-	// 	require.Equal(t, testCase.expectingUpdate, updating, msg)
-	// }
 }
 
 func boolVal(b bool) *bool {
