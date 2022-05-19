@@ -330,23 +330,20 @@ func TestShouldMerge(t *testing.T) {
 
 func TestShouldUpdatePR(t *testing.T) {
 	ctx := context.Background()
-	tests := []struct {
-		name            string
+	tests := map[string]struct {
 		pullCtx         pulltest.MockPullContext
 		updateConfig    UpdateConfig
 		expectingUpdate bool
 	}{
 		// Test default cases and trigger / ignore handling (excluding drafts and required statuses)
-		{
-			name: "default",
+		"default": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: false,
 			},
 			updateConfig:    UpdateConfig{},
 			expectingUpdate: false,
 		},
-		{
-			name: "labelsOnly",
+		"labelsOnly": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: false,
 				LabelValue:   []string{"ignore", "trigger"},
@@ -354,8 +351,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			updateConfig:    UpdateConfig{},
 			expectingUpdate: false,
 		},
-		{
-			name: "ignoreLabelOnly",
+		"ignoreLabelOnly": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: false,
 				LabelValue:   []string{"ignore"},
@@ -363,8 +359,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			updateConfig:    UpdateConfig{},
 			expectingUpdate: false,
 		},
-		{
-			name: "triggerLabelOnly",
+		"triggerLabelOnly": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: false,
 				LabelValue:   []string{"trigger"},
@@ -372,8 +367,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			updateConfig:    UpdateConfig{},
 			expectingUpdate: false,
 		},
-		{
-			name: "configOnly",
+		"configOnly": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: false,
 			},
@@ -387,8 +381,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: false,
 		},
-		{
-			name: "ignoreConfigOnly",
+		"ignoreConfigOnly": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: false,
 			},
@@ -399,8 +392,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: true,
 		},
-		{
-			name: "triggerConfigOnly",
+		"triggerConfigOnly": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: false,
 			},
@@ -411,8 +403,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: false,
 		},
-		{
-			name: "ignoreConfigTriggerLabel",
+		"ignoreConfigTriggerLabel": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: false,
 				LabelValue:   []string{"trigger"},
@@ -424,8 +415,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: true,
 		},
-		{
-			name: "triggerConfigIgnoreLabel",
+		"triggerConfigIgnoreLabel": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: false,
 				LabelValue:   []string{"ignore"},
@@ -437,8 +427,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: false,
 		},
-		{
-			name: "ignored",
+		"ignored": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: false,
 				LabelValue:   []string{"ignore"},
@@ -450,8 +439,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: false,
 		},
-		{
-			name: "triggered",
+		"triggered": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: false,
 				LabelValue:   []string{"trigger"},
@@ -463,8 +451,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: true,
 		},
-		{
-			name: "ignoredAndTriggered",
+		"ignoredAndTriggered": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: false,
 				LabelValue:   []string{"ignore", "trigger"},
@@ -479,8 +466,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: false,
 		},
-		{
-			name: "triggeredWithIgnoreConfig",
+		"triggeredWithIgnoreConfig": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: false,
 				LabelValue:   []string{"trigger"},
@@ -495,8 +481,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: true,
 		},
-		{
-			name: "ignoredWithTriggerConfig",
+		"ignoredWithTriggerConfig": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: false,
 				LabelValue:   []string{"ignore"},
@@ -511,8 +496,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: false,
 		},
-		{
-			name: "triggeredWithIgnoreLabel",
+		"triggeredWithIgnoreLabel": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: false,
 				LabelValue:   []string{"trigger", "ignore"},
@@ -524,8 +508,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: true,
 		},
-		{
-			name: "ignoredWithTriggerLabel",
+		"ignoredWithTriggerLabel": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: false,
 				LabelValue:   []string{"ignore", "trigger"},
@@ -538,16 +521,14 @@ func TestShouldUpdatePR(t *testing.T) {
 			expectingUpdate: false,
 		},
 		// Test ignore draft handling
-		{
-			name: "defaultDraft",
+		"defaultDraft": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: true,
 			},
 			updateConfig:    UpdateConfig{},
 			expectingUpdate: false,
 		},
-		{
-			name: "ignoredDraft",
+		"ignoredDraft": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: true,
 				LabelValue:   []string{"ignore"},
@@ -559,8 +540,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: false,
 		},
-		{
-			name: "triggeredDraft",
+		"triggeredDraft": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: true,
 				LabelValue:   []string{"trigger"},
@@ -572,8 +552,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: true,
 		},
-		{
-			name: "ignoreDraftsDraft",
+		"ignoreDraftsDraft": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: true,
 			},
@@ -582,8 +561,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: false,
 		},
-		{
-			name: "ignoreDraftsNonDraft",
+		"ignoreDraftsNonDraft": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: false,
 			},
@@ -592,8 +570,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: true,
 		},
-		{
-			name: "ignoreDraftsAndTriggeredDraft",
+		"ignoreDraftsAndTriggeredDraft": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: true,
 				LabelValue:   []string{"trigger"},
@@ -606,8 +583,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: true,
 		},
-		{
-			name: "ignoreDraftsAndTriggeredNonDraft",
+		"ignoreDraftsAndTriggeredNonDraft": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: false,
 				LabelValue:   []string{"trigger"},
@@ -620,8 +596,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: true,
 		},
-		{
-			name: "ignoreDraftsAndIgnoredDraft",
+		"ignoreDraftsAndIgnoredDraft": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: true,
 				LabelValue:   []string{"ignore"},
@@ -634,8 +609,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: false,
 		},
-		{
-			name: "ignoreDraftsAndIgnoredNonDraft",
+		"ignoreDraftsAndIgnoredNonDraft": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: false,
 				LabelValue:   []string{"ignore"},
@@ -648,8 +622,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: false,
 		},
-		{
-			name: "ignoreDraftsTriggeredAndIgnoredDraft",
+		"ignoreDraftsTriggeredAndIgnoredDraft": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: true,
 				LabelValue:   []string{"ignore", "trigger"},
@@ -665,8 +638,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: false,
 		},
-		{
-			name: "ignoreDraftsTriggeredAndIgnoredNonDraft",
+		"ignoreDraftsTriggeredAndIgnoredNonDraft": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: false,
 				LabelValue:   []string{"ignore", "trigger"},
@@ -682,8 +654,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: false,
 		},
-		{
-			name: "ignoreDraftsAndIgnoreConfigOnly",
+		"ignoreDraftsAndIgnoreConfigOnly": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: true,
 			},
@@ -695,8 +666,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: false,
 		},
-		{
-			name: "ignoreDraftsAndTriggerConfigOnly",
+		"ignoreDraftsAndTriggerConfigOnly": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue: true,
 			},
@@ -709,16 +679,14 @@ func TestShouldUpdatePR(t *testing.T) {
 			expectingUpdate: false,
 		},
 		// Test required statuses handling
-		{
-			name: "statusesOnly",
+		"statusesOnly": {
 			pullCtx: pulltest.MockPullContext{
 				SuccessStatusesValue: []string{"status1", "status2"},
 			},
 			updateConfig:    UpdateConfig{},
 			expectingUpdate: false,
 		},
-		{
-			name: "fulfilledStatuses",
+		"fulfilledStatuses": {
 			pullCtx: pulltest.MockPullContext{
 				SuccessStatusesValue: []string{"status1", "status2"},
 			},
@@ -727,8 +695,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: true,
 		},
-		{
-			name: "missingStatuses",
+		"missingStatuses": {
 			pullCtx: pulltest.MockPullContext{
 				SuccessStatusesValue: []string{"status1"},
 			},
@@ -737,8 +704,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: false,
 		},
-		{
-			name: "fulfilledTravisCIStatuses",
+		"fulfilledTravisCIStatuses": {
 			pullCtx: pulltest.MockPullContext{
 				SuccessStatusesValue: []string{"status1", "continuous-integration/travis-ci"},
 			},
@@ -747,8 +713,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: true,
 		},
-		{
-			name: "missingTravisCIStatuses",
+		"missingTravisCIStatuses": {
 			pullCtx: pulltest.MockPullContext{
 				SuccessStatusesValue: []string{"status1"},
 			},
@@ -757,8 +722,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: false,
 		},
-		{
-			name: "triggeredMissingStatuses",
+		"triggeredMissingStatuses": {
 			pullCtx: pulltest.MockPullContext{
 				LabelValue:           []string{"trigger"},
 				SuccessStatusesValue: []string{"status1", "status2"},
@@ -771,8 +735,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: true,
 		},
-		{
-			name: "ignoredMissingStatuses",
+		"ignoredMissingStatuses": {
 			pullCtx: pulltest.MockPullContext{
 				LabelValue:           []string{"ignore"},
 				SuccessStatusesValue: []string{"status1", "status2"},
@@ -785,8 +748,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: false,
 		},
-		{
-			name: "triggeredAndIgnoredMissingStatuses",
+		"triggeredAndIgnoredMissingStatuses": {
 			pullCtx: pulltest.MockPullContext{
 				LabelValue:           []string{"trigger", "ignore"},
 				SuccessStatusesValue: []string{"status1", "status2"},
@@ -802,8 +764,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: false,
 		},
-		{
-			name: "triggeredFulfilledStatuses",
+		"triggeredFulfilledStatuses": {
 			pullCtx: pulltest.MockPullContext{
 				LabelValue:           []string{"trigger"},
 				SuccessStatusesValue: []string{"status1", "status2"},
@@ -816,8 +777,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: true,
 		},
-		{
-			name: "ignoredFulfilledStatuses",
+		"ignoredFulfilledStatuses": {
 			pullCtx: pulltest.MockPullContext{
 				LabelValue:           []string{"ignore"},
 				SuccessStatusesValue: []string{"status1", "status2"},
@@ -830,8 +790,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: false,
 		},
-		{
-			name: "triggeredAndIgnoredFulfilledStatuses",
+		"triggeredAndIgnoredFulfilledStatuses": {
 			pullCtx: pulltest.MockPullContext{
 				LabelValue:           []string{"trigger", "ignore"},
 				SuccessStatusesValue: []string{"status1", "status2"},
@@ -847,8 +806,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: false,
 		},
-		{
-			name: "missingStatusesDraft",
+		"missingStatusesDraft": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue:         true,
 				SuccessStatusesValue: []string{"status1"},
@@ -858,8 +816,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: false,
 		},
-		{
-			name: "missingStatusesIgnoreDraftDraft",
+		"missingStatusesIgnoreDraftDraft": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue:         true,
 				SuccessStatusesValue: []string{"status1"},
@@ -870,8 +827,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: false,
 		},
-		{
-			name: "fulfilledStatusesIgnoreDraftDraft",
+		"fulfilledStatusesIgnoreDraftDraft": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue:         true,
 				SuccessStatusesValue: []string{"status1", "status2"},
@@ -882,8 +838,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: false,
 		},
-		{
-			name: "missingStatusesIgnoreDraftNonDraft",
+		"missingStatusesIgnoreDraftNonDraft": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue:         false,
 				SuccessStatusesValue: []string{"status1"},
@@ -894,8 +849,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			},
 			expectingUpdate: false,
 		},
-		{
-			name: "fulfilledStatusesIgnoreDraftNonDraft",
+		"fulfilledStatusesIgnoreDraftNonDraft": {
 			pullCtx: pulltest.MockPullContext{
 				IsDraftValue:         false,
 				SuccessStatusesValue: []string{"status1", "status2"},
@@ -908,13 +862,13 @@ func TestShouldUpdatePR(t *testing.T) {
 		},
 		// Test error handling
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			updating, err := ShouldUpdatePR(ctx, &tc.pullCtx, tc.updateConfig)
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			updating, err := ShouldUpdatePR(ctx, &test.pullCtx, test.updateConfig)
 			require.NoError(t, err)
 			msg := fmt.Sprintf("case %s - pullCtx %+v updateConfig %+v -> expectingUpdate=%t",
-				tc.name, tc.pullCtx, tc.updateConfig, tc.expectingUpdate)
-			require.Equal(t, tc.expectingUpdate, updating, msg)
+				name, test.pullCtx, test.updateConfig, test.expectingUpdate)
+			require.Equal(t, test.expectingUpdate, updating, msg)
 		})
 	}
 }
