@@ -722,7 +722,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			pullCtx: pulltest.MockPullContext{
 				SuccessStatusesValue: []string{"status1", "status2"},
 			},
-			updateConfig:    UpdateConfig{
+			updateConfig: UpdateConfig{
 				RequiredStatuses: []string{"status1", "status2"},
 			},
 			expectingUpdate: true,
@@ -732,7 +732,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			pullCtx: pulltest.MockPullContext{
 				SuccessStatusesValue: []string{"status1"},
 			},
-			updateConfig:    UpdateConfig{
+			updateConfig: UpdateConfig{
 				RequiredStatuses: []string{"status1", "status2"},
 			},
 			expectingUpdate: false,
@@ -742,7 +742,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			pullCtx: pulltest.MockPullContext{
 				SuccessStatusesValue: []string{"status1", "continuous-integration/travis-ci"},
 			},
-			updateConfig:    UpdateConfig{
+			updateConfig: UpdateConfig{
 				RequiredStatuses: []string{"status1", "continuous-integration/travis-ci"},
 			},
 			expectingUpdate: true,
@@ -752,7 +752,7 @@ func TestShouldUpdatePR(t *testing.T) {
 			pullCtx: pulltest.MockPullContext{
 				SuccessStatusesValue: []string{"status1"},
 			},
-			updateConfig:    UpdateConfig{
+			updateConfig: UpdateConfig{
 				RequiredStatuses: []string{"status1", "continuous-integration/travis-ci"},
 			},
 			expectingUpdate: false,
@@ -760,10 +760,10 @@ func TestShouldUpdatePR(t *testing.T) {
 		{
 			name: "triggeredMissingStatuses",
 			pullCtx: pulltest.MockPullContext{
-				LabelValue:   []string{"trigger"},
+				LabelValue:           []string{"trigger"},
 				SuccessStatusesValue: []string{"status1", "status2"},
 			},
-			updateConfig:    UpdateConfig{
+			updateConfig: UpdateConfig{
 				RequiredStatuses: []string{"status1"},
 				Trigger: Signals{
 					Labels: []string{"trigger"},
@@ -774,10 +774,10 @@ func TestShouldUpdatePR(t *testing.T) {
 		{
 			name: "ignoredMissingStatuses",
 			pullCtx: pulltest.MockPullContext{
-				LabelValue:   []string{"ignore"},
+				LabelValue:           []string{"ignore"},
 				SuccessStatusesValue: []string{"status1", "status2"},
 			},
-			updateConfig:    UpdateConfig{
+			updateConfig: UpdateConfig{
 				RequiredStatuses: []string{"status1"},
 				Ignore: Signals{
 					Labels: []string{"ignore"},
@@ -788,11 +788,56 @@ func TestShouldUpdatePR(t *testing.T) {
 		{
 			name: "triggeredAndIgnoredMissingStatuses",
 			pullCtx: pulltest.MockPullContext{
-				LabelValue:   []string{"trigger", "ignore"},
+				LabelValue:           []string{"trigger", "ignore"},
 				SuccessStatusesValue: []string{"status1", "status2"},
 			},
-			updateConfig:    UpdateConfig{
+			updateConfig: UpdateConfig{
 				RequiredStatuses: []string{"status1"},
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+			},
+			expectingUpdate: false,
+		},
+		{
+			name: "triggeredFulfilledStatuses",
+			pullCtx: pulltest.MockPullContext{
+				LabelValue:           []string{"trigger"},
+				SuccessStatusesValue: []string{"status1", "status2"},
+			},
+			updateConfig: UpdateConfig{
+				RequiredStatuses: []string{"status1", "status2"},
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+			},
+			expectingUpdate: true,
+		},
+		{
+			name: "ignoredFulfilledStatuses",
+			pullCtx: pulltest.MockPullContext{
+				LabelValue:           []string{"ignore"},
+				SuccessStatusesValue: []string{"status1", "status2"},
+			},
+			updateConfig: UpdateConfig{
+				RequiredStatuses: []string{"status1", "status2"},
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+			},
+			expectingUpdate: false,
+		},
+		{
+			name: "triggeredAndIgnoredFulfilledStatuses",
+			pullCtx: pulltest.MockPullContext{
+				LabelValue:           []string{"trigger", "ignore"},
+				SuccessStatusesValue: []string{"status1", "status2"},
+			},
+			updateConfig: UpdateConfig{
+				RequiredStatuses: []string{"status1", "status2"},
 				Trigger: Signals{
 					Labels: []string{"trigger"},
 				},
@@ -805,10 +850,10 @@ func TestShouldUpdatePR(t *testing.T) {
 		{
 			name: "missingStatusesDraft",
 			pullCtx: pulltest.MockPullContext{
-				IsDraftValue: true,
+				IsDraftValue:         true,
 				SuccessStatusesValue: []string{"status1"},
 			},
-			updateConfig:    UpdateConfig{
+			updateConfig: UpdateConfig{
 				RequiredStatuses: []string{"status1", "status2"},
 			},
 			expectingUpdate: false,
@@ -816,11 +861,11 @@ func TestShouldUpdatePR(t *testing.T) {
 		{
 			name: "missingStatusesIgnoreDraftDraft",
 			pullCtx: pulltest.MockPullContext{
-				IsDraftValue: true,
+				IsDraftValue:         true,
 				SuccessStatusesValue: []string{"status1"},
 			},
-			updateConfig:    UpdateConfig{
-				IgnoreDrafts: boolVal(true),
+			updateConfig: UpdateConfig{
+				IgnoreDrafts:     boolVal(true),
 				RequiredStatuses: []string{"status1", "status2"},
 			},
 			expectingUpdate: false,
@@ -828,11 +873,11 @@ func TestShouldUpdatePR(t *testing.T) {
 		{
 			name: "fulfilledStatusesIgnoreDraftDraft",
 			pullCtx: pulltest.MockPullContext{
-				IsDraftValue: true,
+				IsDraftValue:         true,
 				SuccessStatusesValue: []string{"status1", "status2"},
 			},
-			updateConfig:    UpdateConfig{
-				IgnoreDrafts: boolVal(true),
+			updateConfig: UpdateConfig{
+				IgnoreDrafts:     boolVal(true),
 				RequiredStatuses: []string{"status1", "status2"},
 			},
 			expectingUpdate: false,
@@ -840,11 +885,11 @@ func TestShouldUpdatePR(t *testing.T) {
 		{
 			name: "missingStatusesIgnoreDraftNonDraft",
 			pullCtx: pulltest.MockPullContext{
-				IsDraftValue: false,
+				IsDraftValue:         false,
 				SuccessStatusesValue: []string{"status1"},
 			},
-			updateConfig:    UpdateConfig{
-				IgnoreDrafts: boolVal(true),
+			updateConfig: UpdateConfig{
+				IgnoreDrafts:     boolVal(true),
 				RequiredStatuses: []string{"status1", "status2"},
 			},
 			expectingUpdate: false,
@@ -852,11 +897,11 @@ func TestShouldUpdatePR(t *testing.T) {
 		{
 			name: "fulfilledStatusesIgnoreDraftNonDraft",
 			pullCtx: pulltest.MockPullContext{
-				IsDraftValue: false,
+				IsDraftValue:         false,
 				SuccessStatusesValue: []string{"status1", "status2"},
 			},
-			updateConfig:    UpdateConfig{
-				IgnoreDrafts: boolVal(true),
+			updateConfig: UpdateConfig{
+				IgnoreDrafts:     boolVal(true),
 				RequiredStatuses: []string{"status1", "status2"},
 			},
 			expectingUpdate: true,
