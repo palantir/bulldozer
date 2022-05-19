@@ -907,7 +907,6 @@ func TestShouldUpdatePR(t *testing.T) {
 			expectingUpdate: true,
 		},
 		// Test error handling
-		// TestShouldUpdatePR TODO: add error scenario coverage
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
