@@ -16,6 +16,7 @@ package bulldozer
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/palantir/bulldozer/pull/pulltest"
@@ -325,4 +326,553 @@ func TestShouldMerge(t *testing.T) {
 		require.Nil(t, err)
 		assert.True(t, actualShouldMerge)
 	})
+}
+
+func TestShouldUpdatePR(t *testing.T) {
+	ctx := context.Background()
+	tests := map[string]struct {
+		pullCtx         pulltest.MockPullContext
+		updateConfig    UpdateConfig
+		expectingUpdate bool
+	}{
+		// Test default cases and trigger / ignore handling (excluding drafts and required statuses)
+		"default": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+			},
+			updateConfig:    UpdateConfig{},
+			expectingUpdate: false,
+		},
+		"labelsOnly": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+				LabelValue:   []string{"ignore", "trigger"},
+			},
+			updateConfig:    UpdateConfig{},
+			expectingUpdate: false,
+		},
+		"ignoreLabelOnly": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+				LabelValue:   []string{"ignore"},
+			},
+			updateConfig:    UpdateConfig{},
+			expectingUpdate: false,
+		},
+		"triggerLabelOnly": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+				LabelValue:   []string{"trigger"},
+			},
+			updateConfig:    UpdateConfig{},
+			expectingUpdate: false,
+		},
+		"configOnly": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+			},
+			updateConfig: UpdateConfig{
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+			},
+			expectingUpdate: false,
+		},
+		"ignoreConfigOnly": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+			},
+			updateConfig: UpdateConfig{
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+			},
+			expectingUpdate: true,
+		},
+		"triggerConfigOnly": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+			},
+			updateConfig: UpdateConfig{
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+			},
+			expectingUpdate: false,
+		},
+		"ignoreConfigTriggerLabel": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+				LabelValue:   []string{"trigger"},
+			},
+			updateConfig: UpdateConfig{
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+			},
+			expectingUpdate: true,
+		},
+		"triggerConfigIgnoreLabel": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+				LabelValue:   []string{"ignore"},
+			},
+			updateConfig: UpdateConfig{
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+			},
+			expectingUpdate: false,
+		},
+		"ignored": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+				LabelValue:   []string{"ignore"},
+			},
+			updateConfig: UpdateConfig{
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+			},
+			expectingUpdate: false,
+		},
+		"triggered": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+				LabelValue:   []string{"trigger"},
+			},
+			updateConfig: UpdateConfig{
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+			},
+			expectingUpdate: true,
+		},
+		"ignoredAndTriggered": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+				LabelValue:   []string{"ignore", "trigger"},
+			},
+			updateConfig: UpdateConfig{
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+			},
+			expectingUpdate: false,
+		},
+		"triggeredWithIgnoreConfig": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+				LabelValue:   []string{"trigger"},
+			},
+			updateConfig: UpdateConfig{
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+			},
+			expectingUpdate: true,
+		},
+		"ignoredWithTriggerConfig": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+				LabelValue:   []string{"ignore"},
+			},
+			updateConfig: UpdateConfig{
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+			},
+			expectingUpdate: false,
+		},
+		"triggeredWithIgnoreLabel": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+				LabelValue:   []string{"trigger", "ignore"},
+			},
+			updateConfig: UpdateConfig{
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+			},
+			expectingUpdate: true,
+		},
+		"ignoredWithTriggerLabel": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+				LabelValue:   []string{"ignore", "trigger"},
+			},
+			updateConfig: UpdateConfig{
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+			},
+			expectingUpdate: false,
+		},
+		// Test ignore draft handling
+		"defaultDraft": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: true,
+			},
+			updateConfig:    UpdateConfig{},
+			expectingUpdate: false,
+		},
+		"ignoredDraft": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: true,
+				LabelValue:   []string{"ignore"},
+			},
+			updateConfig: UpdateConfig{
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+			},
+			expectingUpdate: false,
+		},
+		"triggeredDraft": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: true,
+				LabelValue:   []string{"trigger"},
+			},
+			updateConfig: UpdateConfig{
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+			},
+			expectingUpdate: true,
+		},
+		"ignoreDraftsDraft": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: true,
+			},
+			updateConfig: UpdateConfig{
+				IgnoreDrafts: boolVal(true),
+			},
+			expectingUpdate: false,
+		},
+		"ignoreDraftsNonDraft": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+			},
+			updateConfig: UpdateConfig{
+				IgnoreDrafts: boolVal(true),
+			},
+			expectingUpdate: true,
+		},
+		"ignoreDraftsAndTriggeredDraft": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: true,
+				LabelValue:   []string{"trigger"},
+			},
+			updateConfig: UpdateConfig{
+				IgnoreDrafts: boolVal(true),
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+			},
+			expectingUpdate: true,
+		},
+		"ignoreDraftsAndTriggeredNonDraft": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+				LabelValue:   []string{"trigger"},
+			},
+			updateConfig: UpdateConfig{
+				IgnoreDrafts: boolVal(true),
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+			},
+			expectingUpdate: true,
+		},
+		"ignoreDraftsAndIgnoredDraft": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: true,
+				LabelValue:   []string{"ignore"},
+			},
+			updateConfig: UpdateConfig{
+				IgnoreDrafts: boolVal(true),
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+			},
+			expectingUpdate: false,
+		},
+		"ignoreDraftsAndIgnoredNonDraft": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+				LabelValue:   []string{"ignore"},
+			},
+			updateConfig: UpdateConfig{
+				IgnoreDrafts: boolVal(true),
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+			},
+			expectingUpdate: false,
+		},
+		"ignoreDraftsTriggeredAndIgnoredDraft": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: true,
+				LabelValue:   []string{"ignore", "trigger"},
+			},
+			updateConfig: UpdateConfig{
+				IgnoreDrafts: boolVal(true),
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+			},
+			expectingUpdate: false,
+		},
+		"ignoreDraftsTriggeredAndIgnoredNonDraft": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: false,
+				LabelValue:   []string{"ignore", "trigger"},
+			},
+			updateConfig: UpdateConfig{
+				IgnoreDrafts: boolVal(true),
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+			},
+			expectingUpdate: false,
+		},
+		"ignoreDraftsAndIgnoreConfigOnly": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: true,
+			},
+			updateConfig: UpdateConfig{
+				IgnoreDrafts: boolVal(true),
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+			},
+			expectingUpdate: false,
+		},
+		"ignoreDraftsAndTriggerConfigOnly": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue: true,
+			},
+			updateConfig: UpdateConfig{
+				IgnoreDrafts: boolVal(true),
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+			},
+			expectingUpdate: false,
+		},
+		// Test required statuses handling
+		"statusesOnly": {
+			pullCtx: pulltest.MockPullContext{
+				SuccessStatusesValue: []string{"status1", "status2"},
+			},
+			updateConfig:    UpdateConfig{},
+			expectingUpdate: false,
+		},
+		"fulfilledStatuses": {
+			pullCtx: pulltest.MockPullContext{
+				SuccessStatusesValue: []string{"status1", "status2"},
+			},
+			updateConfig: UpdateConfig{
+				RequiredStatuses: []string{"status1", "status2"},
+			},
+			expectingUpdate: true,
+		},
+		"missingStatuses": {
+			pullCtx: pulltest.MockPullContext{
+				SuccessStatusesValue: []string{"status1"},
+			},
+			updateConfig: UpdateConfig{
+				RequiredStatuses: []string{"status1", "status2"},
+			},
+			expectingUpdate: false,
+		},
+		"fulfilledTravisCIStatuses": {
+			pullCtx: pulltest.MockPullContext{
+				SuccessStatusesValue: []string{"status1", "continuous-integration/travis-ci"},
+			},
+			updateConfig: UpdateConfig{
+				RequiredStatuses: []string{"status1", "continuous-integration/travis-ci"},
+			},
+			expectingUpdate: true,
+		},
+		"missingTravisCIStatuses": {
+			pullCtx: pulltest.MockPullContext{
+				SuccessStatusesValue: []string{"status1"},
+			},
+			updateConfig: UpdateConfig{
+				RequiredStatuses: []string{"status1", "continuous-integration/travis-ci"},
+			},
+			expectingUpdate: false,
+		},
+		"triggeredMissingStatuses": {
+			pullCtx: pulltest.MockPullContext{
+				LabelValue:           []string{"trigger"},
+				SuccessStatusesValue: []string{"status1", "status2"},
+			},
+			updateConfig: UpdateConfig{
+				RequiredStatuses: []string{"status1"},
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+			},
+			expectingUpdate: true,
+		},
+		"ignoredMissingStatuses": {
+			pullCtx: pulltest.MockPullContext{
+				LabelValue:           []string{"ignore"},
+				SuccessStatusesValue: []string{"status1", "status2"},
+			},
+			updateConfig: UpdateConfig{
+				RequiredStatuses: []string{"status1"},
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+			},
+			expectingUpdate: false,
+		},
+		"triggeredAndIgnoredMissingStatuses": {
+			pullCtx: pulltest.MockPullContext{
+				LabelValue:           []string{"trigger", "ignore"},
+				SuccessStatusesValue: []string{"status1", "status2"},
+			},
+			updateConfig: UpdateConfig{
+				RequiredStatuses: []string{"status1"},
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+			},
+			expectingUpdate: false,
+		},
+		"triggeredFulfilledStatuses": {
+			pullCtx: pulltest.MockPullContext{
+				LabelValue:           []string{"trigger"},
+				SuccessStatusesValue: []string{"status1", "status2"},
+			},
+			updateConfig: UpdateConfig{
+				RequiredStatuses: []string{"status1", "status2"},
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+			},
+			expectingUpdate: true,
+		},
+		"ignoredFulfilledStatuses": {
+			pullCtx: pulltest.MockPullContext{
+				LabelValue:           []string{"ignore"},
+				SuccessStatusesValue: []string{"status1", "status2"},
+			},
+			updateConfig: UpdateConfig{
+				RequiredStatuses: []string{"status1", "status2"},
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+			},
+			expectingUpdate: false,
+		},
+		"triggeredAndIgnoredFulfilledStatuses": {
+			pullCtx: pulltest.MockPullContext{
+				LabelValue:           []string{"trigger", "ignore"},
+				SuccessStatusesValue: []string{"status1", "status2"},
+			},
+			updateConfig: UpdateConfig{
+				RequiredStatuses: []string{"status1", "status2"},
+				Trigger: Signals{
+					Labels: []string{"trigger"},
+				},
+				Ignore: Signals{
+					Labels: []string{"ignore"},
+				},
+			},
+			expectingUpdate: false,
+		},
+		"missingStatusesDraft": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue:         true,
+				SuccessStatusesValue: []string{"status1"},
+			},
+			updateConfig: UpdateConfig{
+				RequiredStatuses: []string{"status1", "status2"},
+			},
+			expectingUpdate: false,
+		},
+		"missingStatusesIgnoreDraftDraft": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue:         true,
+				SuccessStatusesValue: []string{"status1"},
+			},
+			updateConfig: UpdateConfig{
+				IgnoreDrafts:     boolVal(true),
+				RequiredStatuses: []string{"status1", "status2"},
+			},
+			expectingUpdate: false,
+		},
+		"fulfilledStatusesIgnoreDraftDraft": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue:         true,
+				SuccessStatusesValue: []string{"status1", "status2"},
+			},
+			updateConfig: UpdateConfig{
+				IgnoreDrafts:     boolVal(true),
+				RequiredStatuses: []string{"status1", "status2"},
+			},
+			expectingUpdate: false,
+		},
+		"missingStatusesIgnoreDraftNonDraft": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue:         false,
+				SuccessStatusesValue: []string{"status1"},
+			},
+			updateConfig: UpdateConfig{
+				IgnoreDrafts:     boolVal(true),
+				RequiredStatuses: []string{"status1", "status2"},
+			},
+			expectingUpdate: false,
+		},
+		"fulfilledStatusesIgnoreDraftNonDraft": {
+			pullCtx: pulltest.MockPullContext{
+				IsDraftValue:         false,
+				SuccessStatusesValue: []string{"status1", "status2"},
+			},
+			updateConfig: UpdateConfig{
+				IgnoreDrafts:     boolVal(true),
+				RequiredStatuses: []string{"status1", "status2"},
+			},
+			expectingUpdate: true,
+		},
+		// Test error handling
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			updating, err := ShouldUpdatePR(ctx, &test.pullCtx, test.updateConfig)
+			require.NoError(t, err)
+			msg := fmt.Sprintf("case %s - pullCtx %+v updateConfig %+v -> expectingUpdate=%t",
+				name, test.pullCtx, test.updateConfig, test.expectingUpdate)
+			require.Equal(t, test.expectingUpdate, updating, msg)
+		})
+	}
+}
+
+func boolVal(b bool) *bool {
+	return &b
 }
