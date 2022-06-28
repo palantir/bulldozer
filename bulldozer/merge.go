@@ -103,7 +103,11 @@ func (m *GitHubMerger) defaultMerge(ctx context.Context, pullCtx pull.Context, m
 
 func (m *GitHubMerger) DeleteHead(ctx context.Context, pullCtx pull.Context) error {
 	_, head := pullCtx.Branches()
-	_, err := m.client.Git.DeleteRef(ctx, pullCtx.Owner(), pullCtx.Repo(), fmt.Sprintf("refs/heads/%s", head))
+	resp, err := m.client.Git.DeleteRef(ctx, pullCtx.Owner(), pullCtx.Repo(), fmt.Sprintf("refs/heads/%s", head))
+	// Disregard the error since Github may delete the branch before we do
+	if resp.StatusCode == http.StatusUnprocessableEntity {
+		return nil
+	}
 	return errors.WithStack(err)
 }
 
