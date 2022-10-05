@@ -29,6 +29,9 @@ github.com/golang/protobuf/proto
 # github.com/google/go-github/v45 v45.2.0
 ## explicit; go 1.17
 github.com/google/go-github/v45/github
+# github.com/google/go-github/v47 v47.0.0
+## explicit; go 1.17
+github.com/google/go-github/v47/github
 # github.com/google/go-querystring v1.1.0
 ## explicit; go 1.10
 github.com/google/go-querystring/query
@@ -55,7 +58,7 @@ github.com/mattn/go-isatty
 github.com/palantir/go-baseapp/baseapp
 github.com/palantir/go-baseapp/baseapp/datadog
 github.com/palantir/go-baseapp/pkg/errfmt
-# github.com/palantir/go-githubapp v0.13.2
+# github.com/palantir/go-githubapp v0.14.0
 ## explicit; go 1.18
 github.com/palantir/go-githubapp/appconfig
 github.com/palantir/go-githubapp/githubapp
@@ -79,7 +82,7 @@ github.com/rs/zerolog/hlog/internal/mutil
 github.com/rs/zerolog/internal/cbor
 github.com/rs/zerolog/internal/json
 github.com/rs/zerolog/log
-# github.com/shurcooL/githubv4 v0.0.0-20220520033151-0b4e3294ff00
+# github.com/shurcooL/githubv4 v0.0.0-20220922232305-70b4d362a8cb
 ## explicit
 github.com/shurcooL/githubv4
 # github.com/shurcooL/graphql v0.0.0-20181231061246-d48a9a75455f
@@ -103,7 +106,7 @@ goji.io
 goji.io/internal
 goji.io/pat
 goji.io/pattern
-# golang.org/x/crypto v0.0.0-20220919173607-35f4265a4bc0
+# golang.org/x/crypto v0.0.0-20221005025214-4161e89ecf1b
 ## explicit; go 1.17
 golang.org/x/crypto/cast5
 golang.org/x/crypto/openpgp
