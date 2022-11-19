@@ -65,15 +65,31 @@ github:
 # Options for application behavior
 options:
   # The path within repositories to find the bulldozer.yml config file
+  # Can also be set by the BULLDOZER_OPTIONS_CONFIGURATION_PATH environment variable.
   configuration_path: .bulldozer.yml
 
   # The name of the application. This will affect the User-Agent header
   # when making requests to Github.
+  # Can also be set by the BULLDOZER_OPTIONS_APP_NAME environment variable.
   app_name: bulldozer
+
+#   # The name of an organization repository to look in for a shared bulldozer file if
+#   # a repository does not define a bulldozer file. Can also be set by the
+#   # BULLDOZER_OPTIONS_SHARED_REPOSITORY environment variable.
+#   shared_repository: .github
+
+#   # The path to the bulldozer file in the shared organization repository.
+#   # Can also be set by the BULLDOZER_OPTIONS_SHARED_CONFIGURATION_PATH environment variable.
+#   shared_policy_path: policy.yml
+
+#   # To reduce pressure on CI systems and Github, the update feature can be disabled at the
+#   # server level by specifying the following server option:
+#   # Can also be set by the BULLDOZER_OPTIONS_DISABLE_UPDATE_FEATURE environment variable.
+#   disable_update_feature: true
 
   # Deprecated: An optional personal access token associated with a GitHub user
   # that is used to merge pull requests into protected branches with push
-  # restrictions. Can also be set by the BULLDOZER_PUSH_RESTRICTION_USER_TOKEN
+  # restrictions. Can also be set by the BULLDOZER_OPTIONS_PUSH_RESTRICTION_USER_TOKEN
   # environment variable.
   #
   # This is not necessary on GitHub.com and GitHub Enterprise 2.20+, which
