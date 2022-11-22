@@ -21,12 +21,10 @@ import (
 )
 
 const (
-	DefaultSharedRepository = ".github"
-	// DefaultConfigurationPath
-	// The default configuration path is the same for the repo as
-	// for the shared config if not configured
-	DefaultConfigurationPath = "bulldozer.yml"
-	DefaultAppName           = "bulldozer"
+	DefaultSharedRepository        = ".github"
+	DefaultConfigurationPath       = ".bulldozer.yml"
+	DefaultSharedConfigurationPath = "bulldozer.yml"
+	DefaultAppName                 = "bulldozer"
 )
 
 type Options struct {
@@ -54,7 +52,7 @@ func (o *Options) fillDefaults() {
 		o.SharedRepository = DefaultSharedRepository
 	}
 	if o.SharedConfigurationPath == "" {
-		o.SharedConfigurationPath = DefaultConfigurationPath
+		o.SharedConfigurationPath = DefaultSharedConfigurationPath
 	}
 }
 
