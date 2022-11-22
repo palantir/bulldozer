@@ -68,9 +68,7 @@ func ParseConfig(bytes []byte) (*Config, error) {
 	}
 	c.Server.SetValuesFromEnv(envPrefix)
 
-	c.Options.SetValuesFromEnv("BULLDOZER_OPTIONS_")
-	// BULLDOZER_ENV_PREFIX_ will override the BULLDOZER_OPTIONS_ values.
-	c.Options.SetValuesFromEnv("BULLDOZER_ENV_PREFIX_")
+	c.Options.SetValuesFromEnv(envPrefix + "OPTIONS_")
 
 	return &c, nil
 }
