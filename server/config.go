@@ -18,7 +18,7 @@ import (
 	"os"
 
 	"github.com/c2h5oh/datasize"
-	"github.com/palantir/bulldozer/bulldozer"
+	"github.com/palantir/bulldozer/server/handler"
 	"github.com/palantir/go-baseapp/baseapp"
 	"github.com/palantir/go-baseapp/baseapp/datadog"
 	"github.com/palantir/go-githubapp/githubapp"
@@ -27,15 +27,13 @@ import (
 )
 
 const (
-	DefaultEnvPrefix               = "BULLDOZER_"
-	DefaultSharedRepository        = ".github"
-	DefaultSharedConfigurationPath = "bulldozer.yml"
+	DefaultEnvPrefix = "BULLDOZER_"
 )
 
 type Config struct {
 	Server  baseapp.HTTPConfig `yaml:"server"`
 	Github  githubapp.Config   `yaml:"github"`
-	Options Options            `yaml:"options"`
+	Options handler.Options    `yaml:"options"`
 	Logging LoggingConfig      `yaml:"logging"`
 	Datadog datadog.Config     `yaml:"datadog"`
 	Cache   CacheConfig        `yaml:"cache"`
@@ -56,20 +54,6 @@ type WorkerConfig struct {
 	QueueSize int `yaml:"queue_size"`
 }
 
-type Options struct {
-	AppName                  string `yaml:"app_name"`
-	PushRestrictionUserToken string `yaml:"push_restriction_user_token"`
-
-	ConfigurationPath       string            `yaml:"configuration_path"`
-	SharedRepository        string            `yaml:"shared_repository"`
-	SharedConfigurationPath string            `yaml:"shared_configuration_path"`
-	DefaultRepositoryConfig *bulldozer.Config `yaml:"default_repository_config"`
-
-	ConfigurationV0Paths []string `yaml:"configuration_v0_paths"`
-
-	DisableUpdateFeature bool `yaml:"disable_update_feature"`
-}
-
 func ParseConfig(bytes []byte) (*Config, error) {
 	var c Config
 	if err := yaml.UnmarshalStrict(bytes, &c); err != nil {
@@ -84,16 +68,7 @@ func ParseConfig(bytes []byte) (*Config, error) {
 	}
 	c.Server.SetValuesFromEnv(envPrefix)
 
-	if v, ok := os.LookupEnv(envPrefix + "PUSH_RESTRICTION_USER_TOKEN"); ok {
-		c.Options.PushRestrictionUserToken = v
-	}
-
-	if c.Options.SharedRepository == "" {
-		c.Options.SharedRepository = DefaultSharedRepository
-	}
-	if c.Options.SharedConfigurationPath == "" {
-		c.Options.SharedConfigurationPath = DefaultSharedConfigurationPath
-	}
+	c.Options.SetValuesFromEnv(envPrefix + "OPTIONS_")
 
 	return &c, nil
 }
