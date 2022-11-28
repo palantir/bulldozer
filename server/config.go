@@ -15,10 +15,10 @@
 package server
 
 import (
-	"github.com/palantir/bulldozer/server/handler"
 	"os"
 
 	"github.com/c2h5oh/datasize"
+	"github.com/palantir/bulldozer/server/handler"
 	"github.com/palantir/go-baseapp/baseapp"
 	"github.com/palantir/go-baseapp/baseapp/datadog"
 	"github.com/palantir/go-githubapp/githubapp"

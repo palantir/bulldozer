@@ -15,9 +15,10 @@
 package handler
 
 import (
-	"github.com/palantir/bulldozer/bulldozer"
 	"os"
 	"strconv"
+
+	"github.com/palantir/bulldozer/bulldozer"
 )
 
 const (
