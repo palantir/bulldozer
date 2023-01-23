@@ -15,9 +15,14 @@
 package bulldozer
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"io"
+	"net/http"
 	"testing"
 
+	"github.com/google/go-github/v47/github"
 	"github.com/palantir/bulldozer/pull"
 	"github.com/palantir/bulldozer/pull/pulltest"
 	"github.com/stretchr/testify/assert"
@@ -180,4 +185,22 @@ func TestPushRestrictionMerger(t *testing.T) {
 	_ = merger.DeleteHead(ctx, pullCtx)
 	assert.Equal(t, 1, normal.DeleteCount, "normal delete was incorrectly called")
 	assert.Equal(t, 1, restricted.DeleteCount, "restricted delete was not called")
+}
+
+func TestBaseBranchChangedRetry(t *testing.T) {
+	merger := &MockMerger{
+		MergeError: github.CheckResponse(
+			&http.Response{
+				StatusCode: http.StatusMethodNotAllowed,
+				Body: io.NopCloser(
+					bytes.NewReader([]byte(
+						fmt.Sprintf(`{"message": "%s"}`, "Base branch was modified. Review and try the merge again.")))),
+			},
+		),
+	}
+	ctx := context.Background()
+	pullCtx := &pulltest.MockPullContext{MergeStateValue: &pull.MergeState{Closed: false, Mergeable: boolVal(true)}}
+
+	_, retry := attemptMerge(ctx, pullCtx, merger, SquashAndMerge, CommitMessage{})
+	assert.True(t, retry, "should retry on base branch changed error")
 }

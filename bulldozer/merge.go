@@ -289,6 +289,10 @@ func attemptMerge(ctx context.Context, pullCtx pull.Context, merger Merger, meth
 
 		switch gerr.Response.StatusCode {
 		case http.StatusMethodNotAllowed:
+			if gerr.Message == "Base branch was modified. Review and try the merge again." {
+				logger.Info().Msg("Base branch was modified, retrying")
+				return false, true
+			}
 			logger.Info().Msgf("Merge rejected due to unsatisfied condition: %q", gerr.Message)
 			return false, false
 		case http.StatusConflict:
