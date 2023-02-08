@@ -44,7 +44,8 @@ github:
   # environment variable.
   web_url: "https://github.com"
   # The base URL for v3 (REST) API requests. Can also be set by the
-  # GITHUB_V3_API_URL environment variable.
+  # GITHUB_V3_API_URL environment variable. For GitHub Enterprise
+  # Server, this should be "https://github.example.com/api/v3"
   v3_api_url: "https://api.github.com"
   app:
     # The integration ID of the GitHub app. Can also be set by the
