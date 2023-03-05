@@ -79,7 +79,7 @@ github.com/rs/zerolog/hlog/internal/mutil
 github.com/rs/zerolog/internal/cbor
 github.com/rs/zerolog/internal/json
 github.com/rs/zerolog/log
-# github.com/shurcooL/githubv4 v0.0.0-20230215024106-420ad0987b9b
+# github.com/shurcooL/githubv4 v0.0.0-20230305132112-efb623903184
 ## explicit
 github.com/shurcooL/githubv4
 # github.com/shurcooL/graphql v0.0.0-20181231061246-d48a9a75455f
