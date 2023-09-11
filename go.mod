@@ -5,10 +5,10 @@ go 1.21
 require (
 	github.com/c2h5oh/datasize v0.0.0-20171227191756-4eba002a5eae
 	github.com/die-net/lrucache v0.0.0-20181227122439-19a39ef22a11
-	github.com/google/go-github/v53 v53.2.0
+	github.com/google/go-github/v55 v55.0.0
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/palantir/go-baseapp v0.5.2
-	github.com/palantir/go-githubapp v0.18.0
+	github.com/palantir/go-githubapp v0.19.0
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.30.0
 	github.com/spf13/cobra v1.7.0
@@ -22,7 +22,7 @@ require (
 	github.com/Microsoft/go-winio v0.5.0 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20230217124315-7d5c6f04bbb8 // indirect
 	github.com/bluekeyes/hatpear v0.1.1 // indirect
-	github.com/bradleyfalzon/ghinstallation/v2 v2.6.0 // indirect
+	github.com/bradleyfalzon/ghinstallation/v2 v2.7.0 // indirect
 	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
