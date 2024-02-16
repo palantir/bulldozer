@@ -20,7 +20,7 @@ require (
 require (
 	github.com/DataDog/datadog-go/v5 v5.0.2 // indirect
 	github.com/Microsoft/go-winio v0.5.0 // indirect
-	github.com/bluekeyes/hatpear v0.1.1 // indirect
+	github.com/bluekeyes/hatpear v0.1.2 // indirect
 	github.com/bradleyfalzon/ghinstallation/v2 v2.9.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
