@@ -2,8 +2,8 @@ github.com/DataDog/datadog-go/v5 v5.0.2 h1:UFtEe7662/Qojxkw1d6SboAeA0CPI3naKhVAS
 github.com/DataDog/datadog-go/v5 v5.0.2/go.mod h1:ZI9JFB4ewXbw1sBnF4sxsR2k1H3xjV+PUAOUsHvKpcU=
 github.com/Microsoft/go-winio v0.5.0 h1:Elr9Wn+sGKPlkaBvwu4mTrxtmOp3F3yV9qhaHbXGjwU=
 github.com/Microsoft/go-winio v0.5.0/go.mod h1:JPGBdM1cNvN/6ISo+n8V5iA4v8pBzdOpzfwIujj1a84=
-github.com/bluekeyes/hatpear v0.1.1 h1:FA5diKynoYJi6YVTJPEDbe4MG6eA8h+7LYHUlm8bppc=
-github.com/bluekeyes/hatpear v0.1.1/go.mod h1:2bh+rl4wLhqzzL0hT7Q4SVGXIivrE8oKgH2WYM3ubt0=
+github.com/bluekeyes/hatpear v0.1.2 h1:D5dz9W/W5YxKlmqn7hRJi218+yVkXylhs/R6Ns/jj4A=
+github.com/bluekeyes/hatpear v0.1.2/go.mod h1:2bh+rl4wLhqzzL0hT7Q4SVGXIivrE8oKgH2WYM3ubt0=
 github.com/bradleyfalzon/ghinstallation/v2 v2.9.0 h1:HmxIYqnxubRYcYGRc5v3wUekmo5Wv2uX3gukmWJ0AFk=
 github.com/bradleyfalzon/ghinstallation/v2 v2.9.0/go.mod h1:wmkTDJf8CmVypxE8ijIStFnKoTa6solK5QfdmJrP9KI=
 github.com/c2h5oh/datasize v0.0.0-20171227191756-4eba002a5eae h1:2Zmk+8cNvAGuY8AyvZuWpUdpQUAXwfom4ReVMe/CTIo=
