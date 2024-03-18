@@ -118,19 +118,23 @@ merge:
     # Pull requests with auto merge enabled are added to the trigger.
     auto_merge: true
 
+    # Pull requests in draft status are added to the trigger.
+    draft: true
+
   # "ignore" defines the set of pull request ignored by bulldozer. If the
   # section is missing, bulldozer considers all pull requests. It takes the
   # same keys as the "trigger" section.
   ignore:
     labels: ["do not merge"]
     comment_substrings: ["==DO_NOT_MERGE=="]
+    draft: true
 
   # "method" defines the merge method. The available options are "merge",
   # "rebase", "squash", and "ff-only".
   method: squash
 
   ##### branch_method has been DEPRECATED in favor of merge_method #####
-  # 
+  #
   # Allows the merge method that is used when auto-merging a PR to be different
   # target branch. The keys of the hash are the target branch name, and the values are the merge method that
   # will be used for PRs targeting that branch. The valid values are the same as for the "method" key.
@@ -142,9 +146,9 @@ merge:
 
   # Allows the merge method that is used when auto-merging a PR to be different
   # based on trigger criteria. The first method where ALL triggers match will
-  # be used. Otherwise, the method specified previously in "merge.method" will 
+  # be used. Otherwise, the method specified previously in "merge.method" will
   # be used.
-  # - ALL trigger criteria must match, unlike merge/trigger where ANY match 
+  # - ALL trigger criteria must match, unlike merge/trigger where ANY match
   # will trigger bulldozer.
   # - This will override any branch_method logic if one of the methods is
   # triggered
@@ -430,7 +434,7 @@ previously installed.
 
 ### Reducing Update Commit and CI Pressure
 
-The Bulldozer "Update" feature is useful when keeping branches up-to-date,  but 
+The Bulldozer "Update" feature is useful when keeping branches up-to-date,  but
 can cause lots of pressure on CI build systems and Github when there are many pull requests
 open on a single repository.
 
