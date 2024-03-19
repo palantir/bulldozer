@@ -170,7 +170,7 @@ func (ghc *GithubContext) RequiredStatuses(ctx context.Context) ([]string, error
 		}
 	}
 	if checks := ghc.branchProtection.GetRequiredStatusChecks(); checks != nil {
-		return checks.Contexts, nil
+		return checks.GetContexts(), nil
 	}
 	return nil, nil
 }
