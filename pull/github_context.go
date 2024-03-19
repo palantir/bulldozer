@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/google/go-github/v59/github"
+	"github.com/google/go-github/v60/github"
 	"github.com/pkg/errors"
 )
 
@@ -170,7 +170,7 @@ func (ghc *GithubContext) RequiredStatuses(ctx context.Context) ([]string, error
 		}
 	}
 	if checks := ghc.branchProtection.GetRequiredStatusChecks(); checks != nil {
-		return checks.Contexts, nil
+		return checks.GetContexts(), nil
 	}
 	return nil, nil
 }
