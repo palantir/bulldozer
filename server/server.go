@@ -129,6 +129,7 @@ func New(c *Config) (*Server, error) {
 
 	// any additional API routes
 	mux.Handle(pat.Get("/api/health"), handler.Health())
+	mux.Handle(pat.Get("/api/metrics"), handler.Metrics(base.Registry(), c.Prometheus))
 
 	return &Server{
 		config: c,

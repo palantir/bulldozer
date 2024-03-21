@@ -19,8 +19,9 @@ import (
 
 	"github.com/c2h5oh/datasize"
 	"github.com/palantir/bulldozer/server/handler"
+	"github.com/palantir/go-baseapp/appmetrics/emitter/datadog"
+	"github.com/palantir/go-baseapp/appmetrics/emitter/prometheus"
 	"github.com/palantir/go-baseapp/baseapp"
-	"github.com/palantir/go-baseapp/baseapp/datadog"
 	"github.com/palantir/go-githubapp/githubapp"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
@@ -31,13 +32,14 @@ const (
 )
 
 type Config struct {
-	Server  baseapp.HTTPConfig `yaml:"server"`
-	Github  githubapp.Config   `yaml:"github"`
-	Options handler.Options    `yaml:"options"`
-	Logging LoggingConfig      `yaml:"logging"`
-	Datadog datadog.Config     `yaml:"datadog"`
-	Cache   CacheConfig        `yaml:"cache"`
-	Workers WorkerConfig       `yaml:"workers"`
+	Server     baseapp.HTTPConfig `yaml:"server"`
+	Github     githubapp.Config   `yaml:"github"`
+	Options    handler.Options    `yaml:"options"`
+	Logging    LoggingConfig      `yaml:"logging"`
+	Datadog    datadog.Config     `yaml:"datadog"`
+	Prometheus prometheus.Config  `yaml:"prometheus"`
+	Cache      CacheConfig        `yaml:"cache"`
+	Workers    WorkerConfig       `yaml:"workers"`
 }
 
 type LoggingConfig struct {
