@@ -8,7 +8,7 @@ require (
 	github.com/google/go-github/v61 v61.0.0
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/palantir/go-baseapp v0.5.2
-	github.com/palantir/go-githubapp v0.25.0
+	github.com/palantir/go-githubapp v0.26.0
 	github.com/pkg/errors v0.9.1
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 	github.com/rs/zerolog v1.33.0
@@ -29,6 +29,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/go-github/v60 v60.0.0 // indirect
+	github.com/google/go-github/v62 v62.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/hashicorp/golang-lru v0.6.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
