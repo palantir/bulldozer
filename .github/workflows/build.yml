@@ -50,8 +50,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    needs:
-      - Verify
 
     env:
       GOPATH: /home/runner/go
@@ -116,3 +114,12 @@ jobs:
       - name: Publish release assets
         if: ${{ github.event_name == 'release' }}
         run: ./godelw publish github --add-v-prefix --api-url=${GITHUB_API_URL} --user=palantir --repository=bulldozer --token=${{ secrets.GITHUB_TOKEN }}
+
+  ci-all:
+    runs-on: ubuntu-latest
+    needs:
+      - Verify
+      - Dist
+    steps:
+    - name: Complete
+      run: exit 0
