@@ -42,7 +42,7 @@ require (
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.42.0 // indirect
 	github.com/prometheus/procfs v0.10.1 // indirect
-	github.com/rs/xid v1.5.0 // indirect
+	github.com/rs/xid v1.6.0 // indirect
 	github.com/shurcooL/githubv4 v0.0.0-20240727222349-48295856cce7 // indirect
 	github.com/shurcooL/graphql v0.0.0-20181231061246-d48a9a75455f // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
