@@ -36,7 +36,7 @@ jobs:
           go-version: ${{ steps.go_version.outputs.version }}
 
       - name: Cache Godel assets
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ~/.godel
           key: ${{ runner.os }}-godel-${{ hashFiles('godelw', 'godel/config/godel.yml') }}
@@ -71,7 +71,7 @@ jobs:
           go-version: ${{ steps.go_version.outputs.version }}
 
       - name: Cache Godel assets
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ~/.godel
           key: ${{ runner.os }}-godel-${{ hashFiles('godelw', 'godel/config/godel.yml') }}
