@@ -49,9 +49,7 @@ func ListOpenPullRequestsForRef(ctx context.Context, client *github.Client, owne
 	var results []*github.PullRequest
 	logger := zerolog.Ctx(ctx)
 
-	if strings.HasPrefix(ref, "refs/heads/") {
-		ref = strings.TrimPrefix(ref, "refs/heads/")
-	}
+	ref = strings.TrimPrefix(ref, "refs/heads/")
 
 	opts := &github.PullRequestListOptions{
 		State: "open",
