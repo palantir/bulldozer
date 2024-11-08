@@ -57,14 +57,18 @@ func (h *CheckRun) Handle(ctx context.Context, eventType, deliveryID string, pay
 		return errors.Wrap(err, "failed to instantiate github client")
 	}
 
-	prs, err := pull.ListOpenPullRequestsForSHA(ctx, client, owner, repoName, event.GetCheckRun().GetHeadSHA())
-	if err != nil {
-		return errors.Wrap(err, "failed to determine open pull requests matching the status context change")
-	}
-
+	prs := event.GetCheckRun().PullRequests
 	if len(prs) == 0 {
-		logger.Debug().Msg("Doing nothing since status change event affects no open pull requests")
-		return nil
+		logger.Debug().Msg("No pull requests associated with the check run, searching by SHA")
+		// if no PR's were attached with the event let's check with Github in case it is a fork
+		prs, err = pull.ListOpenPullRequestsForSHA(ctx, client.PullRequests, owner, repoName, event.GetCheckRun().GetHeadSHA())
+		if err != nil {
+			return errors.Wrap(err, "failed to determine open pull requests matching the status context change")
+		}
+		if len(prs) == 0 {
+			logger.Debug().Msg("No open pull requests found for the given SHA")
+			return nil
+		}
 	}
 
 	for _, pr := range prs {

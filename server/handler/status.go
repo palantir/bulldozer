@@ -59,7 +59,7 @@ func (h *Status) Handle(ctx context.Context, eventType, deliveryID string, paylo
 		return errors.Wrap(err, "failed to instantiate github client")
 	}
 
-	prs, err := pull.ListOpenPullRequestsForSHA(ctx, client, owner, repoName, event.GetSHA())
+	prs, err := pull.GetAllPossibleOpenPullRequestsForSHA(ctx, client.PullRequests, owner, repoName, event.GetSHA())
 	if err != nil {
 		return errors.Wrap(err, "failed to determine open pull requests matching the status context change")
 	}

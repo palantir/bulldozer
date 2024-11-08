@@ -1,4 +1,4 @@
-// Copyright 2018 Palantir Technologies, Inc.
+// Copyright 2024 Palantir Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,62 +23,32 @@ import (
 	"github.com/rs/zerolog"
 )
 
-// ListOpenPullRequestsForSHA returns all pull requests where the HEAD of the source branch
-// in the pull request matches the given SHA.
-func ListOpenPullRequestsForSHA(ctx context.Context, client *github.Client, owner, repoName, SHA string) ([]*github.PullRequest, error) {
-	var results []*github.PullRequest
-	logger := zerolog.Ctx(ctx)
+// GitHubClient is an interface that wraps the methods used from the github.Client.
+type GitHubClient interface {
+	ListPullRequestsWithCommit(ctx context.Context, owner, repo, sha string, opts *github.ListOptions) ([]*github.PullRequest, *github.Response, error)
+	List(ctx context.Context, owner, repo string, opts *github.PullRequestListOptions) ([]*github.PullRequest, *github.Response, error)
+}
 
-	opts := &github.PullRequestListOptions{
-		State: "open",
-		ListOptions: github.ListOptions{
-			PerPage: 100,
-		},
-	}
+// GetOpenPullRequestsForSHA returns all open pull requests where the HEAD of the source branch
+// matches the given SHA.
+func GetOpenPullRequestsForSHA(ctx context.Context, client GitHubClient, owner, repo, sha string) ([]*github.PullRequest, error) {
+	logger := zerolog.Ctx(ctx)
+	var results []*github.PullRequest
+	opts := &github.ListOptions{PerPage: 100}
 
 	for {
-		prs, resp, err := client.PullRequests.List(ctx, owner, repoName, opts)
+		prs, resp, err := client.ListPullRequestsWithCommit(ctx, owner, repo, sha, opts)
 		if err != nil {
-			return results, errors.Wrapf(err, "failed to list pull requests for repository %s/%s", owner, repoName)
+			return nil, errors.Wrapf(err, "failed to list pull requests for repository %s/%s", owner, repo)
 		}
+
 		for _, pr := range prs {
-			if pr.Head.GetSHA() == SHA {
-				logger.Debug().Msgf("found open pull request with sha %s", pr.Head.GetSHA())
+			if pr.GetState() == "open" && pr.GetHead().GetSHA() == sha {
+				logger.Debug().Msgf("found open pull request with sha %s", pr.GetHead().GetSHA())
 				results = append(results, pr)
 			}
 		}
-		if resp.NextPage == 0 {
-			break
-		}
-		opts.ListOptions.Page = resp.NextPage
-	}
 
-	return results, nil
-}
-
-func ListOpenPullRequestsForRef(ctx context.Context, client *github.Client, owner, repoName, ref string) ([]*github.PullRequest, error) {
-	var results []*github.PullRequest
-	logger := zerolog.Ctx(ctx)
-
-	ref = strings.TrimPrefix(ref, "refs/heads/")
-
-	opts := &github.PullRequestListOptions{
-		State: "open",
-		Base:  ref, // Filter by base branch name
-		ListOptions: github.ListOptions{
-			PerPage: 100,
-		},
-	}
-
-	for {
-		prs, resp, err := client.PullRequests.List(ctx, owner, repoName, opts)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to list pull requests for repository %s/%s", owner, repoName)
-		}
-		for _, pr := range prs {
-			logger.Debug().Msgf("found open pull request with base ref %s", pr.GetBase().GetRef())
-			results = append(results, pr)
-		}
 		if resp.NextPage == 0 {
 			break
 		}
@@ -86,5 +56,92 @@ func ListOpenPullRequestsForRef(ctx context.Context, client *github.Client, owne
 	}
 
 	return results, nil
+}
 
+// ListOpenPullRequestsForSHA returns all open pull requests where the HEAD of the source branch
+// matches the given SHA by fetching all open PRs and filtering.
+func ListOpenPullRequestsForSHA(ctx context.Context, client GitHubClient, owner, repo, sha string) ([]*github.PullRequest, error) {
+	logger := zerolog.Ctx(ctx)
+	var results []*github.PullRequest
+	opts := &github.PullRequestListOptions{
+		State:       "open",
+		ListOptions: github.ListOptions{PerPage: 100},
+	}
+
+	for {
+		prs, resp, err := client.List(ctx, owner, repo, opts)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to list pull requests for repository %s/%s", owner, repo)
+		}
+
+		for _, pr := range prs {
+			if pr.Head.GetSHA() == sha {
+				logger.Debug().Msgf("found open pull request with sha %s", pr.Head.GetSHA())
+				results = append(results, pr)
+			}
+		}
+
+		if resp.NextPage == 0 {
+			break
+		}
+		opts.Page = resp.NextPage
+	}
+
+	return results, nil
+}
+
+// GetAllPossibleOpenPullRequestsForSHA attempts to find all open pull requests
+// associated with the given SHA using multiple methods in case we are dealing with a fork
+func GetAllPossibleOpenPullRequestsForSHA(ctx context.Context, client GitHubClient, owner, repo, sha string) ([]*github.PullRequest, error) {
+	logger := zerolog.Ctx(ctx)
+
+	prs, err := GetOpenPullRequestsForSHA(ctx, client, owner, repo, sha)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get open pull requests matching the SHA")
+	}
+
+	if len(prs) == 0 {
+		logger.Debug().Msg("No pull requests associated with the check run, searching by SHA")
+		prs, err = ListOpenPullRequestsForSHA(ctx, client, owner, repo, sha)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to list open pull requests matching the SHA")
+		}
+		if len(prs) == 0 {
+			logger.Debug().Msg("No open pull requests found for the given SHA")
+			return nil, nil
+		}
+	}
+
+	return prs, nil
+}
+
+// ListOpenPullRequestsForRef returns all open pull requests for a given base branch reference.
+func ListOpenPullRequestsForRef(ctx context.Context, client GitHubClient, owner, repo, ref string) ([]*github.PullRequest, error) {
+	logger := zerolog.Ctx(ctx)
+	ref = strings.TrimPrefix(ref, "refs/heads/")
+	opts := &github.PullRequestListOptions{
+		State:       "open",
+		Base:        ref,
+		ListOptions: github.ListOptions{PerPage: 100},
+	}
+
+	var results []*github.PullRequest
+	for {
+		prs, resp, err := client.List(ctx, owner, repo, opts)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to list pull requests for repository %s/%s", owner, repo)
+		}
+
+		for _, pr := range prs {
+			logger.Debug().Msgf("found open pull request with base ref %s", pr.GetBase().GetRef())
+			results = append(results, pr)
+		}
+
+		if resp.NextPage == 0 {
+			break
+		}
+		opts.Page = resp.NextPage
+	}
+
+	return results, nil
 }
