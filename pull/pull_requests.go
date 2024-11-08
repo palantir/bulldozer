@@ -26,22 +26,33 @@ import (
 // ListOpenPullRequestsForSHA returns all pull requests where the HEAD of the source branch
 // in the pull request matches the given SHA.
 func ListOpenPullRequestsForSHA(ctx context.Context, client *github.Client, owner, repoName, SHA string) ([]*github.PullRequest, error) {
-	prs, _, err := client.PullRequests.ListPullRequestsWithCommit(ctx, owner, repoName, SHA, &github.ListOptions{
-		// In practice, there should be at most 1-3 PRs for a given commit. In
-		// exceptional cases, if there are more than 100 PRs, we'll only
-		// consider the first 100 to avoid paging.
-		PerPage: 100,
-	})
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to list pull requests for repository %s/%s", owner, repoName)
+	var results []*github.PullRequest
+	logger := zerolog.Ctx(ctx)
+
+	opts := &github.PullRequestListOptions{
+		State: "open",
+		ListOptions: github.ListOptions{
+			PerPage: 100,
+		},
 	}
 
-	var results []*github.PullRequest
-	for _, pr := range prs {
-		if pr.GetState() == "open" && pr.GetHead().GetSHA() == SHA {
-			results = append(results, pr)
+	for {
+		prs, resp, err := client.PullRequests.List(ctx, owner, repoName, opts)
+		if err != nil {
+			return results, errors.Wrapf(err, "failed to list pull requests for repository %s/%s", owner, repoName)
 		}
+		for _, pr := range prs {
+			if pr.Head.GetSHA() == SHA {
+				logger.Debug().Msgf("found open pull request with sha %s", pr.Head.GetSHA())
+				results = append(results, pr)
+			}
+		}
+		if resp.NextPage == 0 {
+			break
+		}
+		opts.ListOptions.Page = resp.NextPage
 	}
+
 	return results, nil
 }
 

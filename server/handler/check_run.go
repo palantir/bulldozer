@@ -40,6 +40,9 @@ func (h *CheckRun) Handle(ctx context.Context, eventType, deliveryID string, pay
 	}
 
 	repo := event.GetRepo()
+	owner := repo.GetOwner().GetLogin()
+	repoName := repo.GetName()
+
 	installationID := githubapp.GetInstallationIDFromEvent(&event)
 
 	ctx, logger := githubapp.PrepareRepoContext(ctx, installationID, repo)
@@ -54,7 +57,11 @@ func (h *CheckRun) Handle(ctx context.Context, eventType, deliveryID string, pay
 		return errors.Wrap(err, "failed to instantiate github client")
 	}
 
-	prs := event.GetCheckRun().PullRequests
+	prs, err := pull.ListOpenPullRequestsForSHA(ctx, client, owner, repoName, event.GetCheckRun().GetHeadSHA())
+	if err != nil {
+		return errors.Wrap(err, "failed to determine open pull requests matching the status context change")
+	}
+
 	if len(prs) == 0 {
 		logger.Debug().Msg("Doing nothing since status change event affects no open pull requests")
 		return nil
