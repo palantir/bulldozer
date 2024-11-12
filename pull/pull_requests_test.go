@@ -53,7 +53,7 @@ func TestGetOpenPullRequestsForSHA(t *testing.T) {
 
 	mockClient.On("ListPullRequestsWithCommit", ctx, owner, repo, sha, mock.Anything).Return([]*github.PullRequest{pr}, &github.Response{NextPage: 0}, nil)
 
-	prs, err := GetOpenPullRequestsForSHA(ctx, mockClient, owner, repo, sha)
+	prs, err := getOpenPullRequestsForSHA(ctx, mockClient, owner, repo, sha)
 	assert.NoError(t, err)
 	assert.Len(t, prs, 1)
 	assert.Equal(t, sha, prs[0].GetHead().GetSHA())
@@ -75,7 +75,7 @@ func TestListOpenPullRequestsForSHA(t *testing.T) {
 
 	mockClient.On("List", ctx, owner, repo, mock.Anything).Return([]*github.PullRequest{pr}, &github.Response{NextPage: 0}, nil)
 
-	prs, err := ListOpenPullRequestsForSHA(ctx, mockClient, owner, repo, sha)
+	prs, err := ListAllOpenPullRequestsFilteredBySHA(ctx, mockClient, owner, repo, sha)
 	assert.NoError(t, err)
 	assert.Len(t, prs, 1)
 	assert.Equal(t, sha, prs[0].GetHead().GetSHA())
@@ -184,7 +184,7 @@ func TestListOpenPullRequestsForRef(t *testing.T) {
 
 	mockClient.On("List", ctx, owner, repo, mock.Anything).Return([]*github.PullRequest{pr}, &github.Response{NextPage: 0}, nil)
 
-	prs, err := ListOpenPullRequestsForRef(ctx, mockClient, owner, repo, ref)
+	prs, err := GetAllOpenPullRequestsForRef(ctx, mockClient, owner, repo, ref)
 	assert.NoError(t, err)
 	assert.Len(t, prs, 1)
 	assert.Equal(t, "main", prs[0].GetBase().GetRef())

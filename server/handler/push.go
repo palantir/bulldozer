@@ -66,7 +66,7 @@ func (h *Push) Handle(ctx context.Context, eventType, deliveryID string, payload
 		return errors.Wrap(err, "failed to instantiate github client")
 	}
 
-	prs, err := pull.ListOpenPullRequestsForRef(ctx, client.PullRequests, owner, repoName, baseRef)
+	prs, err := pull.GetAllOpenPullRequestsForRef(ctx, client.PullRequests, owner, repoName, baseRef)
 	if err != nil {
 		return errors.Wrap(err, "failed to determine open pull requests matching the push change")
 	}

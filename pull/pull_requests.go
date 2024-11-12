@@ -23,15 +23,15 @@ import (
 	"github.com/rs/zerolog"
 )
 
-// GitHubClient is an interface that wraps the methods used from the github.Client.
-type GitHubClient interface {
+// GitHubPullRequestClient is an interface that wraps the methods used from the github.Client.
+type GitHubPullRequestClient interface {
 	ListPullRequestsWithCommit(ctx context.Context, owner, repo, sha string, opts *github.ListOptions) ([]*github.PullRequest, *github.Response, error)
 	List(ctx context.Context, owner, repo string, opts *github.PullRequestListOptions) ([]*github.PullRequest, *github.Response, error)
 }
 
-// GetOpenPullRequestsForSHA returns all open pull requests where the HEAD of the source branch
+// getOpenPullRequestsForSHA returns all open pull requests where the HEAD of the source branch
 // matches the given SHA.
-func GetOpenPullRequestsForSHA(ctx context.Context, client GitHubClient, owner, repo, sha string) ([]*github.PullRequest, error) {
+func getOpenPullRequestsForSHA(ctx context.Context, client GitHubPullRequestClient, owner, repo, sha string) ([]*github.PullRequest, error) {
 	logger := zerolog.Ctx(ctx)
 	var results []*github.PullRequest
 	opts := &github.ListOptions{PerPage: 100}
@@ -58,9 +58,9 @@ func GetOpenPullRequestsForSHA(ctx context.Context, client GitHubClient, owner, 
 	return results, nil
 }
 
-// ListOpenPullRequestsForSHA returns all open pull requests where the HEAD of the source branch
+// ListAllOpenPullRequestsFilteredBySHA returns all open pull requests where the HEAD of the source branch
 // matches the given SHA by fetching all open PRs and filtering.
-func ListOpenPullRequestsForSHA(ctx context.Context, client GitHubClient, owner, repo, sha string) ([]*github.PullRequest, error) {
+func ListAllOpenPullRequestsFilteredBySHA(ctx context.Context, client GitHubPullRequestClient, owner, repo, sha string) ([]*github.PullRequest, error) {
 	logger := zerolog.Ctx(ctx)
 	var results []*github.PullRequest
 	opts := &github.PullRequestListOptions{
@@ -92,31 +92,27 @@ func ListOpenPullRequestsForSHA(ctx context.Context, client GitHubClient, owner,
 
 // GetAllPossibleOpenPullRequestsForSHA attempts to find all open pull requests
 // associated with the given SHA using multiple methods in case we are dealing with a fork
-func GetAllPossibleOpenPullRequestsForSHA(ctx context.Context, client GitHubClient, owner, repo, sha string) ([]*github.PullRequest, error) {
+func GetAllPossibleOpenPullRequestsForSHA(ctx context.Context, client GitHubPullRequestClient, owner, repo, sha string) ([]*github.PullRequest, error) {
 	logger := zerolog.Ctx(ctx)
 
-	prs, err := GetOpenPullRequestsForSHA(ctx, client, owner, repo, sha)
+	prs, err := getOpenPullRequestsForSHA(ctx, client, owner, repo, sha)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get open pull requests matching the SHA")
 	}
 
 	if len(prs) == 0 {
-		logger.Debug().Msg("No pull requests associated with the check run, searching by SHA")
-		prs, err = ListOpenPullRequestsForSHA(ctx, client, owner, repo, sha)
+		logger.Debug().Msg("no pull requests found via commit association , searching all pull requests by SHA")
+		prs, err = ListAllOpenPullRequestsFilteredBySHA(ctx, client, owner, repo, sha)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to list open pull requests matching the SHA")
-		}
-		if len(prs) == 0 {
-			logger.Debug().Msg("No open pull requests found for the given SHA")
-			return nil, nil
 		}
 	}
 
 	return prs, nil
 }
 
-// ListOpenPullRequestsForRef returns all open pull requests for a given base branch reference.
-func ListOpenPullRequestsForRef(ctx context.Context, client GitHubClient, owner, repo, ref string) ([]*github.PullRequest, error) {
+// GetAllOpenPullRequestsForRef returns all open pull requests for a given base branch reference.
+func GetAllOpenPullRequestsForRef(ctx context.Context, client GitHubPullRequestClient, owner, repo, ref string) ([]*github.PullRequest, error) {
 	logger := zerolog.Ctx(ctx)
 	ref = strings.TrimPrefix(ref, "refs/heads/")
 	opts := &github.PullRequestListOptions{
