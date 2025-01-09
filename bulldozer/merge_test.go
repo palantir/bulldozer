@@ -22,7 +22,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/google/go-github/v67/github"
+	"github.com/google/go-github/v68/github"
 	"github.com/palantir/bulldozer/pull"
 	"github.com/palantir/bulldozer/pull/pulltest"
 	"github.com/stretchr/testify/assert"
