@@ -17,7 +17,7 @@ package handler
 import (
 	"context"
 
-	"github.com/google/go-github/v68/github"
+	"github.com/google/go-github/v69/github"
 	"github.com/palantir/bulldozer/bulldozer"
 	"github.com/palantir/go-githubapp/appconfig"
 	"github.com/rs/zerolog"
