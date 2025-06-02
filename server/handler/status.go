@@ -18,7 +18,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/google/go-github/v71/github"
+	"github.com/google/go-github/v72/github"
 	"github.com/palantir/bulldozer/pull"
 	"github.com/palantir/go-githubapp/githubapp"
 	"github.com/pkg/errors"
