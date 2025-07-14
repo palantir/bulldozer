@@ -8,7 +8,7 @@ status checks are successful and required reviews are provided.
 
 Additionally, `bulldozer` can:
 
-- Only merge pull requests that match certain conditions, like having a
+- Only merge pull requests that  match certain conditions, like having a
   specific label or comment
 - Ignore pull requests that match certain conditions, like having a specific
   label or comment
