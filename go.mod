@@ -3,7 +3,7 @@ module github.com/palantir/bulldozer
 go 1.24.0
 
 require (
-	github.com/c2h5oh/datasize v0.0.0-20171227191756-4eba002a5eae
+	github.com/c2h5oh/datasize v0.0.0-20231215233829-aa82cc1e6500
 	github.com/die-net/lrucache v0.0.0-20240714232319-26322ba4bc23
 	github.com/google/go-github/v74 v74.0.0
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
