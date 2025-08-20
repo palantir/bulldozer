@@ -19,7 +19,7 @@ require (
 )
 
 require (
-	github.com/DataDog/datadog-go/v5 v5.6.0 // indirect
+	github.com/DataDog/datadog-go/v5 v5.7.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bluekeyes/hatpear v0.1.2 // indirect
