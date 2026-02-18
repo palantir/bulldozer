@@ -5,10 +5,10 @@ go 1.25.0
 require (
 	github.com/c2h5oh/datasize v0.0.0-20231215233829-aa82cc1e6500
 	github.com/die-net/lrucache v0.0.0-20240714232319-26322ba4bc23
-	github.com/google/go-github/v82 v82.0.0
+	github.com/google/go-github/v83 v83.0.0
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/palantir/go-baseapp v0.6.0
-	github.com/palantir/go-githubapp v0.41.0
+	github.com/palantir/go-githubapp v0.42.0
 	github.com/pkg/errors v0.9.1
 	github.com/rcrowley/go-metrics v0.0.0-20250401214520-65e299d6c5c9
 	github.com/rs/zerolog v1.34.0

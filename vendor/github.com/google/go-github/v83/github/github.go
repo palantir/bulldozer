@@ -4,8 +4,9 @@
 // license that can be found in the LICENSE file.
 
 //go:generate go run gen-accessors.go
+//go:generate go run gen-iterators.go
 //go:generate go run gen-stringify-test.go
-//go:generate ../script/metadata.sh update-go
+//go:generate sh ../script/metadata.sh update-go
 
 package github
 
@@ -18,7 +19,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -29,21 +29,23 @@ import (
 )
 
 const (
-	Version = "v82.0.0"
+	Version = "v83.0.0"
+
+	HeaderRateLimit     = "X-Ratelimit-Limit"
+	HeaderRateRemaining = "X-Ratelimit-Remaining"
+	HeaderRateReset     = "X-Ratelimit-Reset"
+	HeaderRateResource  = "X-Ratelimit-Resource"
+	HeaderRateUsed      = "X-Ratelimit-Used"
+	HeaderRequestID     = "X-Github-Request-Id"
 
 	defaultAPIVersion = "2022-11-28"
 	defaultBaseURL    = "https://api.github.com/"
 	defaultUserAgent  = "go-github" + "/" + Version
 	uploadBaseURL     = "https://uploads.github.com/"
 
-	headerAPIVersion    = "X-Github-Api-Version"
-	headerRateLimit     = "X-Ratelimit-Limit"
-	headerRateRemaining = "X-Ratelimit-Remaining"
-	headerRateUsed      = "X-Ratelimit-Used"
-	headerRateReset     = "X-Ratelimit-Reset"
-	headerRateResource  = "X-Ratelimit-Resource"
-	headerOTP           = "X-Github-Otp"
-	headerRetryAfter    = "Retry-After"
+	headerAPIVersion = "X-Github-Api-Version"
+	headerOTP        = "X-Github-Otp"
+	headerRetryAfter = "Retry-After"
 
 	headerTokenExpiration = "Github-Authentication-Token-Expiration"
 
@@ -309,11 +311,12 @@ type RawOptions struct {
 	Type RawType
 }
 
+type structPtr[T any] interface{ *T }
+
 // addOptions adds the parameters in opts as URL query parameters to s. opts
 // must be a struct whose fields may contain "url" tags.
-func addOptions(s string, opts any) (string, error) {
-	v := reflect.ValueOf(opts)
-	if v.Kind() == reflect.Pointer && v.IsNil() {
+func addOptions[P structPtr[T], T any](s string, opts P) (string, error) {
+	if opts == nil {
 		return s, nil
 	}
 
@@ -409,7 +412,8 @@ func (c *Client) WithEnterpriseURLs(baseURL, uploadURL string) (*Client, error) 
 	}
 	if !strings.HasSuffix(c2.UploadURL.Path, "/api/uploads/") &&
 		!strings.HasPrefix(c2.UploadURL.Host, "api.") &&
-		!strings.Contains(c2.UploadURL.Host, ".api.") {
+		!strings.Contains(c2.UploadURL.Host, ".api.") &&
+		!strings.HasPrefix(c2.UploadURL.Host, "uploads.") {
 		c2.UploadURL.Path += "api/uploads/"
 	}
 	return c2, nil
@@ -785,21 +789,21 @@ func (r *Response) populatePageValues() {
 // parseRate parses the rate related headers.
 func parseRate(r *http.Response) Rate {
 	var rate Rate
-	if limit := r.Header.Get(headerRateLimit); limit != "" {
+	if limit := r.Header.Get(HeaderRateLimit); limit != "" {
 		rate.Limit, _ = strconv.Atoi(limit)
 	}
-	if remaining := r.Header.Get(headerRateRemaining); remaining != "" {
+	if remaining := r.Header.Get(HeaderRateRemaining); remaining != "" {
 		rate.Remaining, _ = strconv.Atoi(remaining)
 	}
-	if used := r.Header.Get(headerRateUsed); used != "" {
+	if used := r.Header.Get(HeaderRateUsed); used != "" {
 		rate.Used, _ = strconv.Atoi(used)
 	}
-	if reset := r.Header.Get(headerRateReset); reset != "" {
+	if reset := r.Header.Get(HeaderRateReset); reset != "" {
 		if v, _ := strconv.ParseInt(reset, 10, 64); v != 0 {
 			rate.Reset = Timestamp{time.Unix(v, 0)}
 		}
 	}
-	if resource := r.Header.Get(headerRateResource); resource != "" {
+	if resource := r.Header.Get(HeaderRateResource); resource != "" {
 		rate.Resource = resource
 	}
 	return rate
@@ -820,7 +824,7 @@ func parseSecondaryRate(r *http.Response) *time.Duration {
 	// According to GitHub support, endpoints might return x-ratelimit-reset instead,
 	// as an integer which represents the number of seconds since epoch UTC,
 	// representing the time to resume making requests.
-	if v := r.Header.Get(headerRateReset); v != "" {
+	if v := r.Header.Get(HeaderRateReset); v != "" {
 		secondsSinceEpoch, _ := strconv.ParseInt(v, 10, 64) // Error handling is noop.
 		retryAfter := time.Until(time.Unix(secondsSinceEpoch, 0))
 		return &retryAfter
@@ -1451,13 +1455,18 @@ func CheckResponse(r *http.Response) error {
 	switch {
 	case r.StatusCode == http.StatusUnauthorized && strings.HasPrefix(r.Header.Get(headerOTP), "required"):
 		return (*TwoFactorAuthError)(errorResponse)
-	case r.StatusCode == http.StatusForbidden && r.Header.Get(headerRateRemaining) == "0":
+	// Primary rate limit exceeded: GitHub returns 403 or 429 with X-RateLimit-Remaining: 0
+	// See: https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api
+	case (r.StatusCode == http.StatusForbidden || r.StatusCode == http.StatusTooManyRequests) &&
+		r.Header.Get(HeaderRateRemaining) == "0":
 		return &RateLimitError{
 			Rate:     parseRate(r),
 			Response: errorResponse.Response,
 			Message:  errorResponse.Message,
 		}
-	case r.StatusCode == http.StatusForbidden &&
+	// Secondary rate limit exceeded: GitHub returns 403 or 429 with specific documentation_url
+	// See: https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api#about-secondary-rate-limits
+	case (r.StatusCode == http.StatusForbidden || r.StatusCode == http.StatusTooManyRequests) &&
 		(strings.HasSuffix(errorResponse.DocumentationURL, "#abuse-rate-limits") ||
 			strings.HasSuffix(errorResponse.DocumentationURL, "secondary-rate-limits")):
 		abuseRateLimitError := &AbuseRateLimitError{

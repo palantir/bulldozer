@@ -68,8 +68,8 @@ type User struct {
 
 	// Permissions and RoleName identify the permissions and role that a user has on a given
 	// repository. These are only populated when calling Repositories.ListCollaborators.
-	Permissions map[string]bool `json:"permissions,omitempty"`
-	RoleName    *string         `json:"role_name,omitempty"`
+	Permissions *RepositoryPermissions `json:"permissions,omitempty"`
+	RoleName    *string                `json:"role_name,omitempty"`
 
 	// Assignment identifies how a user was assigned to an organization role. Its
 	// possible values are: "direct", "indirect", "mixed". This is only populated when
@@ -208,13 +208,9 @@ func (s *UsersService) GetHovercard(ctx context.Context, user string, opts *Hove
 // UserListOptions specifies optional parameters to the UsersService.ListAll
 // method.
 type UserListOptions struct {
-	// ID of the last user seen
-	Since int64 `url:"since,omitempty"`
-
-	// Note: Pagination is powered exclusively by the Since parameter,
-	// ListOptions.Page has no effect.
-	// ListOptions.PerPage controls an undocumented GitHub API parameter.
-	ListOptions
+	// A user ID. Only return users with an ID greater than this ID.
+	Since   int64 `url:"since,omitempty"`
+	PerPage int   `url:"per_page,omitempty"`
 }
 
 // ListAll lists all GitHub users.
