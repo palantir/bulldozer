@@ -344,7 +344,7 @@ func (signal MaxCommitsSignal) Matches(ctx context.Context, pullCtx pull.Context
 	commits, _ := pullCtx.Commits(ctx)
 
 	if len(commits) <= int(signal) {
-		return true, fmt.Sprintf("pull request has %q commits, which is less than or equal to the maximum of %q", len(commits), signal), nil
+		return true, fmt.Sprintf("pull request has %d commits, which is less than or equal to the maximum of %d", len(commits), signal), nil
 	}
 
 	return false, "", nil
