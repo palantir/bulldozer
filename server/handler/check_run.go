@@ -80,7 +80,7 @@ func (h *CheckRun) Handle(ctx context.Context, eventType, deliveryID string, pay
 		// need to process the pull request.
 		fullPR, _, err := client.PullRequests.Get(ctx, repo.GetOwner().GetLogin(), repo.GetName(), pr.GetNumber())
 		if err != nil {
-			return errors.Wrapf(err, "failed to fetch PR number %q for CheckRun", pr.GetNumber())
+			return errors.Wrapf(err, "failed to fetch PR number %d for CheckRun", pr.GetNumber())
 		}
 		pullCtx := pull.NewGithubContext(client, fullPR)
 
