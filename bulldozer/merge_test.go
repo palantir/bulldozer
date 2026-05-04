@@ -193,13 +193,13 @@ func TestBaseBranchChangedRetry(t *testing.T) {
 			&http.Response{
 				StatusCode: http.StatusMethodNotAllowed,
 				Body: io.NopCloser(
-					bytes.NewReader([]byte(
-						fmt.Sprintf(`{"message": "%s"}`, "Base branch was modified. Review and try the merge again.")))),
+					bytes.NewReader(
+						fmt.Appendf(nil, `{"message": "%s"}`, "Base branch was modified. Review and try the merge again."))),
 			},
 		),
 	}
 	ctx := context.Background()
-	pullCtx := &pulltest.MockPullContext{MergeStateValue: &pull.MergeState{Closed: false, Mergeable: boolVal(true)}}
+	pullCtx := &pulltest.MockPullContext{MergeStateValue: &pull.MergeState{Closed: false, Mergeable: new(true)}}
 
 	_, retry := attemptMerge(ctx, pullCtx, merger, SquashAndMerge, CommitMessage{})
 	assert.True(t, retry, "should retry on base branch changed error")

@@ -46,9 +46,9 @@ func (h *Push) Handle(ctx context.Context, eventType, deliveryID string, payload
 
 	// todo: fixup PushEventRepository != Repository
 	ghRepo := &github.Repository{
-		Name: github.String(repoName),
+		Name: github.Ptr(repoName),
 		Owner: &github.User{
-			Login: github.String(owner),
+			Login: github.Ptr(owner),
 		},
 	}
 

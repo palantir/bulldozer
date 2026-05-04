@@ -47,8 +47,8 @@ func TestGetOpenPullRequestsForSHA(t *testing.T) {
 	sha := "sha"
 
 	pr := &github.PullRequest{
-		State: github.String("open"),
-		Head:  &github.PullRequestBranch{SHA: github.String(sha)},
+		State: github.Ptr("open"),
+		Head:  &github.PullRequestBranch{SHA: github.Ptr(sha)},
 	}
 
 	mockClient.On("ListPullRequestsWithCommit", ctx, owner, repo, sha, mock.Anything).Return([]*github.PullRequest{pr}, &github.Response{NextPage: 0}, nil)
@@ -69,8 +69,8 @@ func TestListOpenPullRequestsForSHA(t *testing.T) {
 	sha := "sha"
 
 	pr := &github.PullRequest{
-		State: github.String("open"),
-		Head:  &github.PullRequestBranch{SHA: github.String(sha)},
+		State: github.Ptr("open"),
+		Head:  &github.PullRequestBranch{SHA: github.Ptr(sha)},
 	}
 
 	mockClient.On("List", ctx, owner, repo, mock.Anything).Return([]*github.PullRequest{pr}, &github.Response{NextPage: 0}, nil)
@@ -91,8 +91,8 @@ func TestGetAllPossibleOpenPullRequestsForSHA_FirstMethodReturnsResults(t *testi
 	sha := "sha"
 
 	pr := &github.PullRequest{
-		State: github.String("open"),
-		Head:  &github.PullRequestBranch{SHA: github.String(sha)},
+		State: github.Ptr("open"),
+		Head:  &github.PullRequestBranch{SHA: github.Ptr(sha)},
 	}
 
 	// Mock the first method to return a valid pull request.
@@ -116,8 +116,8 @@ func TestGetAllPossibleOpenPullRequestsForSHA_SecondMethodReturnsResults(t *test
 	sha := "sha"
 
 	pr := &github.PullRequest{
-		State: github.String("open"),
-		Head:  &github.PullRequestBranch{SHA: github.String(sha)},
+		State: github.Ptr("open"),
+		Head:  &github.PullRequestBranch{SHA: github.Ptr(sha)},
 	}
 
 	// Mock the first method to return no results.
@@ -178,8 +178,8 @@ func TestListOpenPullRequestsForRef(t *testing.T) {
 	ref := "refs/heads/main"
 
 	pr := &github.PullRequest{
-		State: github.String("open"),
-		Base:  &github.PullRequestBranch{Ref: github.String("main")},
+		State: github.Ptr("open"),
+		Base:  &github.PullRequestBranch{Ref: github.Ptr("main")},
 	}
 
 	mockClient.On("List", ctx, owner, repo, mock.Anything).Return([]*github.PullRequest{pr}, &github.Response{NextPage: 0}, nil)

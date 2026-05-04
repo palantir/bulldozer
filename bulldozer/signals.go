@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/palantir/bulldozer/pull"
@@ -221,10 +222,8 @@ func (signal CommentsSignal) Matches(ctx context.Context, pullCtx pull.Context, 
 		if body == signalComment {
 			return true, fmt.Sprintf("pull request body is a %s comment: %q", tag, signalComment), nil
 		}
-		for _, comment := range comments {
-			if comment == signalComment {
-				return true, fmt.Sprintf("pull request has a %s comment: %q", tag, signalComment), nil
-			}
+		if slices.Contains(comments, signalComment) {
+			return true, fmt.Sprintf("pull request has a %s comment: %q", tag, signalComment), nil
 		}
 	}
 
