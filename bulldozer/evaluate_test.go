@@ -872,8 +872,3 @@ func TestShouldUpdatePR(t *testing.T) {
 		})
 	}
 }
-
-//go:fix inline
-func boolVal(b bool) *bool {
-	return new(b)
-}

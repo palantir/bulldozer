@@ -54,8 +54,8 @@ func UpdatePR(ctx context.Context, pullCtx pull.Context, client *github.Client, 
 
 	logger.Debug().Msg("Pull request is not up to date, attempting an update")
 	mergeCommit, _, err := client.Repositories.Merge(ctx, pullCtx.Owner(), pullCtx.Repo(), &github.RepositoryMergeRequest{
-		Base: github.Ptr(pr.Head.GetRef()),
-		Head: github.Ptr(baseRef),
+		Base: new(pr.Head.GetRef()),
+		Head: new(baseRef),
 	})
 	if err != nil {
 		logger.Error().Err(errors.WithStack(err)).Msg("Update merge failed unexpectedly")
