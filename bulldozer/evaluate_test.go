@@ -557,7 +557,7 @@ func TestShouldUpdatePR(t *testing.T) {
 				IsDraftValue: true,
 			},
 			updateConfig: UpdateConfig{
-				IgnoreDrafts: boolVal(true),
+				IgnoreDrafts: new(true),
 			},
 			expectingUpdate: false,
 		},
@@ -566,7 +566,7 @@ func TestShouldUpdatePR(t *testing.T) {
 				IsDraftValue: false,
 			},
 			updateConfig: UpdateConfig{
-				IgnoreDrafts: boolVal(true),
+				IgnoreDrafts: new(true),
 			},
 			expectingUpdate: true,
 		},
@@ -576,7 +576,7 @@ func TestShouldUpdatePR(t *testing.T) {
 				LabelValue:   []string{"trigger"},
 			},
 			updateConfig: UpdateConfig{
-				IgnoreDrafts: boolVal(true),
+				IgnoreDrafts: new(true),
 				Trigger: Signals{
 					Labels: []string{"trigger"},
 				},
@@ -589,7 +589,7 @@ func TestShouldUpdatePR(t *testing.T) {
 				LabelValue:   []string{"trigger"},
 			},
 			updateConfig: UpdateConfig{
-				IgnoreDrafts: boolVal(true),
+				IgnoreDrafts: new(true),
 				Trigger: Signals{
 					Labels: []string{"trigger"},
 				},
@@ -602,7 +602,7 @@ func TestShouldUpdatePR(t *testing.T) {
 				LabelValue:   []string{"ignore"},
 			},
 			updateConfig: UpdateConfig{
-				IgnoreDrafts: boolVal(true),
+				IgnoreDrafts: new(true),
 				Ignore: Signals{
 					Labels: []string{"ignore"},
 				},
@@ -615,7 +615,7 @@ func TestShouldUpdatePR(t *testing.T) {
 				LabelValue:   []string{"ignore"},
 			},
 			updateConfig: UpdateConfig{
-				IgnoreDrafts: boolVal(true),
+				IgnoreDrafts: new(true),
 				Ignore: Signals{
 					Labels: []string{"ignore"},
 				},
@@ -628,7 +628,7 @@ func TestShouldUpdatePR(t *testing.T) {
 				LabelValue:   []string{"ignore", "trigger"},
 			},
 			updateConfig: UpdateConfig{
-				IgnoreDrafts: boolVal(true),
+				IgnoreDrafts: new(true),
 				Ignore: Signals{
 					Labels: []string{"ignore"},
 				},
@@ -644,7 +644,7 @@ func TestShouldUpdatePR(t *testing.T) {
 				LabelValue:   []string{"ignore", "trigger"},
 			},
 			updateConfig: UpdateConfig{
-				IgnoreDrafts: boolVal(true),
+				IgnoreDrafts: new(true),
 				Ignore: Signals{
 					Labels: []string{"ignore"},
 				},
@@ -659,7 +659,7 @@ func TestShouldUpdatePR(t *testing.T) {
 				IsDraftValue: true,
 			},
 			updateConfig: UpdateConfig{
-				IgnoreDrafts: boolVal(true),
+				IgnoreDrafts: new(true),
 				Ignore: Signals{
 					Labels: []string{"ignore"},
 				},
@@ -671,7 +671,7 @@ func TestShouldUpdatePR(t *testing.T) {
 				IsDraftValue: true,
 			},
 			updateConfig: UpdateConfig{
-				IgnoreDrafts: boolVal(true),
+				IgnoreDrafts: new(true),
 				Trigger: Signals{
 					Labels: []string{"trigger"},
 				},
@@ -822,7 +822,7 @@ func TestShouldUpdatePR(t *testing.T) {
 				SuccessStatusesValue: []string{"status1"},
 			},
 			updateConfig: UpdateConfig{
-				IgnoreDrafts:     boolVal(true),
+				IgnoreDrafts:     new(true),
 				RequiredStatuses: []string{"status1", "status2"},
 			},
 			expectingUpdate: false,
@@ -833,7 +833,7 @@ func TestShouldUpdatePR(t *testing.T) {
 				SuccessStatusesValue: []string{"status1", "status2"},
 			},
 			updateConfig: UpdateConfig{
-				IgnoreDrafts:     boolVal(true),
+				IgnoreDrafts:     new(true),
 				RequiredStatuses: []string{"status1", "status2"},
 			},
 			expectingUpdate: false,
@@ -844,7 +844,7 @@ func TestShouldUpdatePR(t *testing.T) {
 				SuccessStatusesValue: []string{"status1"},
 			},
 			updateConfig: UpdateConfig{
-				IgnoreDrafts:     boolVal(true),
+				IgnoreDrafts:     new(true),
 				RequiredStatuses: []string{"status1", "status2"},
 			},
 			expectingUpdate: false,
@@ -855,7 +855,7 @@ func TestShouldUpdatePR(t *testing.T) {
 				SuccessStatusesValue: []string{"status1", "status2"},
 			},
 			updateConfig: UpdateConfig{
-				IgnoreDrafts:     boolVal(true),
+				IgnoreDrafts:     new(true),
 				RequiredStatuses: []string{"status1", "status2"},
 			},
 			expectingUpdate: true,
@@ -871,8 +871,4 @@ func TestShouldUpdatePR(t *testing.T) {
 			require.Equal(t, test.expectingUpdate, updating, msg)
 		})
 	}
-}
-
-func boolVal(b bool) *bool {
-	return &b
 }
