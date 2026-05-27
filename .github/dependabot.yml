@@ -1,10 +1,10 @@
 # Set update schedule for GitHub Actions
 
 version: 2
-updates:
 
+updates:
   - package-ecosystem: "github-actions"
     directory: "/"
+    labels: ["no changelog", "merge when ready", "dependencies", "github_actions"]
     schedule:
-      # Check for updates to GitHub Actions every week
       interval: "weekly"
