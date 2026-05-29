@@ -91,8 +91,8 @@ github.com/prometheus/client_golang/prometheus/promhttp/internal
 # github.com/prometheus/client_model v0.6.2
 ## explicit; go 1.22.0
 github.com/prometheus/client_model/go
-# github.com/prometheus/common v0.67.5
-## explicit; go 1.24.0
+# github.com/prometheus/common v0.68.0
+## explicit; go 1.25.0
 github.com/prometheus/common/expfmt
 github.com/prometheus/common/model
 # github.com/prometheus/procfs v0.20.1
@@ -137,9 +137,6 @@ github.com/stretchr/testify/assert
 github.com/stretchr/testify/assert/yaml
 github.com/stretchr/testify/mock
 github.com/stretchr/testify/require
-# go.yaml.in/yaml/v2 v2.4.4
-## explicit; go 1.15
-go.yaml.in/yaml/v2
 # goji.io v2.0.2+incompatible
 ## explicit
 goji.io
