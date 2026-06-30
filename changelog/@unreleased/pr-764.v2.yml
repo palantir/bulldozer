@@ -1,0 +1,6 @@
+type: improvement
+improvement:
+  description: "Make MaxPullRequestPollCount configurable via `max_pull_request_poll_count` in server config"
+  links:
+    - href: https://github.com/palantir/bulldozer/pull/764
+      text: "764"
