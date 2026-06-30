@@ -28,7 +28,11 @@ import (
 	"github.com/rs/zerolog"
 )
 
-const MaxPullRequestPollCount = 5
+const DefaultMaxPullRequestPollCount = 5
+
+// Deprecated: MaxPullRequestPollCount is retained for backward compatibility.
+// Use MergeConfig.MaxPullRequestPollCount or DefaultMaxPullRequestPollCount instead.
+const MaxPullRequestPollCount = DefaultMaxPullRequestPollCount
 
 type Merger interface {
 	// Merge merges the pull request in the context using the commit message
@@ -227,6 +231,11 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 		commitMsg.Title = title
 	}
 
+	maxAttempts := mergeConfig.MaxPullRequestPollCount
+	if maxAttempts <= 0 {
+		maxAttempts = DefaultMaxPullRequestPollCount
+	}
+
 	var attempts int
 	var merged, retry bool
 	for {
@@ -236,7 +245,7 @@ func MergePR(ctx context.Context, pullCtx pull.Context, merger Merger, mergeConf
 		}
 
 		attempts++
-		if attempts >= MaxPullRequestPollCount {
+		if attempts >= maxAttempts {
 			logger.Error().Msgf("Failed to merge pull request after %d attempts", attempts)
 			return
 		}

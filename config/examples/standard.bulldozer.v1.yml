@@ -13,3 +13,4 @@ merge:
       body: summarize_commits
   delete_after_merge: true
   allow_merge_with_no_checks: false
+  # max_pull_request_poll_count: 5  # Number of times to poll for mergeability before giving up (default: 5)
