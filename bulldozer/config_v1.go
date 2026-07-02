@@ -53,6 +53,11 @@ type MergeConfig struct {
 	// Additional status checks that bulldozer should require
 	// (even if the branch protection settings doesn't require it)
 	RequiredStatuses []string `yaml:"required_statuses"`
+
+	// MaxPullRequestPollCount sets the maximum number of times bulldozer will
+	// poll for a pull request to become mergeable before giving up. If unset
+	// or zero, the default of 5 is used.
+	MaxPullRequestPollCount int `yaml:"max_pull_request_poll_count"`
 }
 
 type MergeOptions struct {
