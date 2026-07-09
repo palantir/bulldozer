@@ -8,3 +8,7 @@ updates:
     labels: ["no changelog", "merge when ready", "dependencies", "github_actions"]
     schedule:
       interval: "weekly"
+    groups:
+      codeql:
+        patterns:
+          - "github/codeql-action*"
