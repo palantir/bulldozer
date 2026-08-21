@@ -32,6 +32,7 @@ const (
 	httpHeaderRateUsed      = "X-Ratelimit-Used"
 	httpHeaderRateReset     = "X-Ratelimit-Reset"
 	httpHeaderRateResource  = "X-Ratelimit-Resource"
+	httpHeaderRequestID     = "X-GitHub-Request-Id"
 )
 
 // ClientLogging creates client middleware that logs request and response
@@ -73,6 +74,9 @@ func ClientLogging(lvl zerolog.Level, opts ...ClientLoggingOption) ClientMiddlew
 				cached := res.Header.Get(httpcache.XFromCache) != ""
 				evt.Bool("cached", cached).
 					Int("status", res.StatusCode)
+				if requestID := res.Header.Get(httpHeaderRequestID); options.LogGitHubRequestID && requestID != "" {
+					evt.Str("github_request_id", requestID)
+				}
 
 				size := res.ContentLength
 				if requestMatches(r, options.ResponseBodyPatterns) {
@@ -109,6 +113,7 @@ type clientLoggingOptions struct {
 
 	// Output control
 	LogRateLimitInformation *RateLimitLoggingOption
+	LogGitHubRequestID      bool
 }
 
 // RateLimitLoggingOption controls which rate limit information is logged.
@@ -145,6 +150,13 @@ func LogResponseBody(patterns ...string) ClientLoggingOption {
 func LogRateLimitInformation(options *RateLimitLoggingOption) ClientLoggingOption {
 	return func(opts *clientLoggingOptions) {
 		opts.LogRateLimitInformation = options
+	}
+}
+
+// LogGitHubRequestID enables logging of the request ID returned by GitHub.
+func LogGitHubRequestID() ClientLoggingOption {
+	return func(opts *clientLoggingOptions) {
+		opts.LogGitHubRequestID = true
 	}
 }
 

@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/bradleyfalzon/ghinstallation/v2"
-	"github.com/google/go-github/v89/github"
+	"github.com/google/go-github/v90/github"
 	"github.com/gregjones/httpcache"
 	"github.com/shurcooL/githubv4"
 	"golang.org/x/oauth2"
@@ -382,11 +382,35 @@ func newInstallation(integrationID, installationID int64, privKeyBytes []byte, v
 func cache(cacheFunc func() httpcache.Cache) ClientMiddleware {
 	return func(next http.RoundTripper) http.RoundTripper {
 		return &httpcache.Transport{
-			Transport:           next,
+			Transport:           noStoreServerErrors(next),
 			Cache:               cacheFunc(),
 			MarkCachedResponses: true,
 		}
 	}
+}
+
+func noStoreServerErrors(next http.RoundTripper) http.RoundTripper {
+	return roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		resp, err := next.RoundTrip(r)
+		if resp != nil && resp.StatusCode >= 500 && resp.StatusCode < 600 {
+			if resp.Header == nil {
+				resp.Header = make(http.Header)
+			}
+			// Preserve existing Cache-Control directives.
+			cacheControl := resp.Header.Get("Cache-Control")
+			// Don't add a no-store directive if it already exists.
+			for _, directive := range strings.Split(cacheControl, ",") {
+				if strings.TrimSpace(directive) == "no-store" {
+					return resp, err
+				}
+			}
+			if cacheControl != "" {
+				cacheControl += ", "
+			}
+			resp.Header.Set("Cache-Control", cacheControl+"no-store")
+		}
+		return resp, err
+	})
 }
 
 func cacheControl(alwaysValidate bool) ClientMiddleware {
