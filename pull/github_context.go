@@ -37,6 +37,7 @@ type GithubContext struct {
 	comments         []string
 	commits          []*Commit
 	branchProtection *github.Protection
+	branchRules      *github.BranchRules
 	successStatuses  []string
 }
 
@@ -169,10 +170,46 @@ func (ghc *GithubContext) RequiredStatuses(ctx context.Context) ([]string, error
 			return nil, err
 		}
 	}
-	if checks := ghc.branchProtection.GetRequiredStatusChecks(); checks != nil {
-		return checks.GetContexts(), nil
+	if ghc.branchRules == nil {
+		if err := ghc.loadBranchRules(ctx); err != nil {
+			return nil, err
+		}
 	}
-	return nil, nil
+	return ghc.requiredStatuses(), nil
+}
+
+func (ghc *GithubContext) requiredStatuses() []string {
+	seen := make(map[string]struct{})
+	var statuses []string
+
+	add := func(name string) {
+		if name == "" {
+			return
+		}
+		if _, ok := seen[name]; ok {
+			return
+		}
+		statuses = append(statuses, name)
+		seen[name] = struct{}{}
+	}
+
+	if ghc.branchProtection != nil {
+		if checks := ghc.branchProtection.GetRequiredStatusChecks(); checks != nil {
+			for _, name := range checks.GetContexts() {
+				add(name)
+			}
+		}
+	}
+
+	if ghc.branchRules != nil {
+		for _, rule := range ghc.branchRules.GetRequiredStatusChecks() {
+			for _, check := range rule.Parameters.RequiredStatusChecks {
+				add(check.Context)
+			}
+		}
+	}
+
+	return statuses
 }
 
 func (ghc *GithubContext) PushRestrictions(ctx context.Context) (bool, error) {
@@ -197,6 +234,16 @@ func (ghc *GithubContext) loadBranchProtection(ctx context.Context) error {
 		return errors.Wrapf(err, "cannot get branch protection for %s", ghc.Locator())
 	}
 	ghc.branchProtection = protection
+	return nil
+}
+
+func (ghc *GithubContext) loadBranchRules(ctx context.Context) error {
+	rules, _, err := ghc.client.Repositories.ListRulesForBranch(ctx, ghc.owner, ghc.repo, ghc.pr.GetBase().GetRef(), nil)
+	if err != nil {
+		return errors.Wrapf(err, "cannot get branch rules for %s", ghc.Locator())
+	}
+
+	ghc.branchRules = rules
 	return nil
 }
 
