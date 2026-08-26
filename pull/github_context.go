@@ -203,7 +203,13 @@ func (ghc *GithubContext) requiredStatuses() []string {
 
 	if ghc.branchRules != nil {
 		for _, rule := range ghc.branchRules.GetRequiredStatusChecks() {
+			if rule == nil {
+				continue
+			}
 			for _, check := range rule.Parameters.RequiredStatusChecks {
+				if check == nil {
+					continue
+				}
 				add(check.Context)
 			}
 		}
