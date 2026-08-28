@@ -33,6 +33,7 @@ func TestSignalsMatchesAny(t *testing.T) {
 		Branches:          []string{"develop"},
 		BranchPatterns:    []string{"test/.*", "^feature/.*$"},
 		AutoMerge:         true,
+		Draft:             true,
 	}
 
 	ctx := context.Background()
@@ -140,6 +141,13 @@ func TestSignalsMatchesAny(t *testing.T) {
 			},
 			Matches: true,
 			Reason:  "pull request is configured to auto merge",
+		},
+		"draftMatch": {
+			PullContext: &pulltest.MockPullContext{
+				IsDraftValue: true,
+			},
+			Matches: true,
+			Reason:  "pull request is a draft",
 		},
 	}
 
@@ -272,6 +280,7 @@ func TestSignalsMatchesAll(t *testing.T) {
 		BranchPatterns:    []string{"test/.*", "^feature/.*$"},
 		MaxCommits:        2,
 		AutoMerge:         true,
+		Draft:             true,
 	}
 
 	ctx := context.Background()
@@ -292,6 +301,7 @@ func TestSignalsMatchesAll(t *testing.T) {
 					{SHA: "2", Message: "commit 2"},
 				},
 				AutoMergeValue: true,
+				IsDraftValue:   true,
 			},
 			Matches: true,
 			Reason:  `pull request matches all testlist signals`,

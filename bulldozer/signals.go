@@ -42,6 +42,7 @@ type BranchesSignal []string
 type BranchPatternsSignal []string
 type MaxCommitsSignal int
 type AutoMergeSignal bool
+type DraftSignal bool
 
 type Signals struct {
 	Labels            LabelsSignal            `yaml:"labels"`
@@ -52,6 +53,7 @@ type Signals struct {
 	BranchPatterns    BranchPatternsSignal    `yaml:"branch_patterns"`
 	MaxCommits        MaxCommitsSignal        `yaml:"max_commits"`
 	AutoMerge         AutoMergeSignal         `yaml:"auto_merge"`
+	Draft             DraftSignal             `yaml:"draft"`
 }
 
 func (signal LabelsSignal) Enabled() bool {
@@ -83,6 +85,10 @@ func (signal MaxCommitsSignal) Enabled() bool {
 }
 
 func (signal AutoMergeSignal) Enabled() bool {
+	return bool(signal)
+}
+
+func (signal DraftSignal) Enabled() bool {
 	return bool(signal)
 }
 
@@ -150,6 +156,7 @@ func (s Signals) MatchesAny(ctx context.Context, pullCtx pull.Context, tag strin
 		&s.Branches,
 		&s.BranchPatterns,
 		&s.AutoMerge,
+		&s.Draft,
 	}
 
 	for _, signal := range signals {
@@ -361,6 +368,23 @@ func (signal AutoMergeSignal) Matches(ctx context.Context, pullCtx pull.Context,
 
 	if autoMerge {
 		return true, "pull request is configured to auto merge", nil
+	}
+
+	return false, "", nil
+}
+
+func (signal DraftSignal) Matches(ctx context.Context, pullCtx pull.Context, tag string) (bool, string, error) {
+	logger := zerolog.Ctx(ctx)
+
+	if !signal.Enabled() {
+		logger.Debug().Msgf("No valid draft pr value has been provided to match against")
+		return false, "", nil
+	}
+
+	isDraft := pullCtx.IsDraft(ctx)
+
+	if isDraft {
+		return true, "pull request is a draft", nil
 	}
 
 	return false, "", nil
