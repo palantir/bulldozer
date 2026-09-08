@@ -17,9 +17,11 @@ package bulldozer
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/google/go-github/v90/github"
@@ -203,4 +205,36 @@ func TestBaseBranchChangedRetry(t *testing.T) {
 
 	_, retry := attemptMerge(ctx, pullCtx, merger, SquashAndMerge, CommitMessage{})
 	assert.True(t, retry, "should retry on base branch changed error")
+}
+
+func TestDefaultMergeBindsToEvaluatedHead(t *testing.T) {
+	const headSHA = "8dd53b0e5c0d0a1b6b3c9e2f4a7d8c1e0f9b2a3c"
+
+	var body map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"merged": true, "sha": "deadbeef"}`))
+	}))
+	defer srv.Close()
+
+	client, err := github.NewClient(github.WithEnterpriseURLs(srv.URL, srv.URL))
+	require.NoError(t, err)
+
+	pullCtx := &pulltest.MockPullContext{
+		OwnerValue:   "testorg",
+		RepoValue:    "testrepo",
+		NumberValue:  1,
+		HeadSHAValue: headSHA,
+	}
+
+	merger := NewGitHubMerger(client)
+	_, err = merger.Merge(context.Background(), pullCtx, MergeCommit, CommitMessage{})
+	require.NoError(t, err)
+
+	assert.Equal(t, headSHA, body["sha"],
+		"the merge request must name the commit that was evaluated")
 }
