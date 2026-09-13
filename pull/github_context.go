@@ -94,7 +94,7 @@ func (ghc *GithubContext) MergeState(ctx context.Context) (*MergeState, error) {
 func (ghc *GithubContext) Comments(ctx context.Context) ([]string, error) {
 	if ghc.comments == nil {
 
-		prCommentOpts := &github.PullRequestListCommentsOptions{ListOptions: github.ListOptions{PerPage: 100}}
+		prCommentOpts := &github.PullRequestListCommentsOptions{PerPage: 100}
 		for {
 			comments, res, err := ghc.client.PullRequests.ListComments(ctx, ghc.owner, ghc.repo, ghc.number, prCommentOpts)
 			if err != nil {
@@ -111,7 +111,7 @@ func (ghc *GithubContext) Comments(ctx context.Context) ([]string, error) {
 			prCommentOpts.Page = res.NextPage
 		}
 
-		issueCommentOpts := &github.IssueListCommentsOptions{ListOptions: github.ListOptions{PerPage: 100}}
+		issueCommentOpts := &github.IssueListCommentsOptions{PerPage: 100}
 		for {
 			comments, res, err := ghc.client.Issues.ListComments(ctx, ghc.owner, ghc.repo, ghc.number, issueCommentOpts)
 			if err != nil {
@@ -233,7 +233,7 @@ func (ghc *GithubContext) CurrentSuccessStatuses(ctx context.Context) ([]string,
 			opts.Page = res.NextPage
 		}
 
-		checkOpts := &github.ListCheckRunsOptions{ListOptions: github.ListOptions{PerPage: 100}}
+		checkOpts := &github.ListCheckRunsOptions{PerPage: 100}
 		for {
 			checkRuns, res, err := ghc.client.Checks.ListCheckRunsForRef(ctx, ghc.owner, ghc.repo, ghc.pr.GetHead().GetSHA(), checkOpts)
 			if err != nil {
