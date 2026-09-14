@@ -64,8 +64,8 @@ func ListAllOpenPullRequestsFilteredBySHA(ctx context.Context, client GitHubPull
 	logger := zerolog.Ctx(ctx)
 	var results []*github.PullRequest
 	opts := &github.PullRequestListOptions{
-		State:       "open",
-		ListOptions: github.ListOptions{PerPage: 100},
+		State:   "open",
+		PerPage: 100,
 	}
 
 	for {
@@ -116,9 +116,9 @@ func GetAllOpenPullRequestsForRef(ctx context.Context, client GitHubPullRequestC
 	logger := zerolog.Ctx(ctx)
 	ref = strings.TrimPrefix(ref, "refs/heads/")
 	opts := &github.PullRequestListOptions{
-		State:       "open",
-		Base:        ref,
-		ListOptions: github.ListOptions{PerPage: 100},
+		State:   "open",
+		Base:    ref,
+		PerPage: 100,
 	}
 
 	var results []*github.PullRequest
