@@ -90,9 +90,16 @@ func (m *GitHubMerger) ffOnlyMerge(ctx context.Context, pullCtx pull.Context) (s
 }
 
 func (m *GitHubMerger) defaultMerge(ctx context.Context, pullCtx pull.Context, method MergeMethod, msg CommitMessage) (string, error) {
+	// Bind the merge to the commit that was evaluated. Without this, GitHub
+	// merges whatever the head is when the request arrives, which may be a
+	// commit pushed after the merge conditions were checked. GitHub rejects a
+	// mismatch with 409, which attemptMerge treats as a non-retryable stop; the
+	// push that moved the head produces its own events, so the pull request is
+	// evaluated again against the new commit.
 	opts := github.PullRequestOptions{
 		CommitTitle: msg.Title,
 		MergeMethod: string(method),
+		SHA:         pullCtx.HeadSHA(),
 	}
 
 	result, _, err := m.client.PullRequests.Merge(ctx, pullCtx.Owner(), pullCtx.Repo(), pullCtx.Number(), msg.Message, &opts)
