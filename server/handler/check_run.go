@@ -93,7 +93,7 @@ func (h *CheckRun) Handle(ctx context.Context, eventType, deliveryID string, pay
 			logger.Debug().Msgf("Skipping updates to pull request due to server configuration override")
 		} else {
 			base, _ := pullCtx.Branches()
-			didUpdatePR, err := h.UpdatePullRequest(logger.WithContext(ctx), pullCtx, client, config, pr, base)
+			didUpdatePR, err := h.UpdatePullRequest(logger.WithContext(ctx), pullCtx, client, config, fullPR, base)
 			if err != nil {
 				logger.Error().Err(errors.WithStack(err)).Msg("Error updating pull request")
 			}
