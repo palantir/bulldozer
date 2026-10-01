@@ -23,14 +23,8 @@ import (
 	"github.com/rs/zerolog"
 )
 
-func UpdatePR(ctx context.Context, pullCtx pull.Context, client *github.Client, updateConfig UpdateConfig, baseRef string) bool {
+func UpdatePR(ctx context.Context, pullCtx pull.Context, client *github.Client, pr *github.PullRequest, updateConfig UpdateConfig, baseRef string) bool {
 	logger := zerolog.Ctx(ctx)
-
-	pr, _, err := client.PullRequests.Get(ctx, pullCtx.Owner(), pullCtx.Repo(), pullCtx.Number())
-	if err != nil {
-		logger.Error().Err(errors.WithStack(err)).Msgf("Failed to retrieve pull request %q", pullCtx.Locator())
-		return false
-	}
 
 	if pr.GetState() == "closed" {
 		logger.Debug().Msg("Pull request already closed")
