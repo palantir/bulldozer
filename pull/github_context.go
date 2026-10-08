@@ -93,6 +93,7 @@ func (ghc *GithubContext) MergeState(ctx context.Context) (*MergeState, error) {
 
 func (ghc *GithubContext) Comments(ctx context.Context) ([]string, error) {
 	if ghc.comments == nil {
+		allComments := []string{}
 
 		prCommentOpts := &github.PullRequestListCommentsOptions{PerPage: 100}
 		for {
@@ -102,7 +103,7 @@ func (ghc *GithubContext) Comments(ctx context.Context) ([]string, error) {
 			}
 
 			for _, c := range comments {
-				ghc.comments = append(ghc.comments, c.GetBody())
+				allComments = append(allComments, c.GetBody())
 			}
 
 			if res.NextPage == 0 {
@@ -119,7 +120,7 @@ func (ghc *GithubContext) Comments(ctx context.Context) ([]string, error) {
 			}
 
 			for _, c := range comments {
-				ghc.comments = append(ghc.comments, c.GetBody())
+				allComments = append(allComments, c.GetBody())
 			}
 
 			if res.NextPage == 0 {
@@ -127,6 +128,8 @@ func (ghc *GithubContext) Comments(ctx context.Context) ([]string, error) {
 			}
 			issueCommentOpts.Page = res.NextPage
 		}
+
+		ghc.comments = allComments
 	}
 
 	return ghc.comments, nil
@@ -208,7 +211,7 @@ func isNotFound(err error) bool {
 func (ghc *GithubContext) CurrentSuccessStatuses(ctx context.Context) ([]string, error) {
 	if ghc.successStatuses == nil {
 		opts := &github.ListOptions{PerPage: 100}
-		var successStatuses []string
+		successStatuses := []string{}
 		allowedCheckConclusions := map[string]bool{
 			"success": true,
 			"neutral": true,

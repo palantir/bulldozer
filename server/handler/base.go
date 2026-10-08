@@ -104,7 +104,7 @@ func (b *Base) UpdatePullRequest(ctx context.Context, pullCtx pull.Context, clie
 	didUpdatePR := false
 
 	if shouldUpdate {
-		didUpdatePR = bulldozer.UpdatePR(ctx, pullCtx, client, config.Update, baseRef)
+		didUpdatePR = bulldozer.UpdatePR(ctx, pullCtx, client, pr, config.Update, baseRef)
 	}
 
 	return didUpdatePR, nil
