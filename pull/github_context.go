@@ -244,9 +244,15 @@ func (ghc *GithubContext) loadBranchProtection(ctx context.Context) error {
 }
 
 func (ghc *GithubContext) loadBranchRules(ctx context.Context) error {
-	rules, _, err := ghc.client.Repositories.ListRulesForBranch(ctx, ghc.owner, ghc.repo, ghc.pr.GetBase().GetRef(), nil)
-	if err != nil {
-		return errors.Wrapf(err, "cannot get branch rules for %s", ghc.Locator())
+	rules := &github.BranchRules{}
+	branch := ghc.pr.GetBase().GetRef()
+	for item, err := range ghc.client.Repositories.ListRulesForBranchIter(ctx, ghc.owner, ghc.repo, branch, &github.ListOptions{PerPage: 100}) {
+		if err != nil {
+			return errors.Wrapf(err, "cannot get branch rules for %s", ghc.Locator())
+		}
+		if check, ok := item.(*github.RequiredStatusChecksBranchRule); ok {
+			rules.RequiredStatusChecks = append(rules.RequiredStatusChecks, check)
+		}
 	}
 
 	ghc.branchRules = rules
