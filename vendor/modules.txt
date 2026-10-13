@@ -85,7 +85,7 @@ github.com/prometheus/client_golang/prometheus/promhttp/internal
 # github.com/prometheus/client_model v0.6.3
 ## explicit; go 1.23
 github.com/prometheus/client_model/go
-# github.com/prometheus/common v0.72.0
+# github.com/prometheus/common v0.72.1
 ## explicit; go 1.26.0
 github.com/prometheus/common/expfmt
 github.com/prometheus/common/model
@@ -146,7 +146,7 @@ goji.io/pattern
 ## explicit; go 1.26.0
 golang.org/x/oauth2
 golang.org/x/oauth2/internal
-# golang.org/x/sys v0.48.0
+# golang.org/x/sys v0.49.0
 ## explicit; go 1.26.0
 golang.org/x/sys/unix
 golang.org/x/sys/windows
