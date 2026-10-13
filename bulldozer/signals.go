@@ -321,7 +321,11 @@ func (signal BranchPatternsSignal) Matches(ctx context.Context, pullCtx pull.Con
 	targetBranch, _ := pullCtx.Branches()
 
 	for _, signalBranch := range signal {
-		if matched, _ := regexp.MatchString(fmt.Sprintf("^%s$", signalBranch), targetBranch); matched {
+		matched, err := regexp.MatchString(fmt.Sprintf("^(?:%s)$", signalBranch), targetBranch)
+		if err != nil {
+			return false, "", errors.Wrapf(err, "invalid branch pattern %q", signalBranch)
+		}
+		if matched {
 			return true, fmt.Sprintf("pull request target branch (%q) matches pattern: %q", targetBranch, signalBranch), nil
 		}
 	}
