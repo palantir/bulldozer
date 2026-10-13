@@ -22,7 +22,7 @@ require (
 
 require (
 	github.com/DataDog/datadog-go/v5 v5.9.1 // indirect
-	github.com/Microsoft/go-winio v0.6.2 // indirect
+	github.com/Microsoft/go-winio v0.6.4 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bluekeyes/hatpear v0.1.2 // indirect
 	github.com/bradleyfalzon/ghinstallation/v2 v2.19.0 // indirect
