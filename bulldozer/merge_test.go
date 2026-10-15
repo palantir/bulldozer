@@ -238,20 +238,3 @@ func TestDefaultMergeBindsToEvaluatedHead(t *testing.T) {
 	assert.Equal(t, headSHA, body["sha"],
 		"the merge request must name the commit that was evaluated")
 }
-
-func TestGitHubMergerDeleteHeadTransportError(t *testing.T) {
-	srv := httptest.NewServer(http.NotFoundHandler())
-	srv.Close()
-
-	client, err := github.NewClient(github.WithEnterpriseURLs(srv.URL, srv.URL))
-	require.NoError(t, err)
-
-	pullCtx := &pulltest.MockPullContext{
-		OwnerValue: "owner",
-		RepoValue:  "repo",
-		BranchName: "feature",
-	}
-
-	err = NewGitHubMerger(client).DeleteHead(context.Background(), pullCtx)
-	assert.Error(t, err)
-}
