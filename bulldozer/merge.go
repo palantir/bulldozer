@@ -16,6 +16,7 @@ package bulldozer
 
 import (
 	"context"
+	stderrors "errors"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -114,8 +115,7 @@ func (m *GitHubMerger) DeleteHead(ctx context.Context, pullCtx pull.Context) err
 	_, err := m.client.Git.DeleteRef(ctx, pullCtx.Owner(), pullCtx.Repo(), fmt.Sprintf("refs/heads/%s", head))
 	if err != nil {
 		// Disregard the error since Github may delete the branch before we do
-		var rerr *github.ErrorResponse
-		if errors.As(err, &rerr) && rerr.Response.StatusCode == http.StatusUnprocessableEntity {
+		if rerr, ok := stderrors.AsType[*github.ErrorResponse](err); ok && rerr.Response.StatusCode == http.StatusUnprocessableEntity {
 			return nil
 		}
 		return errors.WithStack(err)
