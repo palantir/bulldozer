@@ -47,9 +47,10 @@ Bulldozer might be useful if you:
 
 `bulldozer` will only merge pull requests that GitHub allows non-admin
 collaborators to merge. This means that all branch protection settings,
-including required status checks and required reviews, are respected. It also
-means that you _must_ enable branch protection to prevent `bulldozer` from
-immediately merging every pull request.
+including required status checks and required reviews, are respected. Required
+status checks defined in repository rulesets are respected too. It also
+means that you _must_ enable branch protection or rulesets to prevent
+`bulldozer` from immediately merging every pull request.
 
 Only pull requests matching the trigger conditions (or _not_ matching
 ignore conditions) are considered for merging. `bulldozer` is event-driven,
@@ -193,9 +194,9 @@ merge:
   # If true, bulldozer will delete branches after their pull requests merge.
   delete_after_merge: true
 
-  # If true, bulldozer will merge pull requests with no required checks. This
-  # helps to protect against merging branches which inadvertently do not have
-  # required status checks.
+  # If true, bulldozer will merge pull requests with no required checks 
+  # (from either branch protection or rulesets). This helps to protect against 
+  # merging branches which inadvertently do not have required status checks.
   allow_merge_with_no_checks: false
 
 # "update" defines how and when to update pull request branches. Unlike with
@@ -308,8 +309,8 @@ which are to be expected, and others that may be caused by mis-configuring Bulld
 * Branch protection rules are preventing `bulldozer[bot]` from [pushing to the
   branch][push restrictions]. Github apps can be added to the list of restricted
   push users, so you can allow Bulldozer specifically for your repo.
-* The branch has no required checks and `allow_merge_with_no_checks` is set to
-  the default value (`false`).
+* The branch has no required checks (from either branch protection or rulesets) or
+  `allow_merge_with_no_checks` is set to the default value (`false`).
 
 [push restrictions]: https://help.github.com/articles/about-branch-restrictions/
 [a workaround]: #can-bulldozer-work-with-push-restrictions-on-branches
