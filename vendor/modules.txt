@@ -68,7 +68,7 @@ github.com/palantir/go-baseapp/pkg/errfmt
 ## explicit; go 1.27.0
 github.com/palantir/go-githubapp/appconfig
 github.com/palantir/go-githubapp/githubapp
-# github.com/pandatix/go-abnf v0.5.3
+# github.com/pandatix/go-abnf v0.5.4
 ## explicit; go 1.26.0
 github.com/pandatix/go-abnf
 # github.com/patrickmn/go-cache v2.1.0+incompatible
