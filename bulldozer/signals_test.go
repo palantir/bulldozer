@@ -371,3 +371,47 @@ func TestSignalsMatchesAllNoSignals(t *testing.T) {
 		})
 	}
 }
+
+func TestSignalsBranchPatterns(t *testing.T) {
+	ctx := context.Background()
+
+	config, err := ParseConfig([]byte(`
+version: 1
+merge:
+  trigger:
+    branch_patterns: ["main|release/.*"]
+`))
+	require.NoError(t, err)
+
+	tests := map[string]struct {
+		Base        string
+		ShouldMerge bool
+	}{
+		"firstAlternative":          {Base: "main", ShouldMerge: true},
+		"secondAlternative":         {Base: "release/1.0", ShouldMerge: true},
+		"prefixOfFirstAlternative":  {Base: "maintenance", ShouldMerge: false},
+		"suffixOfSecondAlternative": {Base: "old-release/1.0", ShouldMerge: false},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			pullCtx := &pulltest.MockPullContext{
+				BranchBase:            test.Base,
+				RequiredStatusesValue: []string{"ci"},
+				SuccessStatusesValue:  []string{"ci"},
+			}
+
+			merge, err := ShouldMergePR(ctx, pullCtx, config.Merge)
+			require.NoError(t, err)
+			assert.Equal(t, test.ShouldMerge, merge)
+		})
+	}
+
+	t.Run("invalidIgnorePatternFailsClosed", func(t *testing.T) {
+		ignored, _, err := IsPRIgnored(ctx, &pulltest.MockPullContext{BranchBase: "main"}, Signals{
+			BranchPatterns: []string{"hotfix/(.*"},
+		})
+		assert.Error(t, err)
+		assert.True(t, ignored)
+	})
+}
