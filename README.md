@@ -35,6 +35,7 @@ Bulldozer might be useful if you:
 ## Contents
 
 * [Behavior](#behavior)
+* [Quick Start](#quick-start)
 * [Configuration](#configuration)
   + [bulldozer.yml Specification](#bulldozeryml-specification)
 * [FAQ](#faq)
@@ -55,6 +56,68 @@ Only pull requests matching the trigger conditions (or _not_ matching
 ignore conditions) are considered for merging. `bulldozer` is event-driven,
 which means it will usually merge a pull request within a few seconds of the
 pull request satisfying all preconditions.
+
+## Quick Start
+
+This section provides a simple step-by-step guide to getting started with Bulldozer.
+
+### 1. Deploy Bulldozer
+
+Deploy the Bulldozer server using a Docker image or a binary distribution.
+
+- [Download binaries](https://github.com/palantir/bulldozer/releases)
+- [Docker images](https://hub.docker.com/r/palantirtechnologies/bulldozer/)
+
+For detailed deployment instructions and server configuration, see the [Deployment](#deployment) section.
+
+### 2. Configure the GitHub App
+
+Create and configure a GitHub App for Bulldozer.
+
+Set the webhook URL to:
+
+`https://<your-bulldozer-domain>/api/github/hook`
+
+Configure the required repository permissions and subscribe to the webhook events listed in the [GitHub App Configuration](#github-app-configuration) section.
+
+Install the GitHub App on the repository where you want to enable automatic merging.
+
+### 3. Configure your repository
+
+Create a `.bulldozer.yml` file in the root of your repository's target branch.
+
+For a basic configuration, use:
+
+```yaml
+version: 1
+
+merge:
+  trigger:
+    labels:
+      - "merge when ready"
+  method: squash
+```
+
+This configuration tells Bulldozer to consider pull requests with the `merge when ready` label and use squash merging.
+
+### 4. Create a pull request
+
+Open a pull request against the configured repository.
+
+Add the `merge when ready` label to the pull request to trigger Bulldozer.
+
+### 5. Check the merge requirements
+
+Bulldozer attempts to merge the pull request when the configured trigger conditions are met.
+
+Before merging, GitHub must allow the merge. Make sure that:
+
+- All required status checks have passed.
+- Required reviews have been provided.
+- Branch protection requirements are satisfied.
+- The configured merge method is allowed by repository settings.
+
+**Note:** Bulldozer does not bypass GitHub branch protection rules. Adding the trigger label does not guarantee an immediate merge.
 
 ## Configuration
 
