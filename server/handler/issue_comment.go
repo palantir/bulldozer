@@ -47,6 +47,11 @@ func (h *IssueComment) Handle(ctx context.Context, eventType, deliveryID string,
 
 	logger.Debug().Msgf("Received issue_comment %s event", event.GetAction())
 
+	if !event.GetIssue().IsPullRequest() {
+		logger.Debug().Msg("Doing nothing since issue comment is not on a pull request")
+		return nil
+	}
+
 	client, err := h.ClientCreator.NewInstallationClient(installationID)
 	if err != nil {
 		return errors.Wrap(err, "failed to instantiate github client")
