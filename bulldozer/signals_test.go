@@ -20,6 +20,7 @@ import (
 
 	"github.com/palantir/bulldozer/pull"
 	"github.com/palantir/bulldozer/pull/pulltest"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -260,6 +261,19 @@ func TestSignalsMaxCommits(t *testing.T) {
 			assert.Equal(t, test.Reason, reason)
 		})
 	}
+}
+
+func TestSignalsMaxCommitsError(t *testing.T) {
+	signals := Signals{
+		MaxCommits: 2,
+	}
+	pullCtx := &pulltest.MockPullContext{
+		CommitsErrValue: errors.New("failure"),
+	}
+
+	matches, _, err := signals.MatchesAll(context.Background(), pullCtx, "testlist")
+	assert.Error(t, err)
+	assert.False(t, matches, "expected pull request to not match, but it did")
 }
 
 func TestSignalsMatchesAll(t *testing.T) {

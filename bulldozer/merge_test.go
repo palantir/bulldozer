@@ -27,6 +27,7 @@ import (
 	"github.com/google/go-github/v93/github"
 	"github.com/palantir/bulldozer/pull"
 	"github.com/palantir/bulldozer/pull/pulltest"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -187,6 +188,22 @@ func TestPushRestrictionMerger(t *testing.T) {
 	_ = merger.DeleteHead(ctx, pullCtx)
 	assert.Equal(t, 1, normal.DeleteCount, "normal delete was incorrectly called")
 	assert.Equal(t, 1, restricted.DeleteCount, "restricted delete was not called")
+}
+
+func TestDetermineMergeMethodCommitsError(t *testing.T) {
+	mergeConfig := MergeConfig{
+		Method: SquashAndMerge,
+		MergeMethods: []ConditionalMergeMethod{
+			{Method: RebaseAndMerge, Trigger: Signals{MaxCommits: 1}},
+		},
+	}
+	pullCtx := &pulltest.MockPullContext{
+		CommitsErrValue: errors.New("failure"),
+	}
+
+	method, err := DetermineMergeMethod(context.Background(), pullCtx, mergeConfig)
+	assert.Error(t, err)
+	assert.Empty(t, method, "no merge method should be selected when commits cannot be listed")
 }
 
 func TestBaseBranchChangedRetry(t *testing.T) {

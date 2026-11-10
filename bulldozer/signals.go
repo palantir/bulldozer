@@ -340,7 +340,10 @@ func (signal MaxCommitsSignal) Matches(ctx context.Context, pullCtx pull.Context
 		return false, "", nil
 	}
 
-	commits, _ := pullCtx.Commits(ctx)
+	commits, err := pullCtx.Commits(ctx)
+	if err != nil {
+		return false, "", errors.Wrap(err, "unable to list pull request commits")
+	}
 
 	if len(commits) <= int(signal) {
 		return true, fmt.Sprintf("pull request has %d commits, which is less than or equal to the maximum of %d", len(commits), signal), nil
