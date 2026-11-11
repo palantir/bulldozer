@@ -16,6 +16,7 @@ package bulldozer
 
 import (
 	"context"
+	stderrors "errors"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -111,12 +112,15 @@ func (m *GitHubMerger) defaultMerge(ctx context.Context, pullCtx pull.Context, m
 
 func (m *GitHubMerger) DeleteHead(ctx context.Context, pullCtx pull.Context) error {
 	_, head := pullCtx.Branches()
-	resp, err := m.client.Git.DeleteRef(ctx, pullCtx.Owner(), pullCtx.Repo(), fmt.Sprintf("refs/heads/%s", head))
-	// Disregard the error since Github may delete the branch before we do
-	if resp.StatusCode == http.StatusUnprocessableEntity {
-		return nil
+	_, err := m.client.Git.DeleteRef(ctx, pullCtx.Owner(), pullCtx.Repo(), fmt.Sprintf("refs/heads/%s", head))
+	if err != nil {
+		// Disregard the error since Github may delete the branch before we do
+		if rerr, ok := stderrors.AsType[*github.ErrorResponse](err); ok && rerr.Response.StatusCode == http.StatusUnprocessableEntity {
+			return nil
+		}
+		return errors.WithStack(err)
 	}
-	return errors.WithStack(err)
+	return nil
 }
 
 // PushRestrictionMerger delegates merge operations to different Mergers based
