@@ -132,6 +132,7 @@ func ShouldMergePR(ctx context.Context, pullCtx pull.Context, mergeConfig MergeC
 		return false, errors.Wrap(err, "failed to determine required Github status checks for merge")
 	}
 	requiredStatuses = append(requiredStatuses, mergeConfig.RequiredStatuses...)
+	logger.Debug().Msgf("%s has required status checks: [%s]", pullCtx.Locator(), strings.Join(requiredStatuses, ","))
 
 	if len(requiredStatuses) == 0 && !mergeConfig.AllowMergeWithNoChecks {
 		logger.Debug().Msgf("%s has 0 required status checks, but is deemed not mergeable because AllowMergeWithNoChecks is false", pullCtx.Locator())
@@ -142,6 +143,7 @@ func ShouldMergePR(ctx context.Context, pullCtx pull.Context, mergeConfig MergeC
 	if err != nil {
 		return false, errors.Wrap(err, "failed to determine currently successful status checks for merge")
 	}
+	logger.Debug().Msgf("%s has currently successful status checks: [%s]", pullCtx.Locator(), strings.Join(successStatuses, ","))
 
 	unsatisfiedStatuses := statusSetDifference(requiredStatuses, successStatuses)
 	if len(unsatisfiedStatuses) > 0 {
