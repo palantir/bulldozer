@@ -31,7 +31,10 @@ func UpdatePR(ctx context.Context, pullCtx pull.Context, client *github.Client, 
 		return false
 	}
 
-	if pr.Head.Repo.GetFork() {
+	// The update merge runs in the base repository, so the head branch must
+	// be in the same repository. The fork flag of the head repository does not
+	// tell us that: it is also set when the base repository is itself a fork.
+	if pr.GetHead().GetRepo().GetID() != pr.GetBase().GetRepo().GetID() {
 		logger.Debug().Msg("Pull request is from a fork, cannot keep it up to date with base ref")
 		return false
 	}
