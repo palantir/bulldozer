@@ -52,6 +52,11 @@ func (h *CheckRun) Handle(ctx context.Context, eventType, deliveryID string, pay
 		return nil
 	}
 
+	if conclusion := event.GetCheckRun().GetConclusion(); !isPassingCheckConclusion(conclusion) {
+		logger.Debug().Msgf("Doing nothing since check_run conclusion was %q", conclusion)
+		return nil
+	}
+
 	client, err := h.ClientCreator.NewInstallationClient(installationID)
 	if err != nil {
 		return errors.Wrap(err, "failed to instantiate github client")
@@ -107,6 +112,17 @@ func (h *CheckRun) Handle(ctx context.Context, eventType, deliveryID string, pay
 	}
 
 	return nil
+}
+
+// isPassingCheckConclusion must stay in sync with the conclusions accepted by
+// GithubContext.CurrentSuccessStatuses.
+func isPassingCheckConclusion(conclusion string) bool {
+	switch conclusion {
+	case "success", "neutral", "skipped":
+		return true
+	default:
+		return false
+	}
 }
 
 // type assertion
